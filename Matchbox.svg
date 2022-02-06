@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg baseProfile='full' xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 $VIEWPORT$" id="matchbox">
+<title>$TITLE$</title>
+<g id="base" transform="translate(0, 0)">
+	<g id="base-fold" class="fold" fill='none' stroke='#00adee' stroke-width='0.75' >
+		$BASE-FOLD$
+	</g>
+	<g id="base-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2' >
+		$BASE-CUT$
+	</g>
+</g>
+<g id="tray" transform="translate(TRANSLATE-TRAY$)">
+	<g id="tray-fold" class="fold" fill='none' stroke='#00adee' stroke-width='0.75' >
+		$TRAY-FOLD$
+	</g>
+	<g id="tray-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2' >
+		$TRAY-CUT$
+	</g>
+	<g id="tray-labels" class="labels" fill='#75777a' stroke='none' >
+	</g>
+</g>
+</svg>
