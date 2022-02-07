@@ -8,29 +8,16 @@
     </style>
     <title>$TITLE$</title>
     <g id="base" transform="translate(0, 0)">
-        <g id="base-fold" class="fold" fill='none' stroke='#00adee' stroke-width='0.75'>
-            $BASE-FOLD$
-        </g>
         <g id="base-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
             $BASE-CUT$
         </g>
     </g>
-    <g id="wrap" transform="translate($TRANSLATE-WRAP$)">
-        <g id="wrap-fold" class="fold" fill='none' stroke='#00adee' stroke-width='0.75'>
-            $WRAP-FOLD$
-        </g>
-        <g id="wrap-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
-            $WRAP-CUT$
-        </g>
-    </g>
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
         <text x="$LABEL_X$" y="$LABEL_TITLE_Y$" font-family="Arial, Helvetica, sans-serif">Title: $TITLE$</text>
-        <text x="$LABEL_X$" y="$LABEL_FILENAME_Y$" font-family="Arial, Helvetica, sans-serif">File: $FILENAME$</text>
+        <text x="$LABEL_X$" y="$LABEL_FILENAME_Y$" font-family="Arial, Helvetica, sans-serif">File: $FILENAME$
+        </text>
         <text x="$LABEL_X$" y="$LABEL_BASE_WIDTH_Y$" font-family="Arial, Helvetica, sans-serif">
             Base width: $LABEL_BASE_WIDTH_X$
-        </text>
-        <text x="$LABEL_X$" y="$LABEL_FLAP_WIDTH_Y$" class="small">
-            Wrap width: $LABEL_WRAP_WIDTH_X$
         </text>
     </g>
 </svg>

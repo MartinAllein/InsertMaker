@@ -1,4 +1,3 @@
-import sys, getopt
 import argparse
 import xml.dom.minidom
 from classes.Design import Design
@@ -7,24 +6,24 @@ from datetime import datetime
 
 
 class Matchbox(Design):
-    __DEFAULT_FILENAME = "Matchbox-"
+    __DEFAULT_FILENAME = "Matchbox"
 
     __X_OFFSET = Design.X_OFFSET
     __Y_OFFSET = Design.Y_OFFSET
 
     def __init__(self):
 
-        self.length = 111
-        self.width = 222
-        self.height = 333
+        self.length = 0
+        self.width = 0
+        self.height = 0
         self.outfile = ""
         self.title = ""
         self.outfile = ''
 
         self.args = self.parse_arguments()
-        self.corners = []
-        self.cutlines = []
-        self.foldlines = []
+        self.base_corners = []
+        self.base_cutlines = []
+        self.base_foldlines = []
 
         error = ""
 
@@ -32,8 +31,8 @@ class Matchbox(Design):
         self.width = self.args.w
         self.height = self.args.h
 
-        temp_filename = Matchbox.__DEFAULT_FILENAME + \
-                        f"L{self.length}-W{self.width}-H{self.height}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        temp_filename = f"{Matchbox.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
+                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         if not self.args.o:
             self.outfile = temp_filename
@@ -49,9 +48,9 @@ class Matchbox(Design):
             self.outfile += '.svg'
 
         # Convert int 123.5 to 1235000 to avoid decimal places. 4 decimal places used
-        self.length = int(float(self.length) * Matchbox.FACTOR)
-        self.width = int(float(self.width) * Matchbox.FACTOR)
-        self.height = int(float(self.height) * Matchbox.FACTOR)
+        self.length = int(float(self.length) * Design.FACTOR)
+        self.width = int(float(self.width) * Design.FACTOR)
+        self.height = int(float(self.height) * Design.FACTOR)
 
         error += self.__check_length(self.length)
         error += self.__check_width(self.width)
@@ -98,16 +97,45 @@ class Matchbox(Design):
 
     def create(self):
         self.__init_design()
-        base_cut, base_fold = self.__create_base()
-        viewport = self.get_viewport()
+        base_cut = self.__create_base_cutline()
+        base_fold = self.__create_base_foldline()
+        wrap_cut = self.__create_wrap_cutline()
+        wrap_fold = self.__create_wrap_foldline()
 
         with open('templates/Matchbox.svg', 'r') as f:
             template = f.read()
 
         template = template.replace("$BASE-CUT$", base_cut)
         template = template.replace("$BASE-FOLD$", base_fold)
-        template = template.replace("$VIEWPORT$", viewport)
+        template = template.replace("$WRAP-CUT$", wrap_cut)
+        template = template.replace("$WRAP-FOLD$", wrap_fold)
         template = template.replace("$TITLE$", self.title)
+        template = template.replace("$FILENAME$", self.outfile)
+
+        template = template.replace("$LABEL_X$", Design.convert_coord(str(self.base_corners[0][0])))
+
+        ycoord = self.wrap_corners[1][1] + Design.Y_LINE_SEPARATION
+        template = template.replace("$LABEL_TITLE_Y$", Design.convert_coord(ycoord))
+        ycoord += Design.Y_LINE_SEPARATION
+        template = template.replace("$LABEL_FILENAME_Y$", Design.convert_coord(ycoord))
+        ycoord += Design.Y_LINE_SEPARATION
+        template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.convert_coord(str(ycoord)))
+        ycoord += Design.Y_LINE_SEPARATION
+        template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.convert_coord(str(ycoord)))
+
+        template = template.replace("$LABEL_BASE_WIDTH_X$",
+                                    str(round((self.base_corners[34][0] - self.base_corners[0][0]) / Design.FACTOR, 2)))
+
+        template = template.replace("$LABEL_WRAP_WIDTH_X$",
+                                    str(round((self.wrap_corners[10][0] - self.wrap_corners[0][0]) / Design.FACTOR, 2)))
+
+        template = template.replace("$TRANSLATE-WRAP$", "0 " + Design.convert_coord(str(self.base_corners[25][1])))
+
+        temp = self.base_corners[25][1] + self.wrap_corners[1][1] + 2 * Design.FACTOR + 4 * Design.Y_LINE_SEPARATION
+        viewport = f"{Design.convert_coord(int(self.base_corners[34][0] + 2 * Design.FACTOR))}," \
+                   f" {Design.convert_coord(int(temp))}"
+
+        template = template.replace("$VIEWPORT$", viewport)
 
         dom = xml.dom.minidom.parseString(template)
         template = dom.toprettyxml(newl='')
@@ -116,6 +144,11 @@ class Matchbox(Design):
             f.write(template)
 
     def __init_design(self):
+        self.__init_base()
+        self.__init_wrap()
+
+    def __init_base(self):
+
         #    a      b     c    d                                    e   f      g       h
         #
         # i                    10----------------------------------18
@@ -188,35 +221,73 @@ class Matchbox(Design):
         r = int(p + height / 2 + flap_height / 2)
         s = p + height
 
-        self.corners = [Design.Point(a, n), Design.Point(a, o), Design.Point(b, m), Design.Point(b, n),
-                        Design.Point(b, o), Design.Point(b, p), Design.Point(c, j), Design.Point(c, k),
-                        Design.Point(c, q), Design.Point(c, r), Design.Point(d, i), Design.Point(d, j),
-                        Design.Point(d, k), Design.Point(d, m), Design.Point(d, p), Design.Point(d, q),
-                        Design.Point(d, r), Design.Point(d, s), Design.Point(e, i), Design.Point(e, j),
-                        Design.Point(e, k), Design.Point(e, m), Design.Point(e, p), Design.Point(e, q),
-                        Design.Point(e, r), Design.Point(e, s), Design.Point(f, j), Design.Point(f, k),
-                        Design.Point(f, q), Design.Point(f, r), Design.Point(g, m), Design.Point(g, n),
-                        Design.Point(g, o), Design.Point(g, p), Design.Point(h, n), Design.Point(h, o)]
+        self.base_corners = [[a, n], [a, o], [b, m], [b, n], [b, o], [b, p], [c, j], [c, k], [c, q], [c, r], [d, i],
+                             [d, j],
+                             [d, k], [d, m], [d, p], [d, q], [d, r], [d, s], [e, i], [e, j], [e, k], [e, m], [e, p],
+                             [e, q],
+                             [e, r], [e, s], [f, j], [f, k], [f, q], [f, r], [g, m], [g, n], [g, o], [g, p], [h, n],
+                             [h, o]]
 
-        self.cutlines = [0, 1, 4, 5, 14, 15, 8, 9, 16, 17, 25, 24, 29, 28, 23, 22, 33, 32, 35, 34, 31, 30, 21, 20, 27,
-                         26, 19, 18, 10, 11, 6, 7, 12, 13, 2, 3, 0]
-        self.foldlines = [[3, 4], [11, 12], [13, 14], [15, 16], [19, 20], [21, 22], [23, 24], [13, 21], [14, 22],
-                          [31, 32]]
+        self.base_cutlines = [
+            [0, 1, 4, 5, 14, 15, 8, 9, 16, 17, 25, 24, 29, 28, 23, 22, 33, 32, 35, 34, 31, 30, 21, 20, 27,
+             26, 19, 18, 10, 11, 6, 7, 12, 13, 2, 3, 0]]
+        self.base_foldlines = [[3, 4], [11, 12], [15, 16], [19, 20], [23, 24], [31, 32], [13, 14, 22, 21, 13]]
 
-    def __create_base(self):
-        base_cut = ""
-        base_fold = ""
+    def __init_wrap(self):
+        #     a              b           c              d           e   f
+        #            h            w            h             w        flap_width
+        # g   0--------------2-----------4--------------6-----------8
+        #     |              |           |              |           | \
+        #     |              |           |              |           |  \ flap_retract
+        # h   |              |           |              |           |  10
+        #     |              |           |              |           |   |
+        #     |  l           |           |              |           |   |
+        #     |              |           |              |           |   |
+        #     |              |           |              |           |   |
+        # i   |              |           |              |           |  11
+        #     |              |           |              |           |  /
+        #     |              |           |              |           | /
+        # j   1--------------3-----------5--------------7-----------9
 
-        for idx, num in enumerate(self.cutlines[:-1]):
-            base_cut += Design.line(self.corners[self.cutlines[idx]], self.corners[self.cutlines[idx + 1]])
+        length = self.length
+        height = self.height
+        width = self.width
 
-        for idx_outer, num_outer in enumerate(self.foldlines):
-            for idx_inner, num_inner in enumerate(num_outer[:-1]):
-                base_fold += Design.line(self.corners[self.foldlines[idx_outer][idx_inner]],
-                                         self.corners[self.foldlines[idx_outer][idx_inner + 1]])
+        flap_width = int(10 * Design.FACTOR)
+        flap_retract = Design.FLAP_RETRACT
 
-        return base_cut, base_fold
+        # Y - Points
+        a = self.__X_OFFSET
+        b = a + height
+        c = b + width
+        d = c + height
+        e = d + width
+        f = e + flap_width
 
-    def get_viewport(self):
-        return f"{Design.convert_coord(int(self.corners[34].x + 2 * Design.FACTOR))}," \
-               f" {Design.convert_coord(int(self.corners[25].y + 2 * Design.FACTOR))}"
+        # g = self.base_corners[25][1] + self.__Y_OFFSET
+        g = self.__Y_OFFSET
+        h = g + flap_retract
+        i = g + length - flap_retract
+        j = g + length
+
+        self.wrap_corners = [[a, g], [a, j], [b, g], [b, j], [c, g], [c, j], [d, g], [d, j], [e, g], [e, j], [f, h],
+                             [f, i]]
+
+        self.wrap_cutlines = [[0, 1, 9, 11, 10, 8, 0]]
+        self.wrap_foldlines = [[2, 3], [4, 5], [6, 7], [8, 9]]
+
+    # TODO: create_base für ein Array von Werten. Parameter corners und lines(cut oder fold)
+    # TODO: cutlines und outlines in eine eigene Methode, die dann __create_Lines (jetzt create_base) aufruft
+
+    def __create_base_cutline(self):
+        return Design.create_xml_lines(self.base_corners, self.base_cutlines)
+
+    def __create_base_foldline(self):
+        return Design.create_xml_lines(self.base_corners, self.base_foldlines)
+
+    def __create_wrap_cutline(self):
+        return Design.create_xml_lines(self.wrap_corners, self.wrap_cutlines)
+
+    def __create_wrap_foldline(self):
+        return Design.create_xml_lines(self.wrap_corners, self.wrap_foldlines)
+

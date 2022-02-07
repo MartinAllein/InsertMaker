@@ -1,9 +1,10 @@
-import xml.dom.minidom
-from classes.Matchbox import Matchbox
-
+from classes.MatchboxFinn import MatchboxFinn
+from classes.Gui import Gui
 from collections import namedtuple
 
 if __name__ == "__main__":
-    matchbox = Matchbox()
+    # matchbox = MatchboxFinn()
 
-    matchbox.create()
+    # matchbox.create()
+    gui = Gui()
+    gui.init()
