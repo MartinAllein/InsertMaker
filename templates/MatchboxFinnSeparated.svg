@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg baseProfile='full' xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 $VIEWPORT$"
+     id="matchbox">
+    <style>
+        .small { font: sans-serif; font-family: Arial, Helvetica, sans-serif }
+    </style>
+    <title>$TITLE$</title>
+    <g id="top" transform="translate($TRANSLATE_TOP$)">
+        <g id="top-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
+            $TOP-CUT$
+        </g>
+    </g>
+    <g id="center" transform="translate($TRANSLATE_CENTER$)">
+        <g id="center-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
+            $CENTER-CUT$
+        </g>
+    </g>
+    <g id="bottom" transform="translate($TRANSLATE_BOTTOM$)">
+        <g id="bottom-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
+            $BOTTOM-CUT$
+        </g>
+    </g>
+    <g id="left" transform="translate($TRANSLATE_LEFT$)">
+        <g id="left-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
+            $LEFT-CUT$
+        </g>
+    </g>
+    <g id="right" transform="translate($TRANSLATE_RIGHT$)">
+        <g id="right^-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
+            $RIGHT-CUT$
+        </g>
+    </g>
+    <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
+        <text x="$LABEL_X$" y="$LABEL_TITLE_Y$" class="small">Title: $TITLE$</text>
+        <text x="$LABEL_X$" y="$LABEL_FILENAME_Y$" class="small">File: $FILENAME$</text>
+        <text x="$LABEL_X$" y="$LABEL_OVERALL_WIDTH_Y$" class="small">Overall width: $LABEL_OVERALL_WIDTH$
+        </text>
+    </g>
+</svg>
