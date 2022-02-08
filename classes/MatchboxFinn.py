@@ -7,6 +7,7 @@ from datetime import datetime
 class MatchboxFinn(Design):
     __DEFAULT_FILENAME = "MatchboxFinn"
     __DEFAULT_TEMPLATE = "templates/MatchboxFinn.svg"
+    __DEFAULT_TEMPLATE_SEPARATED = "templates/MatchboxFinnSeparated.svg"
 
     __X_OFFSET = Design.X_OFFSET
     __Y_OFFSET = Design.Y_OFFSET
@@ -15,6 +16,8 @@ class MatchboxFinn(Design):
     __SIDE_GAP = int(float(10 * Design.FACTOR))
 
     __DEFAUL_THICKNESS = 1.5
+
+    __SEPARATION = int(float(10 * Design.FACTOR))
 
     def __init__(self):
 
@@ -34,6 +37,7 @@ class MatchboxFinn(Design):
 
         self.args = self.parse_arguments()
         self.corners = []
+        self.cutlines = []
 
         error = ""
 
@@ -122,10 +126,8 @@ class MatchboxFinn(Design):
 
         return parser.parse_args()
 
-    # noinspection DuplicatedCode
     def create(self):
         self.__init_design()
-        # base_cut = self.__create_cutline()
         base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
 
         self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
@@ -152,6 +154,43 @@ class MatchboxFinn(Design):
 
         self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
                                  f" {Design.convert_coord(ycoord + Design.Y_LINE_SEPARATION)}"
+
+        # TEST FOR SEPARATION
+        y1 = 0
+        self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE_SEPARATED
+        self.foo[
+            '$TRANSLATE_TOP$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[10][0]))}, " \
+                                 " 0"
+        #     + f"{Design.convert_coord(str(ycoord))}"
+        top_cut = Design.create_xml_cutlines(self.corners, self.cutlines_top)
+        self.foo["$TOP-CUT$"] = top_cut
+
+        self.foo[
+            '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[13][0]))}, " \
+                                    + f"{Design.convert_coord(str(self.__SEPARATION))}"
+        center_cut = Design.create_xml_cutlines(self.corners, self.cutlines_center)
+        self.foo["$CENTER-CUT$"] = center_cut
+
+        self.foo[
+            '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[18][0]))}, " \
+                                    + f"{Design.convert_coord(str(2 * self.__SEPARATION))}"
+        bottom_cut = Design.create_xml_cutlines(self.corners, self.cutlines_bottom)
+        self.foo["$BOTTOM-CUT$"] = bottom_cut
+
+        self.foo[
+            '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(str(self.length + self.__SEPARATION))}, " \
+                                  + f"-{Design.convert_coord(str(self.height))}"
+        left_cut = Design.create_xml_cutlines(self.corners, self.cutlines_left)
+        self.foo["$LEFT-CUT$"] = left_cut
+
+        self.foo[
+            '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(str(self.height - self.__SEPARATION))}, " \
+                                   + f" {Design.convert_coord(str(self.__SEPARATION))}"
+        right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
+        self.foo["$RIGHT-CUT$"] = right_cut
+
+        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
+                                 f" {Design.convert_coord(round(self.height * 3 + 3 * self.__SEPARATION + 3 * Design.Y_LINE_SEPARATION))}"
 
         Design.write_to_file(self.foo)
 
@@ -253,6 +292,14 @@ class MatchboxFinn(Design):
             [57, 64, 65, 69, 68, 71, 70, 67, 66, 62, 63, 54],
             [53, 52, 45, 44, 51, 50, 10, 11, 22, 23, 12, 13]
         ]
+
+        self.cutlines_top = [[10, 11, 22, 23, 12, 13, 28, 29, 33, 32, 36, 37, 41, 40, 53, 52, 45, 44, 51, 50, 10]]
+        self.cutlines_center = [
+            [13, 15, 24, 25, 16, 18, 31, 30, 34, 35, 39, 38, 42, 43, 58, 56, 47, 46, 55, 53, 40, 41, 37, 36, 32, 33, 29,
+             28, 13]]
+        self.cutlines_bottom = [[18, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 58, 43, 42, 38, 39, 35, 34, 30, 31, 18]]
+        self.cutlines_left = [[0, 1, 4, 5, 9, 8, 17, 16, 25, 24, 15, 14, 7, 6, 2, 3, 0]]
+        self.cutlines_right = [[54, 55, 46, 47, 56, 57, 64, 65, 69, 68, 71, 70, 67, 66, 62, 63, 54]]
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
