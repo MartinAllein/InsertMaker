@@ -1,10 +1,11 @@
 from classes.MatchboxFinn import MatchboxFinn
-from classes.Gui import Gui
-from collections import namedtuple
+from classes.Application import Application
+import tkinter as tk
+from tkinter import ttk
 
 if __name__ == "__main__":
-    # matchbox = MatchboxFinn()
+    matchbox = MatchboxFinn()
 
-    # matchbox.create()
-    gui = Gui()
-    gui.init()
+    matchbox.create()
+    # app = Application()
+    # app.mainloop()

@@ -1,5 +1,4 @@
 import argparse
-import xml.dom.minidom
 from classes.Design import Design
 
 from datetime import datetime
@@ -7,6 +6,7 @@ from datetime import datetime
 
 class MatchboxFinn(Design):
     __DEFAULT_FILENAME = "MatchboxFinn"
+    __DEFAULT_TEMPLATE = "templates/MatchboxFinn.svg"
 
     __X_OFFSET = Design.X_OFFSET
     __Y_OFFSET = Design.Y_OFFSET
@@ -25,6 +25,12 @@ class MatchboxFinn(Design):
         self.outfile = ""
         self.title = ""
         self.outfile = ''
+        self.foo = {}
+
+        self.left_x = 0
+        self.right_x = 0
+        self.top_y = 0
+        self.bottom_y = 0
 
         self.args = self.parse_arguments()
         self.corners = []
@@ -39,6 +45,11 @@ class MatchboxFinn(Design):
             self.thickness = self.__DEFAUL_THICKNESS
         else:
             self.thickness = self.args.s
+
+        # here are the inner measurements on the command line => calculate outer lines
+        self.length += 2 * self.thickness
+        self.width += 2 * self.thickness
+        self.height += self.thickness
 
         temp_filename = f"{MatchboxFinn.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
                         f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -114,40 +125,35 @@ class MatchboxFinn(Design):
     # noinspection DuplicatedCode
     def create(self):
         self.__init_design()
-        base_cut = self.__create_cutline()
+        # base_cut = self.__create_cutline()
+        base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
 
-        with open('templates/MatchboxFinn.svg', 'r') as f:
-            template = f.read()
+        self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
+        self.foo["FILENAME"] = self.outfile
+        self.foo["$BASE-CUT$"] = base_cut
+        self.foo["$TITLE$"] = self.title
+        self.foo["$FILENAME$"] = self.outfile
+        self.foo["$LABEL_X$"] = Design.convert_coord(self.left_x)
 
-        template = template.replace("$BASE-CUT$", base_cut)
-        template = template.replace("$TITLE$", self.title)
-        template = template.replace("$FILENAME$", self.outfile)
+        ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
+        self.foo["$LABEL_TITLE_Y$"] = Design.convert_coord(ycoord)
 
-        template = template.replace("$LABEL_X$", Design.convert_coord(str(self.corners[0][0])))
-
-        ycoord = self.corners[61][1] + Design.Y_LINE_SEPARATION
-        template = template.replace("$LABEL_TITLE_Y$", Design.convert_coord(ycoord))
         ycoord += Design.Y_LINE_SEPARATION
-        template = template.replace("$LABEL_FILENAME_Y$", Design.convert_coord(ycoord))
+        self.foo["$LABEL_FILENAME_Y$"] = Design.convert_coord(ycoord)
+
         ycoord += Design.Y_LINE_SEPARATION
-        template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.convert_coord(str(ycoord)))
+        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.convert_coord(str(ycoord))
+
         ycoord += Design.Y_LINE_SEPARATION
-        template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.convert_coord(str(ycoord)))
+        self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(str(ycoord))
 
-        template = template.replace("$LABEL_BASE_WIDTH_X$",
-                                    str(round((self.corners[38][0] - self.corners[0][0]) / Design.FACTOR, 2)))
+        self.foo["$LABEL_OVERALL_WIDTH$"] = str(
+            round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
-        temp = self.corners[61][1] + 2 * Design.FACTOR + 4 * Design.Y_LINE_SEPARATION
-        viewport = f"{Design.convert_coord(int(self.corners[71][0] + 2 * Design.FACTOR))}," \
-                   f" {Design.convert_coord(int(temp))}"
+        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
+                                 f" {Design.convert_coord(ycoord + Design.Y_LINE_SEPARATION)}"
 
-        template = template.replace("$VIEWPORT$", viewport)
-
-        dom = xml.dom.minidom.parseString(template)
-        template = dom.toprettyxml(newl='')
-
-        with open(f"{self.outfile}", 'w') as f:
-            f.write(template)
+        Design.write_to_file(self.foo)
 
     def __init_design(self):
         self.__init_base()
@@ -198,6 +204,7 @@ class MatchboxFinn(Design):
         slot_width = self.__SLOT_WIDTH
         side_gap = self.__SIDE_GAP
 
+        # noinspection DuplicatedCode
         # X - Points
         a = self.__X_OFFSET
         b = a + int(height / 2) - int(slot_width / 2)
@@ -214,6 +221,7 @@ class MatchboxFinn(Design):
         n = k + int(height / 2) + int(slot_width / 2)
         o = k + height
 
+        # noinspection DuplicatedCode
         # Y - Points
         q = self.__Y_OFFSET
         r = q + int(height / 2) - int(slot_width / 2)
@@ -246,5 +254,5 @@ class MatchboxFinn(Design):
             [53, 52, 45, 44, 51, 50, 10, 11, 22, 23, 12, 13]
         ]
 
-    def __create_cutline(self):
-        return Design.create_xml_lines(self.corners, self.cutlines)
+        # detect boundaries of drawing
+        self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)

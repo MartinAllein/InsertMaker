@@ -13,11 +13,9 @@
         </g>
     </g>
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
-        <text x="$LABEL_X$" y="$LABEL_TITLE_Y$" font-family="Arial, Helvetica, sans-serif">Title: $TITLE$</text>
-        <text x="$LABEL_X$" y="$LABEL_FILENAME_Y$" font-family="Arial, Helvetica, sans-serif">File: $FILENAME$
-        </text>
-        <text x="$LABEL_X$" y="$LABEL_BASE_WIDTH_Y$" font-family="Arial, Helvetica, sans-serif">
-            Base width: $LABEL_BASE_WIDTH_X$
+        <text x="$LABEL_X$" y="$LABEL_TITLE_Y$" class="small">Title: $TITLE$</text>
+        <text x="$LABEL_X$" y="$LABEL_FILENAME_Y$" class="small">File: $FILENAME$</text>
+        <text x="$LABEL_X$" y="$LABEL_OVERALL_WIDTH_Y$" class="small">Overall width: $LABEL_OVERALL_WIDTH$
         </text>
     </g>
 </svg>
