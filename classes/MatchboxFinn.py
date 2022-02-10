@@ -17,7 +17,9 @@ class MatchboxFinn(Design):
 
     __DEFAUL_THICKNESS = 1.5
 
-    __SEPARATION = int(float(10 * Design.FACTOR))
+    __SEPARATION = int(float(3 * Design.FACTOR))
+
+    __THUMBHOLE_SMALL_RADIUS = int(2 * Design.FACTOR)
 
     def __init__(self):
 
@@ -29,6 +31,8 @@ class MatchboxFinn(Design):
         self.title = ""
         self.outfile = ''
         self.foo = {}
+        self.separated = False
+        self.thumbholeradius = 0.0
 
         self.left_x = 0
         self.right_x = 0
@@ -50,6 +54,8 @@ class MatchboxFinn(Design):
         else:
             self.thickness = self.args.s
 
+        self.separated = self.args.x
+
         # here are the inner measurements on the command line => calculate outer lines
         self.length += 2 * self.thickness
         self.width += 2 * self.thickness
@@ -70,6 +76,9 @@ class MatchboxFinn(Design):
 
         if self.outfile[-4:] != '.svg':
             self.outfile += '.svg'
+
+        if self.args.d:
+            self.thumbholeradius = int(self.args.d * Design.FACTOR)
 
         # Convert int 123.5 to 1235000 to avoid decimal places. 4 decimal places used
         self.length = int(float(self.length) * Design.FACTOR)
@@ -120,24 +129,77 @@ class MatchboxFinn(Design):
         parser.add_argument('-l', type=float, required=True, help="length of the matchbox")
         parser.add_argument('-w', type=float, required=True, help="width of the matchbox")
         parser.add_argument('-h', type=float, required=True, help="height of the matchbox")
+        parser.add_argument('-d', type=float, help="Thumb Hole Radius")
         parser.add_argument('-s', type=float, help="thickness of the material")
         parser.add_argument('-o', type=str, help="output filename")
         parser.add_argument('-t', type=str, help="title of the matchbox")
+        parser.add_argument('-x', action="store_true", help="separated Design")
 
         return parser.parse_args()
 
-    def create(self):
+    def create(self, separated=False):
         self.__init_design()
-        base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
 
-        self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
         self.foo["FILENAME"] = self.outfile
-        self.foo["$BASE-CUT$"] = base_cut
         self.foo["$TITLE$"] = self.title
         self.foo["$FILENAME$"] = self.outfile
         self.foo["$LABEL_X$"] = Design.convert_coord(self.left_x)
 
         ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
+
+        if not self.separated:
+            base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
+            self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
+            self.foo["$BASE-CUT$"] = base_cut
+
+        else:
+            # TEST FOR SEPARATION
+            separation = self.__SEPARATION + self.thickness
+
+            y1 = 0
+            self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE_SEPARATED
+
+            # TOP CUT
+            self.foo[
+                '$TRANSLATE_TOP$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[10][0]))}, 0"
+            top_cut = Design.create_xml_cutlines(self.corners, self.cutlines_top)
+            self.foo["$TOP-CUT$"] = top_cut
+
+            # CENTER CUT
+            self.foo[
+                '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[13][0]))}, " \
+                                        + f"{Design.convert_coord(str(self.thickness + separation))}"
+
+            center_cut = Design.create_xml_cutlines(self.corners, self.cutlines_center)
+            self.foo["$CENTER-CUT$"] = center_cut
+
+            # Bottom Cut
+            self.foo[
+                '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[18][0]))}, " \
+                                        + f"{Design.convert_coord(str(2 * (self.thickness + separation)))}"
+            bottom_cut = Design.create_xml_cutlines(self.corners, self.cutlines_bottom)
+            self.foo["$BOTTOM-CUT$"] = bottom_cut
+
+            # LEFT CUT
+            self.foo[
+                '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(str(self.length + self.thickness + separation))}, " \
+                                      + f"-{Design.convert_coord(str(self.height))}"
+            left_cut = Design.create_xml_cutlines(self.corners, self.cutlines_left)
+            self.foo["$LEFT-CUT$"] = left_cut
+
+            # RIGHT CUT
+            self.foo[
+                '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(str(self.height - self.thickness - separation))}, " \
+                                       + f" {Design.convert_coord(str(self.thickness + separation))}"
+            right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
+            self.foo["$RIGHT-CUT$"] = right_cut
+
+            ycoord += 2 * Design.Y_LINE_SEPARATION
+
+        temp = round(3 * (self.height + 3 * self.__SEPARATION + Design.Y_LINE_SEPARATION))
+        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
+                                 f" {Design.convert_coord(temp)}"
+
         self.foo["$LABEL_TITLE_Y$"] = Design.convert_coord(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
@@ -152,46 +214,6 @@ class MatchboxFinn(Design):
         self.foo["$LABEL_OVERALL_WIDTH$"] = str(
             round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
-        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
-                                 f" {Design.convert_coord(ycoord + Design.Y_LINE_SEPARATION)}"
-
-        # TEST FOR SEPARATION
-        y1 = 0
-        self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE_SEPARATED
-        self.foo[
-            '$TRANSLATE_TOP$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[10][0]))}, " \
-                                 " 0"
-        #     + f"{Design.convert_coord(str(ycoord))}"
-        top_cut = Design.create_xml_cutlines(self.corners, self.cutlines_top)
-        self.foo["$TOP-CUT$"] = top_cut
-
-        self.foo[
-            '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[13][0]))}, " \
-                                    + f"{Design.convert_coord(str(self.__SEPARATION))}"
-        center_cut = Design.create_xml_cutlines(self.corners, self.cutlines_center)
-        self.foo["$CENTER-CUT$"] = center_cut
-
-        self.foo[
-            '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[18][0]))}, " \
-                                    + f"{Design.convert_coord(str(2 * self.__SEPARATION))}"
-        bottom_cut = Design.create_xml_cutlines(self.corners, self.cutlines_bottom)
-        self.foo["$BOTTOM-CUT$"] = bottom_cut
-
-        self.foo[
-            '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(str(self.length + self.__SEPARATION))}, " \
-                                  + f"-{Design.convert_coord(str(self.height))}"
-        left_cut = Design.create_xml_cutlines(self.corners, self.cutlines_left)
-        self.foo["$LEFT-CUT$"] = left_cut
-
-        self.foo[
-            '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(str(self.height - self.__SEPARATION))}, " \
-                                   + f" {Design.convert_coord(str(self.__SEPARATION))}"
-        right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
-        self.foo["$RIGHT-CUT$"] = right_cut
-
-        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
-                                 f" {Design.convert_coord(round(self.height * 3 + 3 * self.__SEPARATION + 3 * Design.Y_LINE_SEPARATION))}"
-
         Design.write_to_file(self.foo)
 
     def __init_design(self):
@@ -199,28 +221,41 @@ class MatchboxFinn(Design):
 
     def __init_base(self):
 
-        #          a    b    c    d    e     f          g                    h          i     j    k    m   n     o
-        #  q                      10--------------------------------------------------------------50
-        #                         |                        length                                  |
-        #  r                      11--22                   length                             44--51
-        #                              |                                                      |
-        #  s                      12--23                                                      45--52
-        #                         | side-gap                                              side-gap |
-        #                         |                                                                |
+        #          a    b    c    d    e     f          g                    h          i     j    k    m    n    o
+        #  q                      10--------------------------------------------------------------50    74--77
+        #                         |                                                                |    |    |
+        #                         |                                                                |    |    |
+        #  ac                     |                                                                72--75    78--80
+        #                         |                                                                |              |
+        #                         |                                                                |              |
+        #  ag                     |                                                                |           /-86
+        #  r                      11--22                   length                             44--51          /   |
+        #                              |                                                      |              /    |
+        #                              |                                                      |              |    |
+        #                              |                                                      |              |    |
+        #  s                      12--23                                                      45--52         \    |
+        #                         | side-gap                                              side-gap |          \   |
+        #                         |                                                                |           \-87
+        #  ah                     |                                                                |              |
+        #                         |                                                                |              |
+        #  ad                     |                                                                73--76    79--81
+        #                         |                                                                |    |    |
+        #                         |                                                                |    |    |
         #  t            2--- 6    13--------28          32------------------36          40--------53    62--66
         #               |    |    |          |          |thickness           |          |          |    |    |
         #               |    |    |          |          |                    |          |          |    |    |
         #  u       0----3    7---14          29--------33                    37--------41          54--63    67--70
         #          |              |           slot_width                                           |              |
         #          |              | side-gap                                                       |              |
-        #          |              |                                                                |              |
-        #  v     w |              15--24                                                      46--55              | w
-        #        i |                   |                                                      |                   | i
-        #        d |                   |                                                      |                   | d
-        #        t |                   |                                                      |                   | t
-        #        h |                   |                                                      |                   | h
-        #  w       |              16--25                                                      47--56              |
-        #          |              |                                                                |              |
+        #  ae      82-\           |                                                                |           /-84
+        #  v       |   \          15--24                                                      46--55          /   | w
+        #        w |    \              |                                                      |              /    | i
+        #        i |     |             |                                                      |              |    | d
+        #        d |     |             |                                                      |              |    | d
+        #        t |     |             |                                                      |              |    | t
+        #        h |    /              |                                                      |              \    | h
+        #  w       |   /          16--25                                                      47--56          \   |
+        #  af      83-/           |                                                                |           \-85
         #          |              |                                                                |              |
         #          |              |                                                                |              |
         #  x       1----4    8---17          30--------34                    38--------42          57--64    68--71
@@ -271,9 +306,15 @@ class MatchboxFinn(Design):
         w = t + int(width / 2) + int(slot_width / 2)
         y = t + width
         x = y - thickness
-        z = y + int(height / 2) - int(slot_width / 2)
-        aa = y + int(height / 2) + int(slot_width / 2)
+        z = y + int(height / 2 - slot_width / 2)
+        aa = y + int(height / 2 + slot_width / 2)
         ab = y + height
+        ac = q + thickness
+        ad = t - thickness
+        ae = t + int(width / 2 - self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
+        af = t + int(width / 2 + self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
+        ag = q + int(width / 2 - self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
+        ah = q + int(width / 2 + self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
 
         self.corners = [[a, u], [a, x], [b, t], [b, u], [b, x], [b, y], [c, t], [c, u], [c, x],
                         [c, y], [d, q], [d, r], [d, s], [d, t], [d, u], [d, v], [d, w], [d, x],
@@ -282,24 +323,32 @@ class MatchboxFinn(Design):
                         [h, t], [h, u], [h, x], [h, y], [i, t], [i, u], [i, x], [i, y], [j, r],
                         [j, s], [j, v], [j, w], [j, z], [j, aa], [k, q], [k, r], [k, s], [k, t],
                         [k, u], [k, v], [k, w], [k, x], [k, y], [k, z], [k, aa], [k, ab], [m, t],
-                        [m, u], [m, x], [m, y], [n, t], [n, u], [n, x], [n, y], [o, u], [o, x]]
-
+                        [m, u], [m, x], [m, y], [n, t], [n, u], [n, x], [n, y], [o, u], [o, x],
+                        [k, ac], [k, ad], [m, q], [m, ac], [m, ad], [n, q], [n, ac], [n, ad],
+                        [o, ac], [o, ad], [a, ae], [a, af], [o, ae], [o, af], [o, ag], [o, ah]
+                        ]
         self.cutlines = [
-            [13, 15, 24, 25, 16, 18, 31, 30, 34, 35, 39, 38, 42, 43, 58, 56, 47, 46, 55, 53, 40, 41, 37, 36, 32, 33, 29,
-             28, 13],
-            [14, 7, 6, 2, 3, 0, 1, 4, 5, 9, 8, 17],
-            [18, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 58],
-            [57, 64, 65, 69, 68, 71, 70, 67, 66, 62, 63, 54],
-            [53, 52, 45, 44, 51, 50, 10, 11, 22, 23, 12, 13]
+            [Design.THUMBHOLE, [85, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]],
+            [Design.THUMBHOLE, [87, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]],
+            [Design.LINE,
+             [10, 11, 22, 23, 12, 15, 24, 25, 16, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 56, 47, 46, 55, 52, 45, 44,
+              51, 50, 10]],
+            [Design.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]],
+            [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
+            [Design.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]],
+            [Design.LINE, [73, 76, 62]],
+            [Design.LINE, [72, 75, 74, 77, 78, 80, 81, 79, 66]]
         ]
 
-        self.cutlines_top = [[10, 11, 22, 23, 12, 13, 28, 29, 33, 32, 36, 37, 41, 40, 53, 52, 45, 44, 51, 50, 10]]
-        self.cutlines_center = [
-            [13, 15, 24, 25, 16, 18, 31, 30, 34, 35, 39, 38, 42, 43, 58, 56, 47, 46, 55, 53, 40, 41, 37, 36, 32, 33, 29,
-             28, 13]]
-        self.cutlines_bottom = [[18, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 58, 43, 42, 38, 39, 35, 34, 30, 31, 18]]
-        self.cutlines_left = [[0, 1, 4, 5, 9, 8, 17, 16, 25, 24, 15, 14, 7, 6, 2, 3, 0]]
-        self.cutlines_right = [[54, 55, 46, 47, 56, 57, 64, 65, 69, 68, 71, 70, 67, 66, 62, 63, 54]]
+        self.cutlines_top = [
+            [Design.LINE, [10, 11, 22, 23, 12, 13, 28, 29, 33, 32, 36, 37, 41, 40, 53, 52, 45, 44, 51, 50, 10]]]
+        self.cutlines_center = [[Design.LINE,
+                                 [13, 15, 24, 25, 16, 18, 31, 30, 34, 35, 39, 38, 42, 43, 58, 56, 47, 46, 55, 53, 40,
+                                  41, 37, 36, 32, 33, 29, 28, 13]]]
+        self.cutlines_bottom = [[Design.LINE,
+                                 [18, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 58, 43, 42, 38, 39, 35, 34, 30, 31, 18]]]
+        self.cutlines_left = [[Design.LINE, [0, 1, 4, 5, 9, 8, 17, 16, 25, 24, 15, 14, 7, 6, 2, 3, 0]]]
+        self.cutlines_right = [[Design.LINE, [54, 55, 46, 47, 56, 57, 64, 65, 69, 68, 71, 70, 67, 66, 62, 63, 54]]]
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
