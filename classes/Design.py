@@ -22,8 +22,8 @@ class Design(ABC):
     WEST = "West"
 
     FACTOR = 720000 / 25.4
-    X_OFFSET = int(1 * FACTOR)
-    Y_OFFSET = int(1 * FACTOR)
+    X_OFFSET = int(5 * FACTOR)
+    Y_OFFSET = int(5     * FACTOR)
     FLAP_RETRACT = int(2 * FACTOR)
     X_DRAWING_DELTA = int(2 * FACTOR)
     Y_DRAWING_DELTA = int(2 * FACTOR)
@@ -58,7 +58,7 @@ class Design(ABC):
         return result
 
     @staticmethod
-    def line(start: int, end: int):
+    def line(start, end):
         start_x, start_y = Design.convert_coord(start)
         end_x, end_y = Design.convert_coord(end)
         return Design.__XML_LINE % (start_x, start_y, end_x, end_y)

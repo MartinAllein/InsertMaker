@@ -33,6 +33,7 @@ class MatchboxFinn(Design):
         self.foo = {}
         self.separated = False
         self.thumbholeradius = 0.0
+        self.walls = []
 
         self.left_x = 0
         self.right_x = 0
@@ -76,11 +77,16 @@ class MatchboxFinn(Design):
         else:
             self.title = self.args.t
 
+        if self.args.W:
+            self.walls = self.args.W
+
         if self.outfile[-4:] != '.svg':
             self.outfile += '.svg'
 
         if self.args.d:
             self.thumbholeradius = int(self.args.d * Design.FACTOR)
+
+        print(self.walls)
 
         # Convert int 123.5 to 1235000 to avoid decimal places. 4 decimal places used
         self.length = int(float(self.length) * Design.FACTOR)
@@ -136,6 +142,7 @@ class MatchboxFinn(Design):
         parser.add_argument('-o', type=str, help="output filename")
         parser.add_argument('-t', type=str, help="title of the matchbox")
         parser.add_argument('-x', action="store_true", help="separated Design")
+        parser.add_argument('-W', type=int, nargs='+', help="Walls")
 
         return parser.parse_args()
 
@@ -149,11 +156,17 @@ class MatchboxFinn(Design):
 
         ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
 
+        # self.make_slots([0, 0])
+
         if not self.separated:
             if self.thumbholeradius:
                 base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
             else:
                 base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
+
+            base_cut += self.make_slots(self.corners[10], self.height)
+            base_cut += self.make_slots(self.corners[18], self.height)
+            base_cut += self.make_slots(self.corners[13], self.width)
 
             self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
             self.foo["$BASE-CUT$"] = base_cut
@@ -298,7 +311,8 @@ class MatchboxFinn(Design):
         a = self.__X_OFFSET
         b = a + int(height / 2) - int(slot_width / 2)
         c = a + int(height / 2) + int(slot_width / 2)
-        d = a + height
+        # d = a + height
+        d = self.__X_OFFSET
         e = d + thickness
         f = d + side_gap
         g = f + slot_width
@@ -389,3 +403,33 @@ class MatchboxFinn(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
+
+    def make_slots(self, reference_point, measure_y):
+        walls = self.walls
+        xml_string = ""
+
+        origin_x, origin_y = reference_point
+        origin_x += self.thickness
+        origin_y += int(measure_y / 2 - self.__SLOT_WIDTH / 2)
+        print(Design.to_numeral(origin_x), Design.to_numeral(origin_y))
+
+        for distance in walls:
+            origin_x += int(distance * Design.FACTOR)
+            start = [origin_x, origin_y]
+            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [0, self.__SLOT_WIDTH])
+            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [self.thickness, 0])
+            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [0, -self.__SLOT_WIDTH])
+            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [-self.thickness, 0])
+
+            origin_x += self.thickness
+
+        return xml_string
+
+    def __draw_slot_hole_line(self, xml_string, start, delta):
+
+        # https://stackoverflow.com/questions/25640628/python-adding-lists-of-numbers-with-other-lists-of-numbers
+        stop = [sum(values) for values in zip(start, delta)]
+
+        xml_string += Design.line(start, stop)
+
+        return xml_string, stop
