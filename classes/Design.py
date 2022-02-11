@@ -38,7 +38,7 @@ class Design(ABC):
         pass
 
     @staticmethod
-    def set_dot(coord: str):
+    def __set_dot(coord: str):
         if coord == 0:
             value = "00000"
         else:
@@ -52,9 +52,9 @@ class Design(ABC):
         if type(coord) is list:
             result = []
             for item in coord:
-                result.append(Design.set_dot(item))
+                result.append(Design.__set_dot(item))
         else:
-            result = Design.set_dot(coord)
+            result = Design.__set_dot(coord)
         return result
 
     @staticmethod
@@ -70,28 +70,27 @@ class Design(ABC):
 
         end_x = start_x - smallradius
         end_y = start_y - smallradius
-        xmlstring = Design.__XML_PATH % (
-            Design.convert_coord(start_x), Design.convert_coord(start_y), Design.convert_coord(smallradius),
-            Design.convert_coord(smallradius), direction, Design.convert_coord(end_x), Design.convert_coord(end_y))
+        xmlstring = Design.__make_arc(start_x, start_y, smallradius, direction, end_x, end_y)
 
         start_x = end_x
         start_y = end_y
         end_x = end_x
         end_y = start_y - 2 * thumbholeradius
-        xmlstring += Design.__XML_PATH % (
-            Design.convert_coord(start_x), Design.convert_coord(start_y), Design.convert_coord(thumbholeradius),
-            Design.convert_coord(thumbholeradius), 1 - direction, Design.convert_coord(end_x),
-            Design.convert_coord(end_y))
+        xmlstring += Design.__make_arc(start_x, start_y, thumbholeradius, 1 - direction, end_x, end_y)
 
         start_x = end_x
         start_y = end_y
         end_x = start_x + smallradius
         end_y = start_y - smallradius
-        xmlstring += Design.__XML_PATH % (
-            Design.convert_coord(start_x), Design.convert_coord(start_y), Design.convert_coord(smallradius),
-            Design.convert_coord(smallradius), direction, Design.convert_coord(end_x), Design.convert_coord(end_y))
+        xmlstring += Design.__make_arc(start_x, start_y, smallradius, direction, end_x, end_y)
 
         return xmlstring
+
+    @staticmethod
+    def __make_arc(start_x, start_y, radius, direction, end_x, end_y):
+        return Design.__XML_PATH % (
+            Design.convert_coord(start_x), Design.convert_coord(start_y), Design.convert_coord(radius),
+            Design.convert_coord(radius), direction, Design.convert_coord(end_x), Design.convert_coord(end_y))
 
     @staticmethod
     def create_xml_lines(corners, lines):
@@ -107,33 +106,12 @@ class Design(ABC):
         return xml_lines
 
     @staticmethod
-    def create_xpl_paths(corners, points):
-        pass
-
-    @staticmethod
     def get_bounds(corners):
-        left_x = sys.maxsize - 1
-        right_x = -sys.maxsize - 1
-        top_y = sys.maxsize - 1
-        bottom_y = -sys.maxsize - 1
 
-        for key, value in enumerate(corners):
-
-            # check left_x
-            if value[0] < left_x:
-                left_x = value[0]
-
-            # check right_x
-            if value[0] > right_x:
-                right_x = value[0]
-
-            # check top_y
-            if value[1] < top_y:
-                top_y = value[1]
-
-            # check bottom_y
-            if value[1] > bottom_y:
-                bottom_y = value[1]
+        left_x = min(a for (a, b) in corners)
+        top_y = min(b for (a, b) in corners)
+        right_x = max(a for (a, b) in corners)
+        bottom_y = max(b for (a, b) in corners)
 
         return left_x, right_x, top_y, bottom_y
 
@@ -169,3 +147,7 @@ class Design(ABC):
     @staticmethod
     def create_xml_cutlines(corners, lines):
         return Design.create_xml_lines(corners, lines)
+
+    @staticmethod
+    def to_numeral(value):
+        return round(value / Design.FACTOR, 2)

@@ -39,6 +39,9 @@ class MatchboxFinn(Design):
         self.top_y = 0
         self.bottom_y = 0
 
+        self.inner_dimensions = []
+        self.outer_dimensions = []
+
         self.args = self.parse_arguments()
         self.corners = []
         self.cutlines = []
@@ -59,7 +62,6 @@ class MatchboxFinn(Design):
         # here are the inner measurements on the command line => calculate outer lines
         self.length += 2 * self.thickness
         self.width += 2 * self.thickness
-        self.height += self.thickness
 
         temp_filename = f"{MatchboxFinn.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
                         f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -148,7 +150,11 @@ class MatchboxFinn(Design):
         ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
 
         if not self.separated:
-            base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
+            if self.thumbholeradius:
+                base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
+            else:
+                base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
+
             self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
             self.foo["$BASE-CUT$"] = base_cut
 
@@ -214,6 +220,16 @@ class MatchboxFinn(Design):
         self.foo["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
         Design.write_to_file(self.foo)
+
+        print(
+            f"Inner Length: {self.inner_dimensions[0]} , "
+            f"Inner Width: {self.inner_dimensions[1]} , "
+            f"Inner Height: {self.inner_dimensions[2]}")
+
+        print(
+            f"Outer Length: {self.outer_dimensions[0]} , "
+            f"Outer Width: {self.outer_dimensions[1]} , "
+            f"Outer Height: {self.outer_dimensions[2]}")
 
     def __init_design(self):
         self.__init_base()
@@ -310,9 +326,9 @@ class MatchboxFinn(Design):
         ab = y + height
         ac = q + thickness
         ad = t - thickness
-        ae = t + int(width / 2 - self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
+        ae = t + int(width / 2 - self.thumbholeradius - self.__THUMBHOLE_SMALL_RADIUS)
         af = t + int(width / 2 + self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
-        ag = q + int(width / 2 - self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
+        ag = q + int(width / 2 - self.thumbholeradius - self.__THUMBHOLE_SMALL_RADIUS)
         ah = q + int(width / 2 + self.thumbholeradius + self.__THUMBHOLE_SMALL_RADIUS)
 
         self.corners = [[a, u], [a, x], [b, t], [b, u], [b, x], [b, y], [c, t], [c, u], [c, x],
@@ -326,7 +342,27 @@ class MatchboxFinn(Design):
                         [k, ac], [k, ad], [m, q], [m, ac], [m, ad], [n, q], [n, ac], [n, ad],
                         [o, ac], [o, ad], [a, ae], [a, af], [o, ae], [o, af], [o, ag], [o, ah]
                         ]
+
+        self.inner_dimensions = [Design.to_numeral(self.corners[46][0] - self.corners[24][0]),
+                                 Design.to_numeral(self.corners[1][1] - self.corners[0][1]),
+                                 Design.to_numeral(self.corners[14][0] - self.corners[0][0])]
+
+        self.outer_dimensions = [Design.to_numeral(self.corners[50][0] - self.corners[10][0]),
+                                 Design.to_numeral(self.corners[18][1] - self.corners[13][1]),
+                                 Design.to_numeral(self.corners[24][0] - self.corners[0][0])]
+
         self.cutlines = [
+            [Design.LINE,
+             [10, 11, 22, 23, 12, 15, 24, 25, 16, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 56, 47, 46, 55, 52, 45, 44,
+              51, 50, 10]],
+            [Design.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]],
+            [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
+            [Design.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]],
+            [Design.LINE, [72, 75, 74, 77, 78, 80, 81, 79, 66]],
+            [Design.LINE, [73, 76, 62]],
+        ]
+
+        self.cutlines_with_thumbhole = [
             [Design.THUMBHOLE, [85, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]],
             [Design.THUMBHOLE, [87, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]],
             [Design.LINE,
@@ -334,9 +370,11 @@ class MatchboxFinn(Design):
               51, 50, 10]],
             [Design.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]],
             [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
-            [Design.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]],
+            [Design.LINE, [54, 63, 62, 66, 67, 70, 84]],
+            [Design.LINE, [85, 71, 68, 69, 65, 64, 57]],
             [Design.LINE, [73, 76, 62]],
-            [Design.LINE, [72, 75, 74, 77, 78, 80, 81, 79, 66]]
+            [Design.LINE, [72, 75, 74, 77, 78, 80, 86]],
+            [Design.LINE, [87, 81, 79, 66]]
         ]
 
         self.cutlines_top = [
