@@ -112,24 +112,24 @@ class Matchbox(Design):
         template = template.replace("$TITLE$", self.title)
         template = template.replace("$FILENAME$", self.outfile)
 
-        template = template.replace("$LABEL_X$", Design.convert_coord(str(self.base_corners[0][0])))
+        template = template.replace("$LABEL_X$", Design.convert_coord(self.base_corners[0][0]))
 
         ycoord = self.wrap_corners[1][1] + Design.Y_LINE_SEPARATION
         template = template.replace("$LABEL_TITLE_Y$", Design.convert_coord(ycoord))
         ycoord += Design.Y_LINE_SEPARATION
         template = template.replace("$LABEL_FILENAME_Y$", Design.convert_coord(ycoord))
         ycoord += Design.Y_LINE_SEPARATION
-        template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.convert_coord(str(ycoord)))
+        template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.convert_coord(ycoord))
         ycoord += Design.Y_LINE_SEPARATION
-        template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.convert_coord(str(ycoord)))
+        template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.convert_coord(ycoord))
 
         template = template.replace("$LABEL_BASE_WIDTH_X$",
-                                    str(round((self.base_corners[34][0] - self.base_corners[0][0]) / Design.FACTOR, 2)))
+                                    round((self.base_corners[34][0] - self.base_corners[0][0]) / Design.FACTOR, 2))
 
         template = template.replace("$LABEL_WRAP_WIDTH_X$",
-                                    str(round((self.wrap_corners[10][0] - self.wrap_corners[0][0]) / Design.FACTOR, 2)))
+                                    round((self.wrap_corners[10][0] - self.wrap_corners[0][0]) / Design.FACTOR, 2))
 
-        template = template.replace("$TRANSLATE-WRAP$", "0 " + Design.convert_coord(str(self.base_corners[25][1])))
+        template = template.replace("$TRANSLATE-WRAP$", "0 " + Design.convert_coord(self.base_corners[25][1]))
 
         temp = self.base_corners[25][1] + self.wrap_corners[1][1] + 2 * Design.FACTOR + 4 * Design.Y_LINE_SEPARATION
         viewport = f"{Design.convert_coord(int(self.base_corners[34][0] + 2 * Design.FACTOR))}," \

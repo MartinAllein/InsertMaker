@@ -161,36 +161,36 @@ class MatchboxFinn(Design):
 
             # TOP CUT
             self.foo[
-                '$TRANSLATE_TOP$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[10][0]))}, 0"
+                '$TRANSLATE_TOP$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[10][0])}, 0"
             top_cut = Design.create_xml_cutlines(self.corners, self.cutlines_top)
             self.foo["$TOP-CUT$"] = top_cut
 
             # CENTER CUT
             self.foo[
-                '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[13][0]))}, " \
-                                        + f"{Design.convert_coord(str(self.thickness + separation))}"
+                '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[13][0])}, " \
+                                        + f"{Design.convert_coord(self.thickness + separation)}"
 
             center_cut = Design.create_xml_cutlines(self.corners, self.cutlines_center)
             self.foo["$CENTER-CUT$"] = center_cut
 
             # Bottom Cut
             self.foo[
-                '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(str(self.corners[0][0] - self.corners[18][0]))}, " \
-                                        + f"{Design.convert_coord(str(2 * (self.thickness + separation)))}"
+                '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[18][0])}, " \
+                                        + f"{Design.convert_coord(2 * (self.thickness + separation))}"
             bottom_cut = Design.create_xml_cutlines(self.corners, self.cutlines_bottom)
             self.foo["$BOTTOM-CUT$"] = bottom_cut
 
             # LEFT CUT
             self.foo[
-                '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(str(self.length + self.thickness + separation))}, " \
-                                      + f"-{Design.convert_coord(str(self.height))}"
+                '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(self.length + self.thickness + separation)}, " \
+                                      + f"-{Design.convert_coord(self.height)}"
             left_cut = Design.create_xml_cutlines(self.corners, self.cutlines_left)
             self.foo["$LEFT-CUT$"] = left_cut
 
             # RIGHT CUT
             self.foo[
-                '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(str(self.height - self.thickness - separation))}, " \
-                                       + f" {Design.convert_coord(str(self.thickness + separation))}"
+                '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(self.height - self.thickness - separation)}, " \
+                                       + f" {Design.convert_coord(self.thickness + separation)}"
             right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
             self.foo["$RIGHT-CUT$"] = right_cut
 
@@ -206,13 +206,12 @@ class MatchboxFinn(Design):
         self.foo["$LABEL_FILENAME_Y$"] = Design.convert_coord(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.convert_coord(str(ycoord))
+        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.convert_coord(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(str(ycoord))
+        self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(ycoord)
 
-        self.foo["$LABEL_OVERALL_WIDTH$"] = str(
-            round((self.right_x - self.left_x) / Design.FACTOR, 2))
+        self.foo["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
         Design.write_to_file(self.foo)
 

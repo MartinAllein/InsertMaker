@@ -38,7 +38,7 @@ class Design(ABC):
         pass
 
     @staticmethod
-    def convert_coord(coord):
+    def set_dot(coord: str):
         if coord == 0:
             value = "00000"
         else:
@@ -47,22 +47,26 @@ class Design(ABC):
         return value[:-4] + "." + value[-4:]
 
     @staticmethod
-    def line(start: int, end: int):
-        start_x = Design.convert_coord(start[0])
-        start_y = Design.convert_coord(start[1])
-        end_x = Design.convert_coord(end[0])
-        end_y = Design.convert_coord(end[1])
+    def convert_coord(coord: str):
 
+        if type(coord) is list:
+            result = []
+            for item in coord:
+                result.append(Design.set_dot(item))
+        else:
+            result = Design.set_dot(coord)
+        return result
+
+    @staticmethod
+    def line(start: int, end: int):
+        start_x, start_y = Design.convert_coord(start)
+        end_x, end_y = Design.convert_coord(end)
         return Design.__XML_LINE % (start_x, start_y, end_x, end_y)
 
     @staticmethod
     def thumbholepath(corners, path):
-        start_x = corners[path[0]][0]
-        start_y = corners[path[0]][1]
-        smallradius = path[1]
-        thumbholeradius = path[2]
-        direction = path[3]
-        orientation = path[4]
+        start_x, start_y = corners[path[0]]
+        smallradius, thumbholeradius, direction, orientation = path[1:]
 
         end_x = start_x - smallradius
         end_y = start_y - smallradius
