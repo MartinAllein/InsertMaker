@@ -311,8 +311,8 @@ class MatchboxFinn(Design):
         a = self.__X_OFFSET
         b = a + int(height / 2) - int(slot_width / 2)
         c = a + int(height / 2) + int(slot_width / 2)
-        # d = a + height
-        d = self.__X_OFFSET
+        d = a + height
+        # d = self.__X_OFFSET
         e = d + thickness
         f = d + side_gap
         g = f + slot_width
@@ -372,13 +372,12 @@ class MatchboxFinn(Design):
             [Design.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]],
             [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
             [Design.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]],
-            [Design.LINE, [72, 75, 74, 77, 78, 80, 81, 79, 66]],
-            [Design.LINE, [73, 76, 62]],
+            [Design.LINE, [14, 7, 6, 2, 3, 0, 1, 4, 5, 9, 8, 17]],
         ]
 
         self.cutlines_with_thumbhole = [
             [Design.THUMBHOLE, [85, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]],
-            [Design.THUMBHOLE, [87, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]],
+            [Design.THUMBHOLE, [82, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.SOUTH]],
             [Design.LINE,
              [10, 11, 22, 23, 12, 15, 24, 25, 16, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 56, 47, 46, 55, 52, 45, 44,
               51, 50, 10]],
@@ -386,9 +385,8 @@ class MatchboxFinn(Design):
             [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
             [Design.LINE, [54, 63, 62, 66, 67, 70, 84]],
             [Design.LINE, [85, 71, 68, 69, 65, 64, 57]],
-            [Design.LINE, [73, 76, 62]],
-            [Design.LINE, [72, 75, 74, 77, 78, 80, 86]],
-            [Design.LINE, [87, 81, 79, 66]]
+            [Design.LINE, [14, 7, 6, 2, 3, 0, 82]],
+            [Design.LINE, [83, 1, 4, 5, 9, 8, 17]]
         ]
 
         self.cutlines_top = [

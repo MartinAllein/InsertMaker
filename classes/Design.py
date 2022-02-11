@@ -23,7 +23,7 @@ class Design(ABC):
 
     FACTOR = 720000 / 25.4
     X_OFFSET = int(5 * FACTOR)
-    Y_OFFSET = int(5     * FACTOR)
+    Y_OFFSET = int(5 * FACTOR)
     FLAP_RETRACT = int(2 * FACTOR)
     X_DRAWING_DELTA = int(2 * FACTOR)
     Y_DRAWING_DELTA = int(2 * FACTOR)
@@ -68,21 +68,25 @@ class Design(ABC):
         start_x, start_y = corners[path[0]]
         smallradius, thumbholeradius, direction, orientation = path[1:]
 
-        end_x = start_x - smallradius
-        end_y = start_y - smallradius
-        xmlstring = Design.__make_arc(start_x, start_y, smallradius, direction, end_x, end_y)
+        delta = {
+            Design.NORTH: [[-smallradius, -smallradius, direction], [0, -2 * thumbholeradius, 1 - direction],
+                           [smallradius, -smallradius, direction]],
+            Design.SOUTH: [[smallradius, smallradius, direction], [0, 2 * thumbholeradius, 1 - direction],
+                           [-smallradius, smallradius, direction]],
+            Design.WEST: [[-smallradius, -smallradius, 1 - direction], [-2 * thumbholeradius, 0, direction],
+                          [-smallradius, +smallradius, 1 - direction]],
+            Design.EAST: [[smallradius, smallradius, 1 - direction], [2 * thumbholeradius, 0, direction],
+                          [smallradius, -smallradius, 1 - direction]],
+        }
 
-        start_x = end_x
-        start_y = end_y
-        end_x = end_x
-        end_y = start_y - 2 * thumbholeradius
-        xmlstring += Design.__make_arc(start_x, start_y, thumbholeradius, 1 - direction, end_x, end_y)
-
-        start_x = end_x
-        start_y = end_y
-        end_x = start_x + smallradius
-        end_y = start_y - smallradius
-        xmlstring += Design.__make_arc(start_x, start_y, smallradius, direction, end_x, end_y)
+        xmlstring = ""
+        for values in delta[orientation]:
+            end_x = start_x + values[0]
+            end_y = start_y + values[1]
+            outstring = Design.__make_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
+            xmlstring += outstring
+            start_x = end_x
+            start_y = end_y
 
         return xmlstring
 
