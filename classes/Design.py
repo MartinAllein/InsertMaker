@@ -92,13 +92,13 @@ class Design(ABC):
     @staticmethod
     def create_xml_lines(corners, lines):
         xml_lines = ""
-        for idx_outer, num_outer in enumerate(lines):
-            if num_outer[0] == Design.LINE:
-                for idx_inner, num_inner in enumerate(num_outer[1][:-1]):
-                    xml_lines += Design.line(corners[lines[idx_outer][1][idx_inner]],
-                                             corners[lines[idx_outer][1][idx_inner + 1]])
-            elif num_outer[0] == Design.THUMBHOLE:
-                xml_lines += Design.thumbholepath(corners, num_outer[1])
+        for command, values in lines:
+            if command == Design.LINE:
+                for start, end in zip(values[:-1], values[1:]):
+                    xml_lines += Design.line(corners[start], corners[end])
+            elif command == Design.THUMBHOLE:
+                xml_lines += Design.thumbholepath(corners, values)
+                pass
 
         return xml_lines
 
