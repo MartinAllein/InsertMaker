@@ -16,6 +16,7 @@ class Design(ABC):
 
     LINE = "Line"
     THUMBHOLE = "Path"
+    PAIR = "Pair"
     SOUTH = "South"
     NORTH = "North"
     EAST = "East"
@@ -105,7 +106,9 @@ class Design(ABC):
                     xml_lines += Design.line(corners[start], corners[end])
             elif command == Design.THUMBHOLE:
                 xml_lines += Design.thumbholepath(corners, values)
-                pass
+            elif command == Design.PAIR:
+                for start, end in zip(values[::2], values[1::2]):
+                    xml_lines += Design.line(corners[start], corners[end])
 
         return xml_lines
 

@@ -209,7 +209,8 @@ class MatchboxFinn(Design):
             # RIGHT CUT
             self.foo[
                 '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(self.height - self.thickness - separation)}, " \
-                                       + f" {Design.convert_coord(self.thickness + separation)}"
+                                       + f" {Design.convert_coord(-self.height + self.width +  self.thickness + separation)}"
+                                       # + f" {Design.convert_coord(self.thickness + separation)}"
             right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
             self.foo["$RIGHT-CUT$"] = right_cut
 
@@ -385,6 +386,9 @@ class MatchboxFinn(Design):
             [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
             [Design.LINE, [54, 63, 62, 66, 67, 70, 84]],
             [Design.LINE, [85, 71, 68, 69, 65, 64, 57]],
+            # [Design.LINE, [73, 76, 62]],
+            # [Design.LINE, [72, 75, 74, 77, 78, 80, 86]],
+            # [Design.LINE, [87, 81, 79, 66]]
             [Design.LINE, [14, 7, 6, 2, 3, 0, 82]],
             [Design.LINE, [83, 1, 4, 5, 9, 8, 17]]
         ]
