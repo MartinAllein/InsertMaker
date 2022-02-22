@@ -4,10 +4,10 @@ from classes.Design import Design
 from datetime import datetime
 
 
-class MatchboxFinn(Design):
+class ItemBox(Design):
     __DEFAULT_FILENAME = "MatchboxFinn"
-    __DEFAULT_TEMPLATE = "templates/MatchboxFinn.svg"
-    __DEFAULT_TEMPLATE_SEPARATED = "templates/MatchboxFinnSeparated.svg"
+    __DEFAULT_TEMPLATE = "templates/ItemBox.svg"
+    __DEFAULT_TEMPLATE_SEPARATED = "templates/ItemBoxSeparated.svg"
 
     __X_OFFSET = Design.X_OFFSET
     __Y_OFFSET = Design.Y_OFFSET
@@ -64,7 +64,7 @@ class MatchboxFinn(Design):
         self.length += 2 * self.thickness
         self.width += 2 * self.thickness
 
-        temp_filename = f"{MatchboxFinn.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
+        temp_filename = f"{ItemBox.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
                         f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         if not self.args.o:
@@ -104,19 +104,19 @@ class MatchboxFinn(Design):
 
     @staticmethod
     def __check_length(value):
-        return MatchboxFinn.__check_value('Length', value)
+        return ItemBox.__check_value('Length', value)
 
     @staticmethod
     def __check_width(value):
-        return MatchboxFinn.__check_value('Width', value)
+        return ItemBox.__check_value('Width', value)
 
     @staticmethod
     def __check_height(value):
-        return MatchboxFinn.__check_value('Height', value)
+        return ItemBox.__check_value('Height', value)
 
     @staticmethod
     def __check_thickness(value):
-        return MatchboxFinn.__check_value('Thickness', value)
+        return ItemBox.__check_value('Thickness', value)
 
     @staticmethod
     def __check_value(description, value):
@@ -146,7 +146,7 @@ class MatchboxFinn(Design):
 
         return parser.parse_args()
 
-    def create(self, separated=False):
+    def create(self):
         self.__init_design()
 
         self.foo["FILENAME"] = self.outfile
@@ -163,10 +163,6 @@ class MatchboxFinn(Design):
                 base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
             else:
                 base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
-
-            base_cut += self.make_slots(self.corners[10], self.height)
-            base_cut += self.make_slots(self.corners[18], self.height)
-            base_cut += self.make_slots(self.corners[13], self.width)
 
             self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
             self.foo["$BASE-CUT$"] = base_cut
@@ -209,8 +205,8 @@ class MatchboxFinn(Design):
             # RIGHT CUT
             self.foo[
                 '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(self.height - self.thickness - separation)}, " \
-                                       + f" {Design.convert_coord(-self.height + self.width +  self.thickness + separation)}"
-                                       # + f" {Design.convert_coord(self.thickness + separation)}"
+                                       + f" {Design.convert_coord(-self.height + self.width + self.thickness + separation)}"
+            # + f" {Design.convert_coord(self.thickness + separation)}"
             right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
             self.foo["$RIGHT-CUT$"] = right_cut
 
@@ -405,27 +401,6 @@ class MatchboxFinn(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
-
-    def make_slots(self, reference_point, measure_y):
-        walls = self.walls
-        xml_string = ""
-
-        origin_x, origin_y = reference_point
-        origin_x += self.thickness
-        origin_y += int(measure_y / 2 - self.__SLOT_WIDTH / 2)
-        print(Design.to_numeral(origin_x), Design.to_numeral(origin_y))
-
-        for distance in walls:
-            origin_x += int(distance * Design.FACTOR)
-            start = [origin_x, origin_y]
-            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [0, self.__SLOT_WIDTH])
-            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [self.thickness, 0])
-            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [0, -self.__SLOT_WIDTH])
-            xml_string, start = self.__draw_slot_hole_line(xml_string, start, [-self.thickness, 0])
-
-            origin_x += self.thickness
-
-        return xml_string
 
     def __draw_slot_hole_line(self, xml_string, start, delta):
 

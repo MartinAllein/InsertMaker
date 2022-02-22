@@ -16,11 +16,16 @@ class Design(ABC):
 
     LINE = "Line"
     THUMBHOLE = "Path"
+    HALFCIRCLE = "Halfcircle"
     PAIR = "Pair"
     SOUTH = "South"
     NORTH = "North"
     EAST = "East"
     WEST = "West"
+    VERTICAL = "Vertical"
+    HORIZONTAL = "Horizontal"
+    CW = 1
+    CCW = 0
 
     FACTOR = 720000 / 25.4
     X_OFFSET = int(5 * FACTOR)
@@ -63,6 +68,20 @@ class Design(ABC):
         start_x, start_y = Design.convert_coord(start)
         end_x, end_y = Design.convert_coord(end)
         return Design.__XML_LINE % (start_x, start_y, end_x, end_y)
+
+    @staticmethod
+    def halfcircle(corners, path):
+        start_x, start_y = corners[path[0]]
+        end_x, end_y = corners[path[1]]
+        orientation = path[2]
+
+        diameter = 0
+        if orientation == Design.VERTICAL:
+            diameter = abs(end_y - start_y)
+        else:
+            diameter = abs(end_x - start_x)
+
+        return Design.__make_arc(start_x, start_y, int(diameter / 2), Design.CW, end_x, end_y)
 
     @staticmethod
     def thumbholepath(corners, path):
@@ -109,6 +128,8 @@ class Design(ABC):
             elif command == Design.PAIR:
                 for start, end in zip(values[::2], values[1::2]):
                     xml_lines += Design.line(corners[start], corners[end])
+            elif command == Design.HALFCIRCLE:
+                xml_lines += Design.halfcircle(corners, values)
 
         return xml_lines
 
