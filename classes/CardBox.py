@@ -1,3 +1,4 @@
+import sys
 import argparse
 from classes.Design import Design
 
@@ -21,6 +22,8 @@ class CardBox(Design):
     __DEFAULT_SEPARATION = int(float(3 * Design.FACTOR))
     __DEFAULT_NOSEWIDTH = int(float(5 * Design.FACTOR))
     __DEFAULT_BOTTOMHOLE_RADIUS = int(float(10 * Design.FACTOR))
+
+    __SMALL_HEIGHT = int(20 * Design.FACTOR)
 
     def __init__(self):
 
@@ -46,6 +49,7 @@ class CardBox(Design):
         self.outer_dimensions = []
 
         self.args = self.parse_arguments()
+        self.args_string = ' '.join(sys.argv[1:])
         self.corners = []
         self.cutlines = []
 
@@ -62,12 +66,12 @@ class CardBox(Design):
 
         self.separated = self.args.x
 
+        temp_filename = f"{CardBox.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
+                        f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
         # here are the inner measurements on the command line => calculate outer lines
         self.length += 2 * self.thickness
         self.width += 2 * self.thickness
-
-        temp_filename = f"{CardBox.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
-                        f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         if not self.args.o:
             self.outfile = temp_filename
@@ -82,32 +86,30 @@ class CardBox(Design):
         if self.outfile[-4:] != '.svg':
             self.outfile += '.svg'
 
-        if self.args.d:
-            self.thumbholeradius = int(self.args.d * Design.FACTOR)
-
-        if self.args.f:
-            self.funnel_bottom = self.args.f
-
         if self.args.F:
             self.funnel_top = self.args.F
         else:
             self.funnel_top = self.__DEFAULT_FUNNEL_TOP_WIDTH
 
-        if self.args.F:
-            self.funnel_top = self.args.F
+        if self.args.f:
+            self.funnel_bottom = self.args.f
         else:
             self.funnel_bottom = self.__DEFAULT_FUNNELBOTTOMWIDTH
 
+        # -n neck height of funnel
         if self.args.n:
             self.neckheight = self.args.n
         else:
             self.neckheight = self.__DEFAULT_NECKHEIGHT
 
+        # -u width of nose at bottom of funnel
         if self.args.u:
             self.nosewidth = self.args.u
         else:
             self.nosewidth = self.__DEFAULT_NOSEWIDTH
 
+        # -d Single Thumbhole
+        # -D Dual Thumbhole
         if self.args.d:
             self.thumbhole = True
             self.singlethumbhole = True
@@ -117,6 +119,7 @@ class CardBox(Design):
         else:
             self.thumbhole = False
 
+        # -b Funnel only on one side
         if self.args.b:
             self.singlefunnel = True
             self.singlethumbhole = True
@@ -266,22 +269,23 @@ class CardBox(Design):
 
         ycoord += Design.Y_LINE_SEPARATION
         self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.convert_coord(ycoord)
-
-        ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_OVERALL_HEIGHT_Y$"] = Design.convert_coord(ycoord)
-
-        ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(ycoord)
-
-        ycoord += Design.Y_LINE_SEPARATION
         self.foo["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
         ycoord += Design.Y_LINE_SEPARATION
+        self.foo["$LABEL_OVERALL_HEIGHT_Y$"] = Design.convert_coord(ycoord)
         self.foo["$LABEL_OVERALL_HEIGHT$"] = str(round((self.bottom_y - self.top_y) / Design.FACTOR, 2))
 
-        temp = round(ycoord + Design.Y_LINE_SEPARATION)
+        # ycoord += Design.Y_LINE_SEPARATION
+        # self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(ycoord)
+
+        ycoord += Design.Y_LINE_SEPARATION
+        self.foo["$ARGS_STRING_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$ARGS_STRING$"] = self.args_string
+
+        ycoord += round(ycoord + Design.Y_LINE_SEPARATION)
         self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
-                                 f" {Design.convert_coord(temp)}"
+                                 f" {Design.convert_coord(ycoord)}"
+
         Design.write_to_file(self.foo)
 
         print(
@@ -338,6 +342,56 @@ class CardBox(Design):
         #                         |                          length                                |
         #  ac                     19--------------------------------------------------------------61
 
+        #            a b   c      d    e      f         g                    h          i     j    k      m   n o
+        #                ba   bb       bc                                                     bd       be   bf
+        # p                       10--------------------------------------------------------------52
+        #                         |                                                                |
+        #                         |                                                                |
+        #                         |                                                                |
+        #    ca                   82--86                                                      90--94
+        #                              |                                                      |
+        #                              |                                                      |
+        #    cb                   83--87                                                      91--95
+        #                         |                                                                |
+        #    cc          74--78   |                                                                |   98--A2
+        #                |    |   |                                                                |   |    |
+        # r          72-75    79--12--21----28          32------------------36          40----45--54--99    A3--A6
+        #            |            |          |          |thickness           |          |          |            |
+        #            |            |          |          |                    |          |          |            |
+        # s          0            |          29--------33                    37--------41          |           68
+        #            |            |           slot_width                                           |            |
+        #            |            |                                                                |            |
+        # t          1            |                                                                |            69
+        # u          \            13--22                                                      46--55            /
+        #             \                |  nosewidth                                           |                /
+        # v            4----------14--23                                                      47---56--------66     w
+        #        w     neckheight |                                                                |                i
+        #        i                |                                                                |                d
+        #        d funnel         |  funnelbottomwidth                                             |                d
+        #        t top width      |                                                                |                t
+        #        h                |                                                                |                h
+        # w            5----------15--24                                                      48---57--------67
+        #             /                |  nosewidth                                           |                \
+        # x          /            16--25                                                      49--58            \
+        # y          2            |                                                                |            70
+        #            |            |                                                                |            |
+        #            |            |                                                                |            |
+        # z          3            |          30--------34                    38--------42          |           71
+        #            |            |          |          |                    |          |          |            |
+        #            |            |          |          |                    |          |          |            |
+        #  aa        73-76    80--17--26----31          35------------------39          43----50---59-A0    A4-A7
+        #                |    |   |                                                                |   |    |
+        #     cd         77--81   |                                                                |   A1--A5
+        #                         |                                                                |
+        #     ce                  84--88                                                      92--96
+        #                              |                                                      |
+        #                              |                                                      |
+        #     cf                  85--89                                                      93--97
+        #                         |                                                                |
+        #                         |                          length                                |
+        #                         |                          length                                |
+        #  ac                     19--------------------------------------------------------------61
+
         length = self.length
         height = self.height
         width = self.width
@@ -366,6 +420,12 @@ class CardBox(Design):
         m = k + int(height / 2)
         o = k + height
         n = k + neckheight
+        ba = a + int(height / 2 - slot_width / 2)
+        bb = a + int(height / 2 + slot_width / 2)
+        bc = d + thickness
+        bd = k - thickness
+        be = k + int(height / 2 - slot_width / 2)
+        bf = k + int(height / 2 + slot_width / 2)
 
         # noinspection DuplicatedCode
         # Y - Points
@@ -384,6 +444,13 @@ class CardBox(Design):
         ab = aa + int(height / 2)
         ac = aa + height
 
+        ca = p + int(height / 2 - slot_width / 2)
+        cb = p + int(height / 2 + slot_width / 2)
+        cc = r - thickness
+        cd = aa + thickness
+        ce = aa + int(height / 2 - slot_width / 2)
+        cf = aa + int(height / 2 + slot_width / 2)
+
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
                         [d, ab], [d, ac], [e, q], [e, r], [e, u], [e, v], [e, w], [e, x], [e, aa],
@@ -391,7 +458,11 @@ class CardBox(Design):
                         [h, r], [h, s], [h, z], [h, aa], [i, r], [i, s], [i, z], [i, aa], [j, q],
                         [j, r], [j, u], [j, v], [j, w], [j, x], [j, aa], [j, ab], [k, p], [k, q],
                         [k, r], [k, u], [k, v], [k, w], [k, x], [k, aa], [k, ab], [k, ac], [m, r],
-                        [m, s], [m, z], [m, aa], [n, v], [n, w], [o, s], [o, t], [o, y], [o, z]
+                        [m, s], [m, z], [m, aa], [n, v], [n, w], [o, s], [o, t], [o, y], [o, z],
+                        [a, r], [a, aa], [ba, cc], [ba, r], [ba, aa], [ba, cd], [bb, cc], [bb, r], [bb, aa],
+                        [bb, cd], [d, ca], [d, cb], [d, ce], [d, cf], [bc, ca], [bc, cb], [bc, ce], [bc, cf],
+                        [bd, ca], [bd, cb], [bd, ce], [bd, cf], [k, ca], [k, cb], [k, ce], [k, cf], [be, cc],
+                        [be, r], [be, aa], [be, cd], [bf, cc], [bf, r], [bf, aa], [bf, cd], [o, r], [o, aa]
                         ]
 
         self.inner_dimensions = [Design.to_numeral(self.corners[46][0] - self.corners[22][0]),
@@ -402,19 +473,63 @@ class CardBox(Design):
                                  Design.to_numeral(self.corners[17][1] - self.corners[12][1]),
                                  Design.to_numeral(self.corners[15][0] - self.corners[3][0])]
 
-        self.cutlines = [
-            [Design.LINE, [6, 7, 0, 1, 4, 23, 22, 13, 12]],
-            [Design.LINE, [9, 8, 3, 2, 5, 24, 25, 16, 17]],
-            [Design.LINE, [6, 28, 29, 33, 32, 36, 37, 41, 40, 62]],
-            [Design.LINE, [9, 31, 30, 34, 35, 39, 38, 42, 43, 65]],
-            [Design.LINE, [26, 27, 18, 19, 61, 60, 51, 50]],
-            [Design.LINE, [21, 20, 11, 10, 52, 53, 44, 45]],
-        ]
+        if height <= self.__SMALL_HEIGHT:
+            self.cutlines = [
+                # left upper
+                [Design.LINE, [6, 7, 0, 1, 4, 23, 22, 13, 12]],
+                # left lower
+                [Design.LINE, [9, 8, 3, 2, 5, 24, 25, 16, 17]],
+                # middle upper
+                [Design.LINE, [6, 28, 29, 33, 32, 36, 37, 41, 40, 62]],
+                # middle lower
+                [Design.LINE, [9, 31, 30, 34, 35, 39, 38, 42, 43, 65]],
+                # bottom
+                [Design.LINE, [26, 27, 18, 19, 61, 60, 51, 50]],
+                # top
+                [Design.LINE, [21, 20, 11, 10, 52, 53, 44, 45]],
+            ]
 
-        if self.singlefunnel:
-            self.cutlines.append([Design.LINE, [62, 63, 68, 71, 64, 65]])
-            self.cutlines.append([Design.LINE, [54, 55, 46, 47, 56]])
-            self.cutlines.append([Design.LINE, [59, 58, 49, 48, 57]])
+            if self.singlefunnel:
+                # right single wall top cutline
+                self.cutlines.append([Design.LINE, [62, 63, 68, 71, 64, 65]])
+                # right single wall upper cutline
+                self.cutlines.append([Design.LINE, [54, 55, 46, 47, 56]])
+                # right single wall lower cutline
+                self.cutlines.append([Design.LINE, [59, 58, 49, 48, 57]])
+            else:
+                # right upper
+                self.cutlines.append([Design.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]])
+                # right lower
+                self.cutlines.append([Design.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]])
+
+
+        else:
+            # Height is greater than 20
+            self.cutlines = [
+                # left upper
+                [Design.LINE, [12, 79, 78, 74, 75, 72, 1, 4, 23, 22, 13, 83]],
+                # left lower
+                [Design.LINE, [84, 16, 25, 24, 5, 2, 73, 76, 77, 81, 80, 17]],
+                # middle upper
+                [Design.LINE, [79, 28, 29, 33, 32, 36, 37, 41, 40, 99]],
+                # middle lower
+                [Design.LINE, [80, 31, 30, 34, 35, 39, 38, 42, 43, 100]],
+                # top
+                [Design.LINE, [83, 87, 86, 82, 10, 52, 94, 90, 91, 95]],
+                # bottom
+                [Design.LINE, [84, 88, 89, 85, 19, 61, 97, 93, 92, 96]],
+            ]
+
+            if self.singlefunnel:
+                # right single wall top
+                self.cutlines.append([Design.LINE, [99, 98, 102, 103, 106, 107, 104, 105, 101, 100]])
+                # right single wall upper cutline
+                self.cutlines.append([Design.LINE, [95, 55, 46, 47, 56]])
+                # right single wall lower cutline
+                self.cutlines.append([Design.LINE, [96, 58, 49, 48, 57]])
+            else:
+                self.cutlines.append([Design.LINE, [54, 99, 98, 102, 103, 106, 69, 66, 47, 46, 55, 95]])
+                self.cutlines.append([Design.LINE, [59, 100, 101, 105, 104, 107, 70, 67, 48, 49, 58, 96]])
 
         if self.thumbhole:
             self.cutlines.append([Design.HALFCIRCLE, [14, 15, Design.VERTICAL]])
@@ -422,12 +537,14 @@ class CardBox(Design):
                 self.cutlines.append([Design.LINE, [56, 57]])
             else:
                 self.cutlines.append([Design.HALFCIRCLE, [57, 56, Design.VERTICAL]])
-                self.cutlines.append([Design.LINE, [62, 63, 68, 69, 66, 47, 46, 55, 54]])
-                self.cutlines.append([Design.LINE, [65, 64, 71, 70, 67, 48, 49, 58, 59]])
+#                self.cutlines.append([Design.LINE, [62, 63, 68, 69, 66, 47, 46, 55, 54]])
+#                self.cutlines.append([Design.LINE, [65, 64, 71, 70, 67, 48, 49, 58, 59]])
         else:
-            pass
             self.cutlines.append([Design.LINE, [14, 15]])
             self.cutlines.append([Design.LINE, [56, 57]])
+
+        self.fullright = [
+            [Design.LINE, [57, 48, 49, 58, 59, 100, 101, 105, 104, 107, 106, 103, 102, 98, 99, 54, 55, 46, 47, 56]]]
 
         self.cutlines_top = [
             [Design.LINE, [10, 11, 20, 21, 28, 29, 33, 32, 36, 37, 41, 40, 45, 44, 53, 52, 10]]]
@@ -441,6 +558,7 @@ class CardBox(Design):
         self.cutlines_right_bottom = [[Design.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]]]
 
         # detect boundaries of drawing
+
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
 
     def __make_thumbhole(self, start, end, orientation):

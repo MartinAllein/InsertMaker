@@ -17,5 +17,6 @@
         <text x="$LABEL_X$" y="$LABEL_FILENAME_Y$" class="small">File: $FILENAME$</text>
         <text x="$LABEL_X$" y="$LABEL_OVERALL_WIDTH_Y$" class="small">Overall width: $LABEL_OVERALL_WIDTH$</text>
         <text x="$LABEL_X$" y="$LABEL_OVERALL_HEIGHT_Y$" class="small">Overall height: $LABEL_OVERALL_HEIGHT$</text>
+        <text x="$LABEL_X$" y="$ARGS_STRING_Y$" class="small">Command Line Arguments: $ARGS_STRING$</text>
     </g>
 </svg>
