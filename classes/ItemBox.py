@@ -21,7 +21,7 @@ class ItemBox(Design):
 
     __THUMBHOLE_SMALL_RADIUS = int(2 * Design.FACTOR)
 
-    def __init__(self):
+    def __init__(self, arguments=""):
 
         self.length = 0.0
         self.width = 0.0
@@ -43,7 +43,7 @@ class ItemBox(Design):
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-        self.args = self.parse_arguments()
+        self.args = self.parse_arguments(arguments)
         self.corners = []
         self.cutlines = []
 
@@ -131,7 +131,7 @@ class ItemBox(Design):
     def __str__(self):
         return self.width, self.length, self.height, self.thickness, self.outfile
 
-    def parse_arguments(self):
+    def parse_arguments(self, arguments):
         parser = argparse.ArgumentParser(add_help=False)
 
         parser.add_argument('-l', type=float, required=True, help="length of the matchbox")
@@ -144,7 +144,12 @@ class ItemBox(Design):
         parser.add_argument('-x', action="store_true", help="separated Design")
         parser.add_argument('-W', type=int, nargs='+', help="Walls")
 
-        return parser.parse_args()
+        if not arguments:
+            return parser.parse_args()
+
+        return parser.parse_args(arguments.split())
+
+
 
     def create(self):
         self.__init_design()
@@ -152,7 +157,7 @@ class ItemBox(Design):
         self.foo["FILENAME"] = self.outfile
         self.foo["$TITLE$"] = self.title
         self.foo["$FILENAME$"] = self.outfile
-        self.foo["$LABEL_X$"] = Design.convert_coord(self.left_x)
+        self.foo["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
 
         ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
 
@@ -160,9 +165,9 @@ class ItemBox(Design):
 
         if not self.separated:
             if self.thumbholeradius:
-                base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
+                base_cut = Design.draw_lines(self.corners, self.cutlines_with_thumbhole)
             else:
-                base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
+                base_cut = Design.draw_lines(self.corners, self.cutlines)
 
             self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE
             self.foo["$BASE-CUT$"] = base_cut
@@ -176,36 +181,36 @@ class ItemBox(Design):
 
             # TOP CUT
             self.foo[
-                '$TRANSLATE_TOP$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[10][0])}, 0"
+                '$TRANSLATE_TOP$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[10][0])}, 0"
             top_cut = Design.create_xml_cutlines(self.corners, self.cutlines_top)
             self.foo["$TOP-CUT$"] = top_cut
 
             # CENTER CUT
             self.foo[
-                '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[13][0])}, " \
-                                        + f"{Design.convert_coord(self.thickness + separation)}"
+                '$TRANSLATE_CENTER$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[13][0])}, " \
+                                        + f"{Design.thoudpi_to_dpi(self.thickness + separation)}"
 
             center_cut = Design.create_xml_cutlines(self.corners, self.cutlines_center)
             self.foo["$CENTER-CUT$"] = center_cut
 
             # Bottom Cut
             self.foo[
-                '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[18][0])}, " \
-                                        + f"{Design.convert_coord(2 * (self.thickness + separation))}"
+                '$TRANSLATE_BOTTOM$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[18][0])}, " \
+                                        + f"{Design.thoudpi_to_dpi(2 * (self.thickness + separation))}"
             bottom_cut = Design.create_xml_cutlines(self.corners, self.cutlines_bottom)
             self.foo["$BOTTOM-CUT$"] = bottom_cut
 
             # LEFT CUT
             self.foo[
-                '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(self.length + self.thickness + separation)}, " \
-                                      + f"-{Design.convert_coord(self.height)}"
+                '$TRANSLATE_LEFT$'] = f"{Design.thoudpi_to_dpi(self.length + self.thickness + separation)}, " \
+                                      + f"-{Design.thoudpi_to_dpi(self.height)}"
             left_cut = Design.create_xml_cutlines(self.corners, self.cutlines_left)
             self.foo["$LEFT-CUT$"] = left_cut
 
             # RIGHT CUT
             self.foo[
-                '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(self.height - self.thickness - separation)}, " \
-                                       + f" {Design.convert_coord(-self.height + self.width + self.thickness + separation)}"
+                '$TRANSLATE_RIGHT$'] = f"-{Design.thoudpi_to_dpi(self.height - self.thickness - separation)}, " \
+                                       + f" {Design.thoudpi_to_dpi(-self.height + self.width + self.thickness + separation)}"
             # + f" {Design.convert_coord(self.thickness + separation)}"
             right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
             self.foo["$RIGHT-CUT$"] = right_cut
@@ -213,19 +218,19 @@ class ItemBox(Design):
             ycoord += 2 * Design.Y_LINE_SEPARATION
 
         temp = round(3 * (self.height + 3 * self.__SEPARATION + Design.Y_LINE_SEPARATION))
-        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
-                                 f" {Design.convert_coord(temp)}"
+        self.foo["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
+                                 f" {Design.thoudpi_to_dpi(temp)}"
 
-        self.foo["$LABEL_TITLE_Y$"] = Design.convert_coord(ycoord)
-
-        ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_FILENAME_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
+
+        ycoord += Design.Y_LINE_SEPARATION
+        self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         self.foo["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
@@ -407,6 +412,6 @@ class ItemBox(Design):
         # https://stackoverflow.com/questions/25640628/python-adding-lists-of-numbers-with-other-lists-of-numbers
         stop = [sum(values) for values in zip(start, delta)]
 
-        xml_string += Design.line(start, stop)
+        xml_string += Design.draw_line(start, stop)
 
         return xml_string, stop

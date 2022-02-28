@@ -13,15 +13,15 @@ class CardBox(Design):
     __X_OFFSET = Design.X_OFFSET
     __Y_OFFSET = Design.Y_OFFSET
 
-    __DEFAULT_SLOT_WIDTH = int(float(10 * Design.FACTOR))
-    __DEFAULT_SIDE_GAP = int(float(10 * Design.FACTOR))
-    __DEFAULT_FUNNEL_TOP_WIDTH = int(float(20 * Design.FACTOR))
-    __DEFAULT_FUNNELBOTTOMWIDTH = int(float(10 * Design.FACTOR))
-    __DEFAULT_NECKHEIGHT = int(float(10 * Design.FACTOR))
+    __DEFAULT_SLOT_WIDTH = Design.mm_to_thoudpi(10)
+    __DEFAULT_SIDE_GAP = Design.mm_to_thoudpi(10)
+    __DEFAULT_FUNNEL_TOP_WIDTH = Design.mm_to_thoudpi(20)
+    __DEFAULT_FUNNELBOTTOMWIDTH = Design.mm_to_thoudpi(10)
+    __DEFAULT_NECKHEIGHT = Design.mm_to_thoudpi(10)
     __DEFAULT_THICKNESS = 1.5
-    __DEFAULT_SEPARATION = int(float(3 * Design.FACTOR))
-    __DEFAULT_NOSEWIDTH = int(float(5 * Design.FACTOR))
-    __DEFAULT_BOTTOMHOLE_RADIUS = int(float(10 * Design.FACTOR))
+    __DEFAULT_SEPARATION = Design.mm_to_thoudpi(3)
+    __DEFAULT_NOSEWIDTH = Design.mm_to_thoudpi(5)
+    __DEFAULT_BOTTOMHOLE_RADIUS = Design.mm_to_thoudpi(10)
 
     __SMALL_HEIGHT = int(20 * Design.FACTOR)
 
@@ -70,8 +70,8 @@ class CardBox(Design):
                         f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         # here are the inner measurements on the command line => calculate outer lines
-        self.length += 2 * self.thickness
-        self.width += 2 * self.thickness
+        # self.length += 2 * self.thickness
+        # self.width += 2 * self.thickness
 
         if not self.args.o:
             self.outfile = temp_filename
@@ -202,14 +202,14 @@ class CardBox(Design):
         self.foo["FILENAME"] = self.outfile
         self.foo["$TITLE$"] = self.title
         self.foo["$FILENAME$"] = self.outfile
-        self.foo["$LABEL_X$"] = Design.convert_coord(self.left_x)
+        self.foo["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
 
         ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
 
         # self.make_slots([0, 0])
 
         if not self.separated:
-            base_cut = Design.create_xml_cutlines(self.corners, self.cutlines)
+            base_cut = Design.draw_lines(self.corners, self.cutlines)
 
             # if self.thumbholeradius:
             #     base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
@@ -226,65 +226,62 @@ class CardBox(Design):
 
             # TOP CUT
             self.foo[
-                '$TRANSLATE_TOP$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[10][0])}, 0"
-            top_cut = Design.create_xml_cutlines(self.corners, self.cutlines_top)
+                '$TRANSLATE_TOP$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[10][0])}, 0"
+            top_cut = Design.draw_lines(self.corners, self.cutlines_top)
             self.foo["$TOP-CUT$"] = top_cut
 
             # CENTER CUT
             self.foo[
-                '$TRANSLATE_CENTER$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[13][0])}, " \
-                                        + f"{Design.convert_coord(self.thickness + separation)}"
+                '$TRANSLATE_CENTER$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[13][0])}, " \
+                                        + f"{Design.thoudpi_to_dpi(self.thickness + separation)}"
 
-            center_cut = Design.create_xml_cutlines(self.corners, self.cutlines_center)
+            center_cut = Design.draw_lines(self.corners, self.cutlines_center)
             self.foo["$CENTER-CUT$"] = center_cut
 
             # Bottom Cut
             self.foo[
-                '$TRANSLATE_BOTTOM$'] = f"{Design.convert_coord(self.corners[0][0] - self.corners[18][0])}, " \
-                                        + f"{Design.convert_coord(2 * (self.thickness + separation))}"
-            bottom_cut = Design.create_xml_cutlines(self.corners, self.cutlines_bottom)
+                '$TRANSLATE_BOTTOM$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[18][0])}, " \
+                                        + f"{Design.thoudpi_to_dpi(2 * (self.thickness + separation))}"
+            bottom_cut = Design.draw_lines(self.corners, self.cutlines_bottom)
             self.foo["$BOTTOM-CUT$"] = bottom_cut
 
             # LEFT CUT
             self.foo[
-                '$TRANSLATE_LEFT$'] = f"{Design.convert_coord(self.length + self.thickness + separation)}, " \
-                                      + f"-{Design.convert_coord(self.height)}"
-            left_cut = Design.create_xml_cutlines(self.corners, self.cutlines_left)
+                '$TRANSLATE_LEFT$'] = f"{Design.thoudpi_to_dpi(self.length + self.thickness + separation)}, " \
+                                      + f"-{Design.thoudpi_to_dpi(self.height)}"
+            left_cut = Design.draw_lines(self.corners, self.cutlines_left)
             self.foo["$LEFT-CUT$"] = left_cut
 
             # RIGHT CUT
             self.foo[
-                '$TRANSLATE_RIGHT$'] = f"-{Design.convert_coord(self.height - self.thickness - separation)}, " \
-                                       + f" {Design.convert_coord(-self.height + self.width + self.thickness + separation)}"
+                '$TRANSLATE_RIGHT$'] = f"-{Design.thoudpi_to_dpi(self.height - self.thickness - separation)}, " \
+                                       + f" {Design.thoudpi_to_dpi(-self.height + self.width + self.thickness + separation)}"
             # + f" {Design.convert_coord(self.thickness + separation)}"
-            right_cut = Design.create_xml_cutlines(self.corners, self.cutlines_right)
+            right_cut = Design.draw_lines(self.corners, self.cutlines_right)
             self.foo["$RIGHT-CUT$"] = right_cut
 
             ycoord += 2 * Design.Y_LINE_SEPARATION
 
-        self.foo["$LABEL_TITLE_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_FILENAME_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
         self.foo["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$LABEL_OVERALL_HEIGHT_Y$"] = Design.convert_coord(ycoord)
-        self.foo["$LABEL_OVERALL_HEIGHT$"] = str(round((self.bottom_y - self.top_y) / Design.FACTOR, 2))
-
-        # ycoord += Design.Y_LINE_SEPARATION
-        # self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$LABEL_OVERALL_HEIGHT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.foo["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / Design.FACTOR, 2)
 
         ycoord += Design.Y_LINE_SEPARATION
-        self.foo["$ARGS_STRING_Y$"] = Design.convert_coord(ycoord)
+        self.foo["$ARGS_STRING_Y$"] = Design.thoudpi_to_dpi(ycoord)
         self.foo["$ARGS_STRING$"] = self.args_string
 
-        ycoord += round(ycoord + Design.Y_LINE_SEPARATION)
-        self.foo["$VIEWPORT$"] = f"{Design.convert_coord(round(self.right_x + 2 * Design.FACTOR))}," \
-                                 f" {Design.convert_coord(ycoord)}"
+        ycoord += Design.Y_LINE_SEPARATION
+        self.foo["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
+                                 f" {Design.thoudpi_to_dpi(ycoord)}"
 
         Design.write_to_file(self.foo)
 
@@ -343,22 +340,22 @@ class CardBox(Design):
         #  ac                     19--------------------------------------------------------------61
 
         #            a b   c      d    e      f         g                    h          i     j    k      m   n o
-        #                ba   bb       bc                                                     bd       be   bf
+        #                ba   bb                                                                       be   bf
         # p                       10--------------------------------------------------------------52
         #                         |                                                                |
         #                         |                                                                |
         #                         |                                                                |
-        #    ca                   82--86                                                      90--94
+        #    ca                   80--86                                                      90--94
         #                              |                                                      |
         #                              |                                                      |
-        #    cb                   83--87                                                      91--95
+        #    cb                   81--87                                                      91--95
         #                         |                                                                |
-        #    cc          74--78   |                                                                |   98--A2
-        #                |    |   |                                                                |   |    |
-        # r          72-75    79--12--21----28          32------------------36          40----45--54--99    A3--A6
-        #            |            |          |          |thickness           |          |          |            |
-        #            |            |          |          |                    |          |          |            |
-        # s          0            |          29--------33                    37--------41          |           68
+        #                         |                                                                |
+        #                         |                                                                |
+        # r              72---76  12--21----28          32------------------36          40----45--54  A0----A4
+        #                |     |  |          |          |thickness           |          |          |   |    |
+        #                |     |  |          |          |                    |          |          |   |    |
+        # s          0--73    77-82          29--------33                    37--------41          96-A1    A5-68
         #            |            |           slot_width                                           |            |
         #            |            |                                                                |            |
         # t          1            |                                                                |            69
@@ -376,17 +373,17 @@ class CardBox(Design):
         # y          2            |                                                                |            70
         #            |            |                                                                |            |
         #            |            |                                                                |            |
-        # z          3            |          30--------34                    38--------42          |           71
-        #            |            |          |          |                    |          |          |            |
-        #            |            |          |          |                    |          |          |            |
-        #  aa        73-76    80--17--26----31          35------------------39          43----50---59-A0    A4-A7
-        #                |    |   |                                                                |   |    |
-        #     cd         77--81   |                                                                |   A1--A5
+        # z          3--74    78-83          30--------34                    38--------42          97-A2    A6-71
+        #                |     |  |          |          |                    |          |          |   |    |
+        #                |     |  |          |          |                    |          |          |   |    |
+        #  aa            75---79  17--26----31          35------------------39          43----50---59 A3----A7
         #                         |                                                                |
-        #     ce                  84--88                                                      92--96
+        #                         |                                                                |
+        #                         |                                                                |
+        #     cc                  84--88                                                      92--98
         #                              |                                                      |
         #                              |                                                      |
-        #     cf                  85--89                                                      93--97
+        #     cd                  85--89                                                      93--99
         #                         |                                                                |
         #                         |                          length                                |
         #                         |                          length                                |
@@ -413,19 +410,18 @@ class CardBox(Design):
         e = d + thickness
         f = d + side_gap
         g = f + slot_width
-        k = d + length
+        k = d + length + 2 * thickness
         j = k - thickness
         i = k - side_gap
         h = i - slot_width
         m = k + int(height / 2)
         o = k + height
         n = k + neckheight
+
         ba = a + int(height / 2 - slot_width / 2)
         bb = a + int(height / 2 + slot_width / 2)
-        bc = d + thickness
-        bd = k - thickness
-        be = k + int(height / 2 - slot_width / 2)
-        bf = k + int(height / 2 + slot_width / 2)
+        bc = k + int(height / 2 - slot_width / 2)
+        bd = k + int(height / 2 + slot_width / 2)
 
         # noinspection DuplicatedCode
         # Y - Points
@@ -438,18 +434,21 @@ class CardBox(Design):
         u = v - nosewidth
         w = r + int(width / 2 + funnelbottomwidth / 2)
         x = w + nosewidth
-        z = s + width
+        aa = r + width + 2 * thickness
+        z = aa - thickness
         y = z - int(width / 2 - funneltopwidth / 2)
-        aa = z + thickness
         ab = aa + int(height / 2)
         ac = aa + height
 
         ca = p + int(height / 2 - slot_width / 2)
         cb = p + int(height / 2 + slot_width / 2)
-        cc = r - thickness
-        cd = aa + thickness
-        ce = aa + int(height / 2 - slot_width / 2)
-        cf = aa + int(height / 2 + slot_width / 2)
+        cc = aa + int(height / 2 - slot_width / 2)
+        cd = aa + int(height / 2 + slot_width / 2)
+
+        print(Design.to_numeral(width), )
+
+        print(Design.to_numeral(p), Design.to_numeral(ca), Design.to_numeral(cb), Design.to_numeral(r),
+              Design.to_numeral(s), Design.to_numeral(z))
 
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
@@ -459,19 +458,21 @@ class CardBox(Design):
                         [j, r], [j, u], [j, v], [j, w], [j, x], [j, aa], [j, ab], [k, p], [k, q],
                         [k, r], [k, u], [k, v], [k, w], [k, x], [k, aa], [k, ab], [k, ac], [m, r],
                         [m, s], [m, z], [m, aa], [n, v], [n, w], [o, s], [o, t], [o, y], [o, z],
-                        [a, r], [a, aa], [ba, cc], [ba, r], [ba, aa], [ba, cd], [bb, cc], [bb, r], [bb, aa],
-                        [bb, cd], [d, ca], [d, cb], [d, ce], [d, cf], [bc, ca], [bc, cb], [bc, ce], [bc, cf],
-                        [bd, ca], [bd, cb], [bd, ce], [bd, cf], [k, ca], [k, cb], [k, ce], [k, cf], [be, cc],
-                        [be, r], [be, aa], [be, cd], [bf, cc], [bf, r], [bf, aa], [bf, cd], [o, r], [o, aa]
+                        [ba, r], [ba, s], [ba, z], [ba, aa], [bb, r], [bb, s], [bb, z], [bb, aa], [d, ca],
+                        [d, cb], [d, s], [d, z], [d, cc], [d, cd], [e, ca], [e, cb], [e, cc], [e, cd],
+                        [j, ca], [j, cb], [j, cc], [j, cd], [k, ca], [k, cb], [k, s], [k, z], [k, cc],
+                        [k, cd], [bc, r], [bc, s], [bc, z], [bc, aa], [bd, r], [bd, s], [bd, z], [bd, aa]
                         ]
 
-        self.inner_dimensions = [Design.to_numeral(self.corners[46][0] - self.corners[22][0]),
-                                 Design.to_numeral(self.corners[30][1] - self.corners[29][1]),
-                                 Design.to_numeral(self.corners[14][0] - self.corners[0][0])]
+        #        self.inner_dimensions = [Design.to_numeral(self.corners[46][0] - self.corners[22][0]),
+        #                                 Design.to_numeral(self.corners[30][1] - self.corners[29][1]),
+        #                                 Design.to_numeral(self.corners[14][0] - self.corners[0][0])]
 
-        self.outer_dimensions = [Design.to_numeral(self.corners[54][0] - self.corners[12][0]),
-                                 Design.to_numeral(self.corners[17][1] - self.corners[12][1]),
-                                 Design.to_numeral(self.corners[15][0] - self.corners[3][0])]
+        #        self.outer_dimensions = [Design.to_numeral(self.corners[54][0] - self.corners[12][0]),
+        #                                 Design.to_numeral(self.corners[17][1] - self.corners[12][1]),
+        #                                 Design.to_numeral(self.corners[15][0] - self.corners[3][0])]
+        self.inner_dimensions = [Design.to_numeral(j - e), Design.to_numeral(z - s), Design.to_numeral(d - a)]
+        self.outer_dimensions = [Design.to_numeral(k - d), Design.to_numeral(aa - r), Design.to_numeral(e - a)]
 
         if height <= self.__SMALL_HEIGHT:
             self.cutlines = [
@@ -487,6 +488,7 @@ class CardBox(Design):
                 [Design.LINE, [26, 27, 18, 19, 61, 60, 51, 50]],
                 # top
                 [Design.LINE, [21, 20, 11, 10, 52, 53, 44, 45]],
+
             ]
 
             if self.singlefunnel:
@@ -501,35 +503,37 @@ class CardBox(Design):
                 self.cutlines.append([Design.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]])
                 # right lower
                 self.cutlines.append([Design.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]])
-
-
         else:
             # Height is greater than 20
             self.cutlines = [
                 # left upper
-                [Design.LINE, [12, 79, 78, 74, 75, 72, 1, 4, 23, 22, 13, 83]],
+                [Design.LINE, [82, 77, 76, 72, 73, 0, 1, 4, 23, 22, 13, 81]],
                 # left lower
-                [Design.LINE, [84, 16, 25, 24, 5, 2, 73, 76, 77, 81, 80, 17]],
+                [Design.LINE, [83, 78, 79, 75, 74, 3, 2, 5, 24, 25, 16, 84]],
                 # middle upper
-                [Design.LINE, [79, 28, 29, 33, 32, 36, 37, 41, 40, 99]],
+                [Design.LINE, [12, 28, 29, 33, 32, 36, 37, 41, 40, 54]],
                 # middle lower
-                [Design.LINE, [80, 31, 30, 34, 35, 39, 38, 42, 43, 100]],
+                [Design.LINE, [17, 31, 30, 34, 35, 39, 38, 42, 43, 59]],
                 # top
-                [Design.LINE, [83, 87, 86, 82, 10, 52, 94, 90, 91, 95]],
+                [Design.LINE, [81, 87, 86, 80, 10, 52, 94, 90, 91, 95]],
                 # bottom
-                [Design.LINE, [84, 88, 89, 85, 19, 61, 97, 93, 92, 96]],
+                [Design.LINE, [84, 88, 89, 85, 19, 61, 99, 93, 92, 98]],
+                # right top
+                [Design.LINE, [96, 101, 100, 104, 105, 68]],
+                # right bottom
+                [Design.LINE, [97, 102, 103, 107, 106, 71]],
+                [Design.LINE, [95, 55, 46, 47]],
+                [Design.LINE, [98, 58, 49, 48]],
             ]
 
             if self.singlefunnel:
                 # right single wall top
-                self.cutlines.append([Design.LINE, [99, 98, 102, 103, 106, 107, 104, 105, 101, 100]])
-                # right single wall upper cutline
-                self.cutlines.append([Design.LINE, [95, 55, 46, 47, 56]])
-                # right single wall lower cutline
-                self.cutlines.append([Design.LINE, [96, 58, 49, 48, 57]])
+                self.cutlines.append([Design.LINE, [68, 71]])
+                self.cutlines.append([Design.LINE, [47, 56]])
+                self.cutlines.append([Design.LINE, [48, 57]])
             else:
-                self.cutlines.append([Design.LINE, [54, 99, 98, 102, 103, 106, 69, 66, 47, 46, 55, 95]])
-                self.cutlines.append([Design.LINE, [59, 100, 101, 105, 104, 107, 70, 67, 48, 49, 58, 96]])
+                self.cutlines.append([Design.LINE, [68, 69, 66, 47]])
+                self.cutlines.append([Design.LINE, [71, 70, 67, 48]])
 
         if self.thumbhole:
             self.cutlines.append([Design.HALFCIRCLE, [14, 15, Design.VERTICAL]])
@@ -537,8 +541,6 @@ class CardBox(Design):
                 self.cutlines.append([Design.LINE, [56, 57]])
             else:
                 self.cutlines.append([Design.HALFCIRCLE, [57, 56, Design.VERTICAL]])
-#                self.cutlines.append([Design.LINE, [62, 63, 68, 69, 66, 47, 46, 55, 54]])
-#                self.cutlines.append([Design.LINE, [65, 64, 71, 70, 67, 48, 49, 58, 59]])
         else:
             self.cutlines.append([Design.LINE, [14, 15]])
             self.cutlines.append([Design.LINE, [56, 57]])

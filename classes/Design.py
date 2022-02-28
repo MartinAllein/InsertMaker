@@ -2,22 +2,25 @@ import sys
 import os
 import xml.dom.minidom
 from abc import ABC, abstractmethod
+import configparser
 
+CONFIG_FILE = 'config/Designsfd.config'
 FILENAME = 'FILENAME'
 
 TEMPLATE = 'TEMPLATE'
 
 
 class Design(ABC):
-    DEFAULT_FILENAME = "Design-"
-
-    __XML_LINE = '<line x1="%s"  y1="%s"  x2="%s" y2="%s" />\n'
+    __XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
     __XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
 
+    # Line Types
     LINE = "Line"
     THUMBHOLE = "Path"
     HALFCIRCLE = "Halfcircle"
     PAIR = "Pair"
+
+    # Drawing directions
     SOUTH = "South"
     NORTH = "North"
     EAST = "East"
@@ -28,12 +31,14 @@ class Design(ABC):
     CCW = 0
 
     FACTOR = 720000 / 25.4
-    X_OFFSET = int(5 * FACTOR)
-    Y_OFFSET = int(5 * FACTOR)
-    FLAP_RETRACT = int(2 * FACTOR)
-    X_DRAWING_DELTA = int(2 * FACTOR)
-    Y_DRAWING_DELTA = int(2 * FACTOR)
-    Y_LINE_SEPARATION = int(7 * FACTOR)
+
+    # Fallback settings when Design.config is missing
+    X_OFFSET = 5
+    Y_OFFSET = 5
+    FLAP_RETRACT = 2
+    X_DRAWING_DELTA = 2
+    Y_DRAWING_DELTA = 2
+    Y_LINE_SEPARATION = 7
 
     @abstractmethod
     def create(self):
@@ -44,7 +49,7 @@ class Design(ABC):
         pass
 
     @staticmethod
-    def __set_dot(coord: str):
+    def __divide_dpi(coord: str):
         if coord == 0:
             value = "00000"
         else:
@@ -53,24 +58,24 @@ class Design(ABC):
         return value[:-4] + "." + value[-4:]
 
     @staticmethod
-    def convert_coord(coord: str):
+    def thoudpi_to_dpi(coord: str):
 
         if type(coord) is list:
             result = []
             for item in coord:
-                result.append(Design.__set_dot(item))
+                result.append(Design.__divide_dpi(item))
         else:
-            result = Design.__set_dot(coord)
+            result = Design.__divide_dpi(coord)
         return result
 
     @staticmethod
-    def line(start, end):
-        start_x, start_y = Design.convert_coord(start)
-        end_x, end_y = Design.convert_coord(end)
+    def draw_line(start, end):
+        start_x, start_y = Design.thoudpi_to_dpi(start)
+        end_x, end_y = Design.thoudpi_to_dpi(end)
         return Design.__XML_LINE % (start_x, start_y, end_x, end_y)
 
     @staticmethod
-    def halfcircle(corners, path):
+    def draw_halfcircle(corners, path):
         start_x, start_y = corners[path[0]]
         end_x, end_y = corners[path[1]]
         orientation = path[2]
@@ -81,10 +86,10 @@ class Design(ABC):
         else:
             diameter = abs(end_x - start_x)
 
-        return Design.__make_arc(start_x, start_y, int(diameter / 2), Design.CW, end_x, end_y)
+        return Design.__draw_arc(start_x, start_y, int(diameter / 2), Design.CW, end_x, end_y)
 
     @staticmethod
-    def thumbholepath(corners, path):
+    def draw_thumbhole_path(corners, path):
         start_x, start_y = corners[path[0]]
         smallradius, thumbholeradius, direction, orientation = path[1:]
 
@@ -103,7 +108,7 @@ class Design(ABC):
         for values in delta[orientation]:
             end_x = start_x + values[0]
             end_y = start_y + values[1]
-            outstring = Design.__make_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
+            outstring = Design.__draw_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
             xmlstring += outstring
             start_x = end_x
             start_y = end_y
@@ -111,25 +116,25 @@ class Design(ABC):
         return xmlstring
 
     @staticmethod
-    def __make_arc(start_x, start_y, radius, direction, end_x, end_y):
+    def __draw_arc(start_x, start_y, radius, direction, end_x, end_y):
         return Design.__XML_PATH % (
-            Design.convert_coord(start_x), Design.convert_coord(start_y), Design.convert_coord(radius),
-            Design.convert_coord(radius), direction, Design.convert_coord(end_x), Design.convert_coord(end_y))
+            Design.thoudpi_to_dpi(start_x), Design.thoudpi_to_dpi(start_y), Design.thoudpi_to_dpi(radius),
+            Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x), Design.thoudpi_to_dpi(end_y))
 
     @staticmethod
-    def create_xml_lines(corners, lines):
+    def draw_lines(corners, lines):
         xml_lines = ""
         for command, values in lines:
             if command == Design.LINE:
                 for start, end in zip(values[:-1], values[1:]):
-                    xml_lines += Design.line(corners[start], corners[end])
+                    xml_lines += Design.draw_line(corners[start], corners[end])
             elif command == Design.THUMBHOLE:
-                xml_lines += Design.thumbholepath(corners, values)
+                xml_lines += Design.draw_thumbhole_path(corners, values)
             elif command == Design.PAIR:
                 for start, end in zip(values[::2], values[1::2]):
-                    xml_lines += Design.line(corners[start], corners[end])
+                    xml_lines += Design.draw_line(corners[start], corners[end])
             elif command == Design.HALFCIRCLE:
-                xml_lines += Design.halfcircle(corners, values)
+                xml_lines += Design.draw_halfcircle(corners, values)
 
         return xml_lines
 
@@ -164,7 +169,7 @@ class Design(ABC):
         del items[FILENAME]
 
         for key in items:
-            template = template.replace(key, items[key])
+            template = template.replace(key, str(items[key]))
 
         dom = xml.dom.minidom.parseString(template)
         template = dom.toprettyxml(newl='')
@@ -173,9 +178,30 @@ class Design(ABC):
             f.write(template)
 
     @staticmethod
-    def create_xml_cutlines(corners, lines):
-        return Design.create_xml_lines(corners, lines)
-
-    @staticmethod
     def to_numeral(value):
         return round(value / Design.FACTOR, 2)
+
+    @staticmethod
+    def mm_to_thoudpi(value):
+        return int(float(value) * Design.FACTOR)
+
+
+# Read default values from the config file
+if os.path.isfile(CONFIG_FILE):
+    # read entries from the configuration file
+    config = configparser.ConfigParser()
+    config.read(CONFIG_FILE)
+    Design.X_OFFSET = config['DESIGN']['X_OFFSET']
+    Design.Y_OFFSET = config['DESIGN']['Y_OFFSET']
+    Design.FLAP_RETRACT = config['DESIGN']['FLAP_RETRACT']
+    Design.X_DRAWING_DELTA = config['DESIGN']['X_DRAWING_DELTA']
+    Design.Y_DRAWING_DELTA = config['DESIGN']['Y_DRAWING_DELTA']
+    Design.Y_LINE_SEPARATION = config['DESIGN']['Y_LINE_SEPARATION']
+
+# convert all mm to thoudpi
+Design.X_OFFSET = Design.mm_to_thoudpi(Design.X_OFFSET)
+Design.Y_OFFSET = Design.mm_to_thoudpi(Design.Y_OFFSET)
+Design.FLAP_RETRACT = Design.mm_to_thoudpi(Design.FLAP_RETRACT)
+Design.X_DRAWING_DELTA = Design.mm_to_thoudpi(Design.X_DRAWING_DELTA)
+Design.Y_DRAWING_DELTA = Design.mm_to_thoudpi(Design.Y_DRAWING_DELTA)
+Design.Y_LINE_SEPARATION = Design.mm_to_thoudpi(Design.Y_LINE_SEPARATION)
