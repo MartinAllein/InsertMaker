@@ -12,7 +12,7 @@ TEMPLATE = 'TEMPLATE'
 class Design(ABC):
     __XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
     __XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
-    __CONFIG_FILE = 'config/Designs.config'
+    __CONFIG_FILE = 'config/Design.config'
 
     # Line Types
     LINE = "Line"
@@ -38,7 +38,7 @@ class Design(ABC):
     Y_LINE_SEPARATION = 7
 
     @classmethod
-    def default_config(cls):
+    def config_file(cls):
         return cls.__CONFIG_FILE
 
     @abstractmethod
@@ -179,7 +179,7 @@ class Design(ABC):
             f.write(template)
 
     @staticmethod
-    def to_numeral(value):
+    def thoudpi_to_mm(value):
         return round(value / Design.FACTOR, 2)
 
     @staticmethod
@@ -188,10 +188,10 @@ class Design(ABC):
 
 
 # Read default values from the config file
-if os.path.isfile(Design.get):
+if os.path.isfile(Design.config_file()):
     # read entries from the configuration file
     config = configparser.ConfigParser()
-    config.read(Design.CONFIG_FILE)
+    config.read(Design.config_file())
     Design.X_OFFSET = config['DESIGN']['X_OFFSET']
     Design.Y_OFFSET = config['DESIGN']['Y_OFFSET']
     Design.Y_LINE_SEPARATION = config['DESIGN']['Y_LINE_SEPARATION']

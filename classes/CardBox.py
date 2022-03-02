@@ -1,6 +1,9 @@
+import os
 import sys
 import argparse
+import configparser
 from classes.Design import Design
+from pathlib import Path
 
 from datetime import datetime
 
@@ -10,20 +13,20 @@ class CardBox(Design):
     __DEFAULT_TEMPLATE = "templates/CardBox.svg"
     __DEFAULT_TEMPLATE_SEPARATED = "templates/ItemBoxSeparated.svg"
 
-    __X_OFFSET = Design.X_OFFSET
-    __Y_OFFSET = Design.Y_OFFSET
+    x_offset = Design.X_OFFSET
+    y_offset = Design.Y_OFFSET
 
-    __DEFAULT_SLOT_WIDTH = Design.mm_to_thoudpi(10)
-    __DEFAULT_SIDE_GAP = Design.mm_to_thoudpi(10)
-    __DEFAULT_FUNNEL_TOP_WIDTH = Design.mm_to_thoudpi(20)
-    __DEFAULT_FUNNELBOTTOMWIDTH = Design.mm_to_thoudpi(10)
-    __DEFAULT_NECKHEIGHT = Design.mm_to_thoudpi(10)
-    __DEFAULT_THICKNESS = 1.5
-    __DEFAULT_SEPARATION = Design.mm_to_thoudpi(3)
-    __DEFAULT_NOSEWIDTH = Design.mm_to_thoudpi(5)
-    __DEFAULT_BOTTOMHOLE_RADIUS = Design.mm_to_thoudpi(10)
+    slot_width = Design.mm_to_thoudpi(10)
+    side_gap = Design.mm_to_thoudpi(10)
+    funnel_top_width = Design.mm_to_thoudpi(20)
+    funnel_bottom_width = Design.mm_to_thoudpi(10)
+    neck_height = Design.mm_to_thoudpi(10)
+    thickness = 1.5
+    vertical_separation = Design.mm_to_thoudpi(3)
+    nose_width = Design.mm_to_thoudpi(5)
+    bottomhole_radius = Design.mm_to_thoudpi(10)
 
-    __SMALL_HEIGHT = int(20 * Design.FACTOR)
+    __SMALL_HEIGHT = Design.mm_to_thoudpi(20)
 
     def __init__(self):
 
@@ -60,7 +63,7 @@ class CardBox(Design):
         self.height = self.args.h
 
         if not self.args.s:
-            self.thickness = self.__DEFAULT_THICKNESS
+            self.thickness = self.thickness
         else:
             self.thickness = self.args.s
 
@@ -89,24 +92,24 @@ class CardBox(Design):
         if self.args.F:
             self.funnel_top = self.args.F
         else:
-            self.funnel_top = self.__DEFAULT_FUNNEL_TOP_WIDTH
+            self.funnel_top = self.funnel_top_width
 
         if self.args.f:
             self.funnel_bottom = self.args.f
         else:
-            self.funnel_bottom = self.__DEFAULT_FUNNELBOTTOMWIDTH
+            self.funnel_bottom = self.funnel_bottom_width
 
         # -n neck height of funnel
         if self.args.n:
             self.neckheight = self.args.n
         else:
-            self.neckheight = self.__DEFAULT_NECKHEIGHT
+            self.neckheight = self.neck_height
 
         # -u width of nose at bottom of funnel
         if self.args.u:
             self.nosewidth = self.args.u
         else:
-            self.nosewidth = self.__DEFAULT_NOSEWIDTH
+            self.nosewidth = self.nose_width
 
         # -d Single Thumbhole
         # -D Dual Thumbhole
@@ -219,7 +222,7 @@ class CardBox(Design):
 
         else:
             # TEST FOR SEPARATION
-            separation = self.__DEFAULT_SEPARATION + self.thickness
+            separation = self.vertical_separation + self.thickness
 
             y1 = 0
             self.foo["TEMPLATE"] = self.__DEFAULT_TEMPLATE_SEPARATED
@@ -394,8 +397,8 @@ class CardBox(Design):
         width = self.width
         thickness = self.thickness
 
-        slot_width = self.__DEFAULT_SLOT_WIDTH
-        side_gap = self.__DEFAULT_SIDE_GAP
+        slot_width = self.slot_width
+        side_gap = self.side_gap
         neckheight = self.neckheight
         funneltopwidth = self.funnel_top
         funnelbottomwidth = self.funnel_bottom
@@ -403,7 +406,7 @@ class CardBox(Design):
 
         # noinspection DuplicatedCode
         # X - Points
-        a = self.__X_OFFSET
+        a = self.x_offset
         b = a + height - neckheight
         c = a + int(height / 2)
         d = a + height
@@ -425,7 +428,7 @@ class CardBox(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        p = self.__Y_OFFSET
+        p = self.y_offset
         q = p + int(height / 2)
         r = p + height
         s = r + thickness
@@ -445,10 +448,10 @@ class CardBox(Design):
         cc = aa + int(height / 2 - slot_width / 2)
         cd = aa + int(height / 2 + slot_width / 2)
 
-        print(Design.to_numeral(width), )
+        print(Design.thoudpi_to_mm(width), )
 
-        print(Design.to_numeral(p), Design.to_numeral(ca), Design.to_numeral(cb), Design.to_numeral(r),
-              Design.to_numeral(s), Design.to_numeral(z))
+        print(Design.thoudpi_to_mm(p), Design.thoudpi_to_mm(ca), Design.thoudpi_to_mm(cb), Design.thoudpi_to_mm(r),
+              Design.thoudpi_to_mm(s), Design.thoudpi_to_mm(z))
 
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
@@ -471,8 +474,8 @@ class CardBox(Design):
         #        self.outer_dimensions = [Design.to_numeral(self.corners[54][0] - self.corners[12][0]),
         #                                 Design.to_numeral(self.corners[17][1] - self.corners[12][1]),
         #                                 Design.to_numeral(self.corners[15][0] - self.corners[3][0])]
-        self.inner_dimensions = [Design.to_numeral(j - e), Design.to_numeral(z - s), Design.to_numeral(d - a)]
-        self.outer_dimensions = [Design.to_numeral(k - d), Design.to_numeral(aa - r), Design.to_numeral(e - a)]
+        self.inner_dimensions = [Design.thoudpi_to_mm(j - e), Design.thoudpi_to_mm(z - s), Design.thoudpi_to_mm(d - a)]
+        self.outer_dimensions = [Design.thoudpi_to_mm(k - d), Design.thoudpi_to_mm(aa - r), Design.thoudpi_to_mm(e - a)]
 
         if height <= self.__SMALL_HEIGHT:
             self.cutlines = [
@@ -566,3 +569,39 @@ class CardBox(Design):
     def __make_thumbhole(self, start, end, orientation):
         # startpoint, endpoint, orientation of the circle
         pass
+
+
+config_file = 'config/' + Path(__file__).stem + ".config"
+# Read default values from the config file
+if os.path.isfile(config_file):
+    # read entries from the configuration file
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    print("-------------")
+    print(config.sections())
+    print("-------------")
+    CardBox.x_offset = int(config['CARDBOX']['X_OFFSET'])
+    CardBox.y_offset = int(config['CARDBOX']['Y_OFFSET'])
+    CardBox.vertical_separation = int(config['CARDBOX']['VERTICAL_SEPARATION'])
+    CardBox.slot_width = int(config['CARDBOX']['SLOT_WIDTH'])
+    CardBox.side_gap = int(config['CARDBOX']['SIDE_GAP'])
+    CardBox.funnel_top_width = int(config['CARDBOX']['FUNNEL_TOP_WIDTH'])
+    CardBox.funnel_bottom_width = int(config['CARDBOX']['FUNNEL_BOTTOM_WIDTH'])
+    CardBox.neck_height = int(config['CARDBOX']['NECKHEIGHT'])
+    CardBox.thickness = float(config['CARDBOX']['THICKNESS'])
+    CardBox.nose_width = int(config['CARDBOX']['NOSE_WIDTH'])
+    CardBox.bottomhole_radius = int(config['CARDBOX']['BOTTOMHOLE_RADIUS'])
+
+# convert all mm to thoudpi
+CardBox.x_offset = Design.mm_to_thoudpi(CardBox.x_offset)
+CardBox.y_offset = Design.mm_to_thoudpi(CardBox.Y_OFFSET)
+CardBox.vertical_separation = Design.mm_to_thoudpi(CardBox.vertical_separation)
+CardBox.vertical_separation = Design.mm_to_thoudpi(CardBox.vertical_separation)
+CardBox.slot_width = Design.mm_to_thoudpi(CardBox.slot_width)
+CardBox.side_gap = Design.mm_to_thoudpi(CardBox.side_gap)
+CardBox.funnel_top_width = Design.mm_to_thoudpi(CardBox.funnel_top_width)
+CardBox.funnel_bottom_width = Design.mm_to_thoudpi(CardBox.funnel_bottom_width)
+CardBox.neck_height = Design.mm_to_thoudpi(CardBox.neck_height)
+CardBox.thickness = Design.mm_to_thoudpi(CardBox.thickness)
+CardBox.nose_width = Design.mm_to_thoudpi(CardBox.nose_width)
+CardBox.bottomhole_radius = Design.mm_to_thoudpi(CardBox.bottomhole_radius)

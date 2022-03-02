@@ -359,13 +359,13 @@ class ItemBox(Design):
                         [o, ac], [o, ad], [a, ae], [a, af], [o, ae], [o, af], [o, ag], [o, ah]
                         ]
 
-        self.inner_dimensions = [Design.to_numeral(self.corners[46][0] - self.corners[24][0]),
-                                 Design.to_numeral(self.corners[1][1] - self.corners[0][1]),
-                                 Design.to_numeral(self.corners[14][0] - self.corners[0][0])]
+        self.inner_dimensions = [Design.thoudpi_to_mm(self.corners[46][0] - self.corners[24][0]),
+                                 Design.thoudpi_to_mm(self.corners[1][1] - self.corners[0][1]),
+                                 Design.thoudpi_to_mm(self.corners[14][0] - self.corners[0][0])]
 
-        self.outer_dimensions = [Design.to_numeral(self.corners[50][0] - self.corners[10][0]),
-                                 Design.to_numeral(self.corners[18][1] - self.corners[13][1]),
-                                 Design.to_numeral(self.corners[24][0] - self.corners[0][0])]
+        self.outer_dimensions = [Design.thoudpi_to_mm(self.corners[50][0] - self.corners[10][0]),
+                                 Design.thoudpi_to_mm(self.corners[18][1] - self.corners[13][1]),
+                                 Design.thoudpi_to_mm(self.corners[24][0] - self.corners[0][0])]
 
         self.cutlines = [
             [Design.LINE,
