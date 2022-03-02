@@ -4,7 +4,6 @@ import xml.dom.minidom
 from abc import ABC, abstractmethod
 import configparser
 
-CONFIG_FILE = 'config/Designsfd.config'
 FILENAME = 'FILENAME'
 
 TEMPLATE = 'TEMPLATE'
@@ -13,6 +12,7 @@ TEMPLATE = 'TEMPLATE'
 class Design(ABC):
     __XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
     __XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
+    __CONFIG_FILE = 'config/Designs.config'
 
     # Line Types
     LINE = "Line"
@@ -35,10 +35,11 @@ class Design(ABC):
     # Fallback settings when Design.config is missing
     X_OFFSET = 5
     Y_OFFSET = 5
-    FLAP_RETRACT = 2
-    X_DRAWING_DELTA = 2
-    Y_DRAWING_DELTA = 2
     Y_LINE_SEPARATION = 7
+
+    @classmethod
+    def default_config(cls):
+        return cls.__CONFIG_FILE
 
     @abstractmethod
     def create(self):
@@ -187,21 +188,15 @@ class Design(ABC):
 
 
 # Read default values from the config file
-if os.path.isfile(CONFIG_FILE):
+if os.path.isfile(Design.get):
     # read entries from the configuration file
     config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
+    config.read(Design.CONFIG_FILE)
     Design.X_OFFSET = config['DESIGN']['X_OFFSET']
     Design.Y_OFFSET = config['DESIGN']['Y_OFFSET']
-    Design.FLAP_RETRACT = config['DESIGN']['FLAP_RETRACT']
-    Design.X_DRAWING_DELTA = config['DESIGN']['X_DRAWING_DELTA']
-    Design.Y_DRAWING_DELTA = config['DESIGN']['Y_DRAWING_DELTA']
     Design.Y_LINE_SEPARATION = config['DESIGN']['Y_LINE_SEPARATION']
 
 # convert all mm to thoudpi
 Design.X_OFFSET = Design.mm_to_thoudpi(Design.X_OFFSET)
 Design.Y_OFFSET = Design.mm_to_thoudpi(Design.Y_OFFSET)
-Design.FLAP_RETRACT = Design.mm_to_thoudpi(Design.FLAP_RETRACT)
-Design.X_DRAWING_DELTA = Design.mm_to_thoudpi(Design.X_DRAWING_DELTA)
-Design.Y_DRAWING_DELTA = Design.mm_to_thoudpi(Design.Y_DRAWING_DELTA)
 Design.Y_LINE_SEPARATION = Design.mm_to_thoudpi(Design.Y_LINE_SEPARATION)
