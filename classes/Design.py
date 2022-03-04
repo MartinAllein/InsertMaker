@@ -59,7 +59,7 @@ class Design(ABC):
         return value[:-4] + "." + value[-4:]
 
     @staticmethod
-    def thoudpi_to_dpi(coord: str):
+    def thoudpi_to_dpi(coord: int):
 
         if type(coord) is list:
             result = []
