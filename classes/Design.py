@@ -196,7 +196,3 @@ if os.path.isfile(Design.config_file()):
     Design.Y_OFFSET = config['DESIGN']['Y_OFFSET']
     Design.Y_LINE_SEPARATION = config['DESIGN']['Y_LINE_SEPARATION']
 
-# convert all mm to thoudpi
-Design.X_OFFSET = Design.mm_to_thoudpi(Design.X_OFFSET)
-Design.Y_OFFSET = Design.mm_to_thoudpi(Design.Y_OFFSET)
-Design.Y_LINE_SEPARATION = Design.mm_to_thoudpi(Design.Y_LINE_SEPARATION)

@@ -84,7 +84,7 @@ class ItemBox(Design):
             self.outfile += '.svg'
 
         if self.args.d:
-            self.thumbholeradius = int(self.args.d * Design.FACTOR)
+            self.thumbholeradius = self.args.d
 
         print(self.walls)
 

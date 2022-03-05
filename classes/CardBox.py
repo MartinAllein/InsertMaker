@@ -33,10 +33,8 @@ class CardBox(Design):
     def __init__(self):
         self.__init_variables()
 
-        # Parse
+        # Parse the cli
         self.args = self.parse_arguments()
-
-        error = ""
 
         if self.args.v:
             self.verbose = True
@@ -64,23 +62,11 @@ class CardBox(Design):
         if self.outfile[-4:] != '.svg':
             self.outfile += '.svg'
 
-        # Convert int 123.5 to 1235000 to avoid decimal places. 4 decimal places used
-        # self.length = int(float(self.length) * Design.FACTOR)
-        # self.width = int(float(self.width) * Design.FACTOR)
-        # self.height = int(float(self.height) * Design.FACTOR)
-        # self.thickness = int(float(self.thickness) * Design.FACTOR)
-        # self.funnel_bottom = int(float(self.funnel_bottom) * Design.FACTOR)
-        # self.funnel_top = int(float(self.funnel_top) * Design.FACTOR)
-        # self.neckheight = int(float(self.neckheight) * Design.FACTOR)
-        # self.nosewidth = int(float(self.nosewidth) * Design.FACTOR)
+        if self.verbose:
+            self.__print_variables()
 
-        # error += self.__check_length(self.length)
-        # error += self.__check_width(self.width)
-        # error += self.__check_height(self.height)
-        # error += self.__check_thickness(self.height)
-
-        # if not error:
-        #    print(error)
+        # Convert all measures to thousands dpi
+        self.__convert_all_to_thoudpi()
 
     def __config_from_cli(self):
 
@@ -96,6 +82,10 @@ class CardBox(Design):
         # Outfile
         if self.args.o:
             self.outfile = self.args.o
+
+        # Project
+        if self.args.p:
+            self.project = self.args.p
 
         # Title
         if self.args.t:
@@ -140,45 +130,54 @@ class CardBox(Design):
             self.enforce_large_design = True
 
     def __config_from_file(self, filename: str, section: str):
-        defaults = {'x_offset': self.__DEFAULT_X_OFFSET, 'y_offset': self.__DEFAULT_Y_OFFSET,
-                    'vertical_separation': self.__DEFAULT_VERTICAL_SEPARATION,
-                    'slot_width': self.__DEFAULT_SLOT_WIDTH, 'corner_gap': self.__DEFAULT_CORNER_GAP,
-                    'funnel_top_width': self.__DEFAULT_FUNNEL_TOP_WIDTH,
-                    'funnel_bottom_width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
-                    'funnel_neck_height': self.__DEFAULT_FUNNEL_NECK_HEIGHT, 'thickness': self.__DEFAULT_THICKNESS,
-                    'center_nose_width': self.__DEFAULT_CENTER_NOSE_WIDTH,
-                    'enforce_small_design': self.__DEFAULT_ENFORCE_SMALL_DESIGN,
-                    'enforce_large_design': self.__DEFAULT_ENFORCE_LARGE_DESIGN}
+        defaults = {'x offset': self.__DEFAULT_X_OFFSET,
+                    'y offset': self.__DEFAULT_Y_OFFSET,
+                    'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
+                    'slot width': self.__DEFAULT_SLOT_WIDTH, 'corner_gap': self.__DEFAULT_CORNER_GAP,
+                    'funnel top width': self.__DEFAULT_FUNNEL_TOP_WIDTH,
+                    'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
+                    'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT, 'thickness': self.__DEFAULT_THICKNESS,
+                    'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
+                    'enforce small design': self.__DEFAULT_ENFORCE_SMALL_DESIGN,
+                    'enforce large design': self.__DEFAULT_ENFORCE_LARGE_DESIGN,
+                    'length': 0,
+                    'width': 0,
+                    'height': 0,
+                    'project': "",
+                    'filename': ""
+                    }
 
         config_file = 'config/' + filename + ".config"
         # Read default values from the config file
-        if os.path.isfile(config_file):
-            # read entries from the configuration file
-            config = configparser.ConfigParser(defaults=defaults)
-            config.read(config_file)
-            print("-------------")
-            print(config.sections())
-            print("-------------")
-
-            if not config.has_section(section):
-                print("Section " + section + " in config file config/" + filename + ".config not found")
-                sys.exit()
-
-            self.x_offset = int(config[section]['x_offset'])
-            self.y_offset = int(config[section]['y_offset'])
-            self.vertical_separation = int(config[section]['vertical_separation'])
-            self.slot_width = int(config[section]['slot_width'])
-            self.corner_gap = int(config[section]['corner_gap'])
-            self.funnel_top_width = int(config[section]['funnel_top_width'])
-            self.funnel_bottom_width = int(config[section]['funnel_bottom_width'])
-            self.funnel_neck_height = int(config[section]['funnel_neck_height'])
-            self.thickness = float(config[section]['thickness'])
-            self.center_nose_width = int(config[section]['center_nose_width'])
-            self.enforce_small_design = bool(config[section]['enforce_small_design'])
-            self.enforce_large_design = bool(config[section]['enforce_large_design'])
-        else:
+        if not os.path.isfile(config_file):
             print("Config file config/" + filename + ".config not found")
             sys.exit()
+
+        # read entries from the configuration file
+        config = configparser.ConfigParser(defaults=defaults)
+        config.read(config_file)
+
+        if not config.has_section(section):
+            print("Section " + section + " in config file config/" + filename + ".config not found")
+            sys.exit()
+
+        self.project = config[section]['project'].strip('"')
+        self.outfile = config[section]['filename'].strip('"')
+        self.x_offset = int(config[section]['x offset'])
+        self.y_offset = int(config[section]['y offset'])
+        self.vertical_separation = int(config[section]['vertical separation'])
+        self.slot_width = int(config[section]['slot width'])
+        self.corner_gap = int(config[section]['corner gap'])
+        self.funnel_top_width = int(config[section]['funnel top width'])
+        self.funnel_bottom_width = int(config[section]['funnel bottom width'])
+        self.funnel_neck_height = int(config[section]['funnel neck height'])
+        self.thickness = float(config[section]['thickness'])
+        self.center_nose_width = int(config[section]['center nose width'])
+        self.enforce_small_design = bool(config[section]['enforce small design'])
+        self.enforce_large_design = bool(config[section]['enforce large design'])
+        self.length = float(config[section]['length'])
+        self.width = float(config[section]['width'])
+        self.height = float(config[section]['height'])
 
     def __init_variables(self):
         # initialization of variables
@@ -191,9 +190,9 @@ class CardBox(Design):
         self.width = 0.0
         self.height = 0.0
         self.thickness = self.__DEFAULT_THICKNESS
+        self.project = ""
         self.outfile = ""
         self.title = ""
-        self.outfile = ''
         self.separated = False
         self.thumbhole = False
         self.singlethumbhole = True
@@ -221,8 +220,11 @@ class CardBox(Design):
         self.funnel_neck_height = CardBox.__DEFAULT_FUNNEL_NECK_HEIGHT
         self.center_nose_width = CardBox.__DEFAULT_CENTER_NOSE_WIDTH
         self.corner_gap = CardBox.__DEFAULT_CORNER_GAP
-        self.bottomhole_radius = CardBox.__DEFAULT_BOTTOM_HOLE_RADIUS
         self.small_height = CardBox.__DEFAULT_SMALL_HEIGHT
+        self.vertical_separation = CardBox.__DEFAULT_VERTICAL_SEPARATION
+
+        # not implemented yet
+        # self.bottomhole_radius = CardBox.__DEFAULT_BOTTOM_HOLE_RADIUS
 
         self.verbose = False
 
@@ -275,13 +277,13 @@ class CardBox(Design):
         parser.add_argument('-t', type=int, help="Drawing Title")
         parser.add_argument('-x', action="store_true", help="separated Design")
         parser.add_argument('-o', type=str, help="output filename")
+        parser.add_argument('-p', type=str, help="Project Name")
 
         group_enforce = parser.add_mutually_exclusive_group()
         group_enforce.add_argument('-e', action="store_true", help="Enforce small design")
         group_enforce.add_argument('-E', action="store_true", help="Enforce large design")
 
         parser.add_argument('-v', action="store_true", help="verbose output")
-
 
         # The config file is mutually exclusive to all other command line parameters
         # and has precedence
@@ -294,13 +296,12 @@ class CardBox(Design):
         self.__init_design()
 
         self.template["FILENAME"] = self.outfile
+        self.template["$PROJECT$"] = self.project
         self.template["$TITLE$"] = self.title
         self.template["$FILENAME$"] = self.outfile
         self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
 
-        ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
-
-        # self.make_slots([0, 0])
+        ycoord = self.bottom_y + self.vertical_separation
 
         if not self.separated:
             base_cut = Design.draw_lines(self.corners, self.cutlines)
@@ -356,38 +357,34 @@ class CardBox(Design):
 
             ycoord += 2 * Design.Y_LINE_SEPARATION
 
+        self.template["$LABEL_PROJECT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+
+        ycoord += self.vertical_separation
         self.template["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += self.vertical_separation
         self.template["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += self.vertical_separation
         self.template["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
         self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += self.vertical_separation
         self.template["$LABEL_OVERALL_HEIGHT_Y$"] = Design.thoudpi_to_dpi(ycoord)
         self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / Design.FACTOR, 2)
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += self.vertical_separation
         self.template["$ARGS_STRING_Y$"] = Design.thoudpi_to_dpi(ycoord)
         self.template["$ARGS_STRING$"] = self.args_string
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += self.vertical_separation
         self.template["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
                                       f" {Design.thoudpi_to_dpi(ycoord)}"
 
+        # self.template["$VIEWPORT$"] = f"{round(self.right_x + 2 * Design.FACTOR)}," \
+        #                              f" {ycoord}"
+
         Design.write_to_file(self.template)
-
-        print(
-            f"Inner Length: {self.inner_dimensions[0]} , "
-            f"Inner Width: {self.inner_dimensions[1]} , "
-            f"Inner Height: {self.inner_dimensions[2]}")
-
-        print(
-            f"Outer Length: {self.outer_dimensions[0]} , "
-            f"Outer Width: {self.outer_dimensions[1]} , "
-            f"Outer Height: {self.outer_dimensions[2]}")
 
     def __init_design(self):
         self.__init_base()
@@ -483,8 +480,6 @@ class CardBox(Design):
         #                         |                          length                                |
         #  ac                     19--------------------------------------------------------------61
 
-        print(self.thickness)
-
         length = self.length
         height = self.height
         width = self.width
@@ -541,10 +536,42 @@ class CardBox(Design):
         cc = aa + int(height / 2 - slot_width / 2)
         cd = aa + int(height / 2 + slot_width / 2)
 
-        print(thickness)
+        if self.verbose:
+            print(f"a: {a} / {Design.thoudpi_to_mm(a)}")
+            print(f"b: {b}/ {Design.thoudpi_to_mm(b)}")
+            print(f"c: {c}/ {Design.thoudpi_to_mm(c)}")
+            print(f"d: {d}/ {Design.thoudpi_to_mm(d)}")
+            print(f"e: {e}/ {Design.thoudpi_to_mm(e)}")
+            print(f"f: {f}/ {Design.thoudpi_to_mm(f)}")
+            print(f"g: {g}/ {Design.thoudpi_to_mm(g)}")
+            print(f"h: {h}/ {Design.thoudpi_to_mm(h)}")
+            print(f"i: {i}/ {Design.thoudpi_to_mm(i)}")
+            print(f"j: {j}/ {Design.thoudpi_to_mm(j)}")
+            print(f"k: {k}/ {Design.thoudpi_to_mm(k)}")
+            print(f"m: {m}/ {Design.thoudpi_to_mm(m)}")
+            print(f"n: {n}/ {Design.thoudpi_to_mm(n)}")
+            print(f"o: {o}/ {Design.thoudpi_to_mm(o)}")
+            print(f"ba: {ba}/ {Design.thoudpi_to_mm(ba)}")
+            print(f"bb: {bb}/ {Design.thoudpi_to_mm(bb)}")
+            print(f"bc: {bc}/ {Design.thoudpi_to_mm(bc)}")
+            print(f"bd: {bd}/ {Design.thoudpi_to_mm(bd)}")
 
-        print(Design.thoudpi_to_mm(p), Design.thoudpi_to_mm(ca), Design.thoudpi_to_mm(cb), Design.thoudpi_to_mm(r),
-              Design.thoudpi_to_mm(s), Design.thoudpi_to_mm(z))
+            print(f"bd: {p}/ {Design.thoudpi_to_mm(p)}")
+            print(f"bd: {q}/ {Design.thoudpi_to_mm(q)}")
+            print(f"bd: {r}/ {Design.thoudpi_to_mm(r)}")
+            print(f"bd: {s}/ {Design.thoudpi_to_mm(s)}")
+            print(f"bd: {t}/ {Design.thoudpi_to_mm(t)}")
+            print(f"bd: {u}/ {Design.thoudpi_to_mm(u)}")
+            print(f"bd: {v}/ {Design.thoudpi_to_mm(v)}")
+            print(f"bd: {w}/ {Design.thoudpi_to_mm(w)}")
+            print(f"bd: {x}/ {Design.thoudpi_to_mm(x)}")
+            print(f"bd: {y}/ {Design.thoudpi_to_mm(y)}")
+            print(f"bd: {z}/ {Design.thoudpi_to_mm(z)}")
+            print(f"bd: {ab}/ {Design.thoudpi_to_mm(ab)}")
+            print(f"bd: {ac}/ {Design.thoudpi_to_mm(ac)}")
+            print(f"bd: {ca}/ {Design.thoudpi_to_mm(ca)}")
+            print(f"bd: {cb}/ {Design.thoudpi_to_mm(cb)}")
+            print(f"bd: {cd}/ {Design.thoudpi_to_mm(cd)}")
 
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
@@ -659,22 +686,67 @@ class CardBox(Design):
 
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
 
+        if self.verbose:
+            self.__print_dimensons()
+
+        if self.verbose:
+            print(
+                f"Left X: {Design.thoudpi_to_mm(self.left_x)}, "
+                f"Right X:{Design.thoudpi_to_mm(self.right_x)}, "
+                f"Top Y: {Design.thoudpi_to_mm(self.top_y)}, "
+                f"Bottom Y: {Design.thoudpi_to_mm(self.bottom_y)}"
+            )
+
     def __make_thumbhole(self, start, end, orientation):
         # startpoint, endpoint, orientation of the circle
         pass
 
-    def __setup(self):
-        pass
+    def __print_variables(self):
+        print("-------------")
+        print(f"Length: {self.length}")
+        print(f"Width: {self.width}")
+        print(f"Height: {self.height}")
+        print(f"X Offset:{self.x_offset}\nY Offset: {self.y_offset}\n")
+        print(f"Vertical Separation: {self.vertical_separation}\nSlot Width: {self.slot_width}")
+        print(f"Corner Gap: {self.corner_gap}\nFunnel Top Width: {self.funnel_top_width}")
+        print(f"Funnel Bottom Width: {self.funnel_bottom_width}")
+        print(f"Funnel Neck Height: {self.funnel_neck_height}\nThickness: {self.thickness}")
+        print(f"Center Nose Width: {self.center_nose_width}")
+        print(f"Enforce Small Design: {self.enforce_small_design}")
+        print(f"Enforce Large Design: {self.enforce_large_design}")
+        print(f"Project: {self.project}")
+        print(f"Filename: {self.outfile}")
+        print(f"Title: {self.title}")
 
-# convert all mm to thoudpi
-# CardBox.x_offset = Design.mm_to_thoudpi(CardBox.x_offset)
-# CardBox.y_offset = Design.mm_to_thoudpi(CardBox.y_offset)
-# CardBox.vertical_separation = Design.mm_to_thoudpi(CardBox.vertical_separation)
-# CardBox.slot_width = Design.mm_to_thoudpi(CardBox.slot_width)
-# CardBox.side_gap = Design.mm_to_thoudpi(CardBox.side_gap)
-# CardBox.funnel_top_width = Design.mm_to_thoudpi(CardBox.funnel_top_width)
-# CardBox.funnel_bottom_width = Design.mm_to_thoudpi(CardBox.funnel_bottom_width)
-# CardBox.neck_height = Design.mm_to_thoudpi(CardBox.neck_height)
-# CardBox.thickness = Design.mm_to_thoudpi(CardBox.thickness)
-# CardBox.nose_width = Design.mm_to_thoudpi(CardBox.nose_width)
-# CardBox.bottomhole_radius = Design.mm_to_thoudpi(CardBox.bottomhole_radius)
+    def __print_dimensons(self):
+        print(
+            f"Inner Length: {self.inner_dimensions[0]} , "
+            f"Inner Width: {self.inner_dimensions[1]} , "
+            f"Inner Height: {self.inner_dimensions[2]}")
+
+        print(
+            f"Outer Length: {self.outer_dimensions[0]} , "
+            f"Outer Width: {self.outer_dimensions[1]} , "
+            f"Outer Height: {self.outer_dimensions[2]}")
+
+    def __convert_all_to_thoudpi(self):
+        # convert all mm to thoudpi
+        self.length = Design.mm_to_thoudpi(self.length)
+        self.width = Design.mm_to_thoudpi(self.width)
+        self.height = Design.mm_to_thoudpi(self.height)
+        self.x_offset = Design.mm_to_thoudpi(self.x_offset)
+        self.y_offset = Design.mm_to_thoudpi(self.y_offset)
+        self.vertical_separation = Design.mm_to_thoudpi(self.vertical_separation)
+        self.slot_width = Design.mm_to_thoudpi(self.slot_width)
+        self.corner_gap = Design.mm_to_thoudpi(self.corner_gap)
+        self.funnel_top_width = Design.mm_to_thoudpi(self.funnel_top_width)
+        self.funnel_bottom_width = Design.mm_to_thoudpi(self.funnel_bottom_width)
+        self.funnel_neck_height = Design.mm_to_thoudpi(self.funnel_neck_height)
+        self.thickness = Design.mm_to_thoudpi(self.thickness)
+        self.center_nose_width = Design.mm_to_thoudpi(self.center_nose_width)
+        # not yet implemented
+        # self.bottomhole_radius = Design.mm_to_thoudpi(self.bottomhole_radius)
+
+# TODO:
+# create empty template --create-template <filename>
+# implement bottom hole
