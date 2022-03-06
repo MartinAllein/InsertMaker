@@ -28,7 +28,7 @@ class CardBox(Design):
     __DEFAULT_ENFORCE_SMALL_DESIGN = False
     __DEFAULT_ENFORCE_LARGE_DESIGN = True
 
-    __DEFAULT_SMALL_HEIGHT = 20
+    __DEFAULT_SMALL_HEIGHT =  Design.mm_to_thoudpi(20)
 
     def __init__(self):
         self.__init_variables()
@@ -138,13 +138,13 @@ class CardBox(Design):
                     'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
                     'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT, 'thickness': self.__DEFAULT_THICKNESS,
                     'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
-                    'enforce small design': self.__DEFAULT_ENFORCE_SMALL_DESIGN,
-                    'enforce large design': self.__DEFAULT_ENFORCE_LARGE_DESIGN,
                     'length': 0,
                     'width': 0,
                     'height': 0,
                     'project': "",
-                    'filename': ""
+                    'filename': "",
+                    'thumbhole' : False,
+                    'funnel': 'dual with holes',
                     }
 
         config_file = 'config/' + filename + ".config"
@@ -173,8 +173,32 @@ class CardBox(Design):
         self.funnel_neck_height = int(config[section]['funnel neck height'])
         self.thickness = float(config[section]['thickness'])
         self.center_nose_width = int(config[section]['center nose width'])
-        self.enforce_small_design = bool(config[section]['enforce small design'])
-        self.enforce_large_design = bool(config[section]['enforce large design'])
+
+        if config.has_option(section, 'funnel'):
+            funnel = config[section]['funnel']
+            if funnel == "single with hole" or funnel == "single with holes":
+                self.thumbhole = True
+                self.singlethumbhole = True
+                self.singlefunnel = True
+            elif funnel == "dual with hole":
+                self.thumbhole = True
+                self.singlethumbhole = True
+                self.singlefunnel = False
+            elif funnel == "dual with holes":
+                self.thumbhole = True
+                self.singlethumbhole = False
+                self.singlefunnel = False
+
+        if config.has_option(section, 'enforce design'):
+            design = config[section]['enforce design']
+
+            if design == 'small':
+                self.enforce_small_design = True
+                self.enforce_large_design = False
+            elif design == 'large':
+                self.enforce_small_design = False
+                self.enforce_large_design = True
+
         self.length = float(config[section]['length'])
         self.width = float(config[section]['width'])
         self.height = float(config[section]['height'])
@@ -195,7 +219,7 @@ class CardBox(Design):
         self.title = ""
         self.separated = False
         self.thumbhole = False
-        self.singlethumbhole = True
+        self.singlethumbhole = False
         self.singlefunnel = False
         self.enforce_small_design = False
         self.enforce_large_design = False
@@ -523,7 +547,7 @@ class CardBox(Design):
         t = s + int(width / 2 - funneltopwidth / 2)
         v = s + int(width / 2 - funnelbottomwidth / 2)
         u = v - nosewidth
-        w = r + int(width / 2 + funnelbottomwidth / 2)
+        w = s + int(width / 2 + funnelbottomwidth / 2)
         x = w + nosewidth
         aa = r + width + 2 * thickness
         z = aa - thickness
@@ -556,22 +580,24 @@ class CardBox(Design):
             print(f"bc: {bc}/ {Design.thoudpi_to_mm(bc)}")
             print(f"bd: {bd}/ {Design.thoudpi_to_mm(bd)}")
 
-            print(f"bd: {p}/ {Design.thoudpi_to_mm(p)}")
-            print(f"bd: {q}/ {Design.thoudpi_to_mm(q)}")
-            print(f"bd: {r}/ {Design.thoudpi_to_mm(r)}")
-            print(f"bd: {s}/ {Design.thoudpi_to_mm(s)}")
-            print(f"bd: {t}/ {Design.thoudpi_to_mm(t)}")
-            print(f"bd: {u}/ {Design.thoudpi_to_mm(u)}")
-            print(f"bd: {v}/ {Design.thoudpi_to_mm(v)}")
-            print(f"bd: {w}/ {Design.thoudpi_to_mm(w)}")
-            print(f"bd: {x}/ {Design.thoudpi_to_mm(x)}")
-            print(f"bd: {y}/ {Design.thoudpi_to_mm(y)}")
-            print(f"bd: {z}/ {Design.thoudpi_to_mm(z)}")
-            print(f"bd: {ab}/ {Design.thoudpi_to_mm(ab)}")
-            print(f"bd: {ac}/ {Design.thoudpi_to_mm(ac)}")
-            print(f"bd: {ca}/ {Design.thoudpi_to_mm(ca)}")
-            print(f"bd: {cb}/ {Design.thoudpi_to_mm(cb)}")
-            print(f"bd: {cd}/ {Design.thoudpi_to_mm(cd)}")
+            print(f"p: {p}/ {Design.thoudpi_to_mm(p)}")
+            print(f"q: {q}/ {Design.thoudpi_to_mm(q)}")
+            print(f"r: {r}/ {Design.thoudpi_to_mm(r)}")
+            print(f"s: {s}/ {Design.thoudpi_to_mm(s)}")
+            print(f"t: {t}/ {Design.thoudpi_to_mm(t)}")
+            print(f"u: {u}/ {Design.thoudpi_to_mm(u)}")
+            print(f"v: {v}/ {Design.thoudpi_to_mm(v)}")
+            print(f"w: {w}/ {Design.thoudpi_to_mm(w)}")
+            print(f"x: {x}/ {Design.thoudpi_to_mm(x)}")
+            print(f"y: {y}/ {Design.thoudpi_to_mm(y)}")
+            print(f"z: {z}/ {Design.thoudpi_to_mm(z)}")
+            print(f"aa: {aa}/ {Design.thoudpi_to_mm(aa)}")
+            print(f"ab: {ab}/ {Design.thoudpi_to_mm(ab)}")
+            print(f"ac: {ac}/ {Design.thoudpi_to_mm(ac)}")
+            print(f"ca: {ca}/ {Design.thoudpi_to_mm(ca)}")
+            print(f"cb: {cb}/ {Design.thoudpi_to_mm(cb)}")
+            print(f"cc: {cc}/ {Design.thoudpi_to_mm(cc)}")
+            print(f"cd: {cd}/ {Design.thoudpi_to_mm(cd)}")
 
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
@@ -597,7 +623,7 @@ class CardBox(Design):
         self.inner_dimensions = [Design.thoudpi_to_mm(j - e), Design.thoudpi_to_mm(z - s), Design.thoudpi_to_mm(d - a)]
         self.outer_dimensions = [Design.thoudpi_to_mm(k - d), Design.thoudpi_to_mm(aa - r), Design.thoudpi_to_mm(e - a)]
 
-        if height <= self.small_height:
+        if (height <= self.small_height or self.enforce_small_design) and not self.enforce_large_design:
             self.cutlines = [
                 # left upper
                 [Design.LINE, [6, 7, 0, 1, 4, 23, 22, 13, 12]],
@@ -750,3 +776,4 @@ class CardBox(Design):
 # TODO:
 # create empty template --create-template <filename>
 # implement bottom hole
+# Config Parameter für default small height

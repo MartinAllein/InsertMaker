@@ -159,7 +159,7 @@ class ItemBox(Design):
         self.foo["$FILENAME$"] = self.outfile
         self.foo["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
 
-        ycoord = self.bottom_y + Design.Y_LINE_SEPARATION
+        ycoord = self.bottom_y +int( Design.Y_LINE_SEPARATION)
 
         # self.make_slots([0, 0])
 
@@ -217,19 +217,19 @@ class ItemBox(Design):
 
             ycoord += 2 * Design.Y_LINE_SEPARATION
 
-        temp = round(3 * (self.height + 3 * self.__SEPARATION + Design.Y_LINE_SEPARATION))
+        temp = round(3 * (self.height + 3 * int( self.__SEPARATION) + int(Design.Y_LINE_SEPARATION)))
         self.foo["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
                                  f" {Design.thoudpi_to_dpi(temp)}"
 
         self.foo["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += int( Design.Y_LINE_SEPARATION)
         self.foo["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += int( Design.Y_LINE_SEPARATION)
         self.foo["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += int( Design.Y_LINE_SEPARATION)
         self.foo["$LABEL_FLAP_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         self.foo["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
@@ -301,16 +301,16 @@ class ItemBox(Design):
         #  ab                     21--------------------------------------------------------------61
 
         length = self.length
-        height = self.height
+        height = int(self.height)
         width = self.width
         thickness = self.thickness
 
-        slot_width = self.__SLOT_WIDTH
+        slot_width = int(self.__SLOT_WIDTH)
         side_gap = self.__SIDE_GAP
 
         # noinspection DuplicatedCode
         # X - Points
-        a = self.__X_OFFSET
+        a = int(self.__X_OFFSET)
         b = a + int(height / 2) - int(slot_width / 2)
         c = a + int(height / 2) + int(slot_width / 2)
         d = a + height
@@ -328,7 +328,7 @@ class ItemBox(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        q = self.__Y_OFFSET
+        q = int(self.__Y_OFFSET)
         r = q + int(height / 2) - int(slot_width / 2)
         s = q + int(height / 2) + int(slot_width / 2)
         t = q + height
