@@ -186,6 +186,9 @@ class Design(ABC):
     def mm_to_thoudpi(value):
         return int(float(value) * Design.FACTOR)
 
+    def foobar(self):
+        pass
+
 
 # Read default values from the config file
 if os.path.isfile(Design.config_file()):
@@ -195,4 +198,3 @@ if os.path.isfile(Design.config_file()):
     Design.X_OFFSET = config['DESIGN']['X_OFFSET']
     Design.Y_OFFSET = config['DESIGN']['Y_OFFSET']
     Design.Y_LINE_SEPARATION = config['DESIGN']['Y_LINE_SEPARATION']
-

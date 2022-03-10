@@ -3,12 +3,10 @@ import sys
 import argparse
 import configparser
 from classes.Design import Design
-from pathlib import Path
-
 from datetime import datetime
 
 
-class CardBox(Design):
+class CardBox:
     __DEFAULT_FILENAME = "CardBox"
     __DEFAULT_TEMPLATE = "templates/CardBox.svg"
     __DEFAULT_TEMPLATE_SEPARATED = "templates/ItemBoxSeparated.svg"
@@ -28,13 +26,13 @@ class CardBox(Design):
     __DEFAULT_ENFORCE_SMALL_DESIGN = False
     __DEFAULT_ENFORCE_LARGE_DESIGN = True
 
-    __DEFAULT_SMALL_HEIGHT =  Design.mm_to_thoudpi(20)
+    __DEFAULT_SMALL_HEIGHT = Design.mm_to_thoudpi(20)
 
-    def __init__(self):
+    def __init__(self, arguments):
         self.__init_variables()
 
         # Parse the cli
-        self.args = self.parse_arguments()
+        self.args = self.parse_arguments(arguments)
 
         if self.args.v:
             self.verbose = True
@@ -49,7 +47,7 @@ class CardBox(Design):
             # CLI was chosen
             self.__config_from_cli()
 
-        temp_name = f"{CardBox.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
+        temp_name = f"{self.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
                     f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         if not self.title:
@@ -143,7 +141,8 @@ class CardBox(Design):
                     'height': 0,
                     'project': "",
                     'filename': "",
-                    'thumbhole' : False,
+                    'title': "",
+                    'thumbhole': False,
                     'funnel': 'dual with holes',
                     }
 
@@ -163,6 +162,7 @@ class CardBox(Design):
 
         self.project = config[section]['project'].strip('"')
         self.outfile = config[section]['filename'].strip('"')
+        self.title = config[section]['title'].strip('"')
         self.x_offset = int(config[section]['x offset'])
         self.y_offset = int(config[section]['y offset'])
         self.vertical_separation = int(config[section]['vertical separation'])
@@ -236,16 +236,16 @@ class CardBox(Design):
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-        self.x_offset = Design.X_OFFSET
-        self.y_offset = Design.Y_OFFSET
-        self.slot_width = CardBox.__DEFAULT_SLOT_WIDTH
-        self.funnel_top_width = CardBox.__DEFAULT_FUNNEL_TOP_WIDTH
-        self.funnel_bottom_width = CardBox.__DEFAULT_FUNNEL_BOTTOM_WIDTH
-        self.funnel_neck_height = CardBox.__DEFAULT_FUNNEL_NECK_HEIGHT
-        self.center_nose_width = CardBox.__DEFAULT_CENTER_NOSE_WIDTH
-        self.corner_gap = CardBox.__DEFAULT_CORNER_GAP
-        self.small_height = CardBox.__DEFAULT_SMALL_HEIGHT
-        self.vertical_separation = CardBox.__DEFAULT_VERTICAL_SEPARATION
+        self.x_offset = self.__DEFAULT_X_OFFSET
+        self.y_offset = self.__DEFAULT_Y_OFFSET
+        self.slot_width = self.__DEFAULT_SLOT_WIDTH
+        self.funnel_top_width = self.__DEFAULT_FUNNEL_TOP_WIDTH
+        self.funnel_bottom_width = self.__DEFAULT_FUNNEL_BOTTOM_WIDTH
+        self.funnel_neck_height = self.__DEFAULT_FUNNEL_NECK_HEIGHT
+        self.center_nose_width = self.__DEFAULT_CENTER_NOSE_WIDTH
+        self.corner_gap = self.__DEFAULT_CORNER_GAP
+        self.small_height = self.__DEFAULT_SMALL_HEIGHT
+        self.vertical_separation = self.__DEFAULT_VERTICAL_SEPARATION
 
         # not implemented yet
         # self.bottomhole_radius = CardBox.__DEFAULT_BOTTOM_HOLE_RADIUS
@@ -281,12 +281,12 @@ class CardBox(Design):
     def __str__(self):
         return self.width, self.length, self.height, self.thickness, self.outfile
 
-    def parse_arguments(self):
+    def parse_arguments(self, arguments: str):
         parser = argparse.ArgumentParser(add_help=False)
 
-        parser.add_argument('-l', type=float, required=True, help="length of the matchbox")
-        parser.add_argument('-w', type=float, required=True, help="width of the matchbox")
-        parser.add_argument('-h', type=float, required=True, help="height of the matchbox")
+        parser.add_argument('-l', type=float, help="length of the matchbox")
+        parser.add_argument('-w', type=float, help="width of the matchbox")
+        parser.add_argument('-h', type=float, help="height of the matchbox")
         parser.add_argument('-s', type=float, help="Thickness")
 
         group_thumbhole = parser.add_mutually_exclusive_group()
@@ -314,7 +314,10 @@ class CardBox(Design):
         parser.add_argument('-c', type=str, required=True, help="Configuration File")
         parser.add_argument('-C', type=str, required=True, help="Config file section")
 
-        return parser.parse_args()
+        if not arguments:
+            return parser.parse_args()
+
+        return parser.parse_args(arguments.split())
 
     def create(self, separated=False):
         self.__init_design()
@@ -379,8 +382,7 @@ class CardBox(Design):
             right_cut = Design.draw_lines(self.corners, self.cutlines_right)
             self.template["$RIGHT-CUT$"] = right_cut
 
-            ycoord += 2 * Design.Y_LINE_SEPARATION
-
+        ycoord += 2 * self.vertical_separation
         self.template["$LABEL_PROJECT_Y$"] = Design.thoudpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
@@ -404,9 +406,6 @@ class CardBox(Design):
         ycoord += self.vertical_separation
         self.template["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
                                       f" {Design.thoudpi_to_dpi(ycoord)}"
-
-        # self.template["$VIEWPORT$"] = f"{round(self.right_x + 2 * Design.FACTOR)}," \
-        #                              f" {ycoord}"
 
         Design.write_to_file(self.template)
 
