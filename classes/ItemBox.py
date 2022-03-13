@@ -393,9 +393,9 @@ class ItemBox:
         e = d + thickness
         f = d + corner_gap
         g = f + slot_width
-        k = d + length
+        j = e + length
+        k = j + thickness
         i = k - corner_gap
-        j = k - thickness
         h = i - slot_width
 
         m = k + int(height / 2) - int(slot_width / 2)
@@ -409,8 +409,8 @@ class ItemBox:
         s = q + int(height / 2) + int(slot_width / 2)
         t = q + height
         u = t + thickness
-        v = t + int(width / 2) - int(slot_width / 2)
-        w = t + int(width / 2) + int(slot_width / 2)
+        v = u + int(width / 2) - int(slot_width / 2)
+        w = u + int(width / 2) + int(slot_width / 2)
         x = u + width
         y = x + thickness
         z = y + int(height / 2 - slot_width / 2)

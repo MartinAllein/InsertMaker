@@ -28,7 +28,7 @@ class CardBox:
 
     __DEFAULT_SMALL_HEIGHT = Design.mm_to_thoudpi(20)
 
-    def __init__(self, arguments):
+    def __init__(self, arguments=""):
         self.__init_variables()
 
         # Parse the cli
