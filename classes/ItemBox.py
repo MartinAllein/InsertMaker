@@ -11,8 +11,8 @@ class ItemBox:
     __DEFAULT_TEMPLATE = "templates/ItemBox.svg"
     __DEFAULT_TEMPLATE_SEPARATED = "templates/ItemBoxSeparated.svg"
 
-    __DEFAULT_X_OFFSET = Design.X_OFFSET
-    __DEFAULT_Y_OFFSET = Design.Y_OFFSET
+    __DEFAULT_X_OFFSET = Design.x_offset
+    __DEFAULT_Y_OFFSET = Design.y_offset
 
     __DEFAUL_THICKNESS = 1.5
 

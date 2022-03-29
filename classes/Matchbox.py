@@ -8,8 +8,8 @@ from datetime import datetime
 class Matchbox(Design):
     __DEFAULT_FILENAME = "Matchbox"
 
-    __X_OFFSET = Design.X_OFFSET
-    __Y_OFFSET = Design.Y_OFFSET
+    __X_OFFSET = Design.__DEFAULT_X_OFFSET
+    __Y_OFFSET = Design.__DEFAULT_Y_OFFSET
 
     def __init__(self):
 
@@ -114,13 +114,13 @@ class Matchbox(Design):
 
         template = template.replace("$LABEL_X$", Design.thoudpi_to_dpi(self.base_corners[0][0]))
 
-        ycoord = self.wrap_corners[1][1] + Design.Y_LINE_SEPARATION
+        ycoord = self.wrap_corners[1][1] + Design.__DEFAULT_Y_LINE_SEPARATION
         template = template.replace("$LABEL_TITLE_Y$", Design.thoudpi_to_dpi(ycoord))
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += Design.__DEFAULT_Y_LINE_SEPARATION
         template = template.replace("$LABEL_FILENAME_Y$", Design.thoudpi_to_dpi(ycoord))
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += Design.__DEFAULT_Y_LINE_SEPARATION
         template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.thoudpi_to_dpi(ycoord))
-        ycoord += Design.Y_LINE_SEPARATION
+        ycoord += Design.__DEFAULT_Y_LINE_SEPARATION
         template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.thoudpi_to_dpi(ycoord))
 
         template = template.replace("$LABEL_BASE_WIDTH_X$",
@@ -131,7 +131,7 @@ class Matchbox(Design):
 
         template = template.replace("$TRANSLATE-WRAP$", "0 " + Design.thoudpi_to_dpi(self.base_corners[25][1]))
 
-        temp = self.base_corners[25][1] + self.wrap_corners[1][1] + 2 * Design.FACTOR + 4 * Design.Y_LINE_SEPARATION
+        temp = self.base_corners[25][1] + self.wrap_corners[1][1] + 2 * Design.FACTOR + 4 * Design.__DEFAULT_Y_LINE_SEPARATION
         viewport = f"{Design.thoudpi_to_dpi(int(self.base_corners[34][0] + 2 * Design.FACTOR))}," \
                    f" {Design.thoudpi_to_dpi(int(temp))}"
 

@@ -6,23 +6,20 @@ from classes.Design import Design
 from datetime import datetime
 
 
-class CardBox:
-    __DEFAULT_FILENAME = "CardBox"
-    __DEFAULT_TEMPLATE = "templates/CardBox.svg"
-    __DEFAULT_TEMPLATE_SEPARATED = "templates/ItemBoxSeparated.svg"
+class Corner:
+    __DEFAULT_FILENAME = "Corner"
+    __DEFAULT_TEMPLATE = "templates/Corner.svg"
+    __DEFAULT_TEMPLATE_SEPARATED = "templates/CornerSeparated.svg"
 
-    __DEFAULT_X_OFFSET = Design.x_offset
-    __DEFAULT_Y_OFFSET = Design.y_offset
+    __DEFAULT_X_OFFSET = Design.__DEFAULT_X_OFFSET
+    __DEFAULT_Y_OFFSET = Design.__DEFAULT_Y_OFFSET
 
     __DEFAULT_SLOT_WIDTH = 10
     __DEFAULT_CORNER_GAP = 10
-    __DEFAULT_FUNNEL_TOP_WIDTH = 20
-    __DEFAULT_FUNNEL_BOTTOM_WIDTH = 10
-    __DEFAULT_FUNNEL_NECK_HEIGHT = 10
+    __DEFAULT_CORNER_RADIUS = 2
     __DEFAULT_THICKNESS = 1.5
+
     __DEFAULT_VERTICAL_SEPARATION = 3
-    __DEFAULT_CENTER_NOSE_WIDTH = 5
-    __DEFAULT_BOTTOM_HOLE_RADIUS = 10
     __DEFAULT_ENFORCE_SMALL_DESIGN = False
     __DEFAULT_ENFORCE_LARGE_DESIGN = True
 
@@ -218,9 +215,9 @@ class CardBox:
         self.outfile = ""
         self.title = ""
         self.separated = False
-        self.thumbhole = False
-        self.singlethumbhole = False
-        self.singlefunnel = False
+        self.corner_radius = self.__DEFAULT_CORNER_RADIUS
+        self.rectangular = True
+        self.bottom_tile = True
         self.enforce_small_design = False
         self.enforce_large_design = False
 
@@ -239,10 +236,6 @@ class CardBox:
         self.x_offset = self.__DEFAULT_X_OFFSET
         self.y_offset = self.__DEFAULT_Y_OFFSET
         self.slot_width = self.__DEFAULT_SLOT_WIDTH
-        self.funnel_top_width = self.__DEFAULT_FUNNEL_TOP_WIDTH
-        self.funnel_bottom_width = self.__DEFAULT_FUNNEL_BOTTOM_WIDTH
-        self.funnel_neck_height = self.__DEFAULT_FUNNEL_NECK_HEIGHT
-        self.center_nose_width = self.__DEFAULT_CENTER_NOSE_WIDTH
         self.corner_gap = self.__DEFAULT_CORNER_GAP
         self.small_height = self.__DEFAULT_SMALL_HEIGHT
         self.vertical_separation = self.__DEFAULT_VERTICAL_SEPARATION
@@ -252,62 +245,8 @@ class CardBox:
 
         self.verbose = False
 
-    @staticmethod
-    def __check_length(value):
-        return CardBox.__check_value('Length', value)
-
-    @staticmethod
-    def __check_width(value):
-        return CardBox.__check_value('Width', value)
-
-    @staticmethod
-    def __check_height(value):
-        return CardBox.__check_value('Height', value)
-
-    @staticmethod
-    def __check_thickness(value):
-        return CardBox.__check_value('Thickness', value)
-
-    @staticmethod
-    def __check_value(description, value):
-        string = ""
-        if not value:
-            string += f" missing {description}\n"
-        elif int(value) <= 0:
-            string += f"{description} must be greater than zero (Is:{value})"
-
-        return string
-
-    def __str__(self):
-        return self.width, self.length, self.height, self.thickness, self.outfile
-
     def parse_arguments(self, arguments: str):
         parser = argparse.ArgumentParser(add_help=False)
-
-        parser.add_argument('-l', type=float, help="length of the matchbox")
-        parser.add_argument('-w', type=float, help="width of the matchbox")
-        parser.add_argument('-h', type=float, help="height of the matchbox")
-        parser.add_argument('-s', type=float, help="Thickness")
-
-        group_thumbhole = parser.add_mutually_exclusive_group()
-        group_thumbhole.add_argument('-d', action="store_true", help="Single Thumbhole")
-        group_thumbhole.add_argument('-D', action="store_true", help="Double Thumbhole")
-        parser.add_argument('-b', action="store_true", help="Funnel on both sides")
-
-        parser.add_argument('-f', type=float, help="Funnel Bottom Width")
-        parser.add_argument('-F', type=str, help="Funnel Bottom width")
-        parser.add_argument('-n', type=int, help="Funnel Neck Height")
-        parser.add_argument('-u', type=int, help="Nose width")
-        parser.add_argument('-t', type=int, help="Drawing Title")
-        parser.add_argument('-x', action="store_true", help="separated Design")
-        parser.add_argument('-o', type=str, help="output filename")
-        parser.add_argument('-p', type=str, help="Project Name")
-
-        group_enforce = parser.add_mutually_exclusive_group()
-        group_enforce.add_argument('-e', action="store_true", help="Enforce small design")
-        group_enforce.add_argument('-E', action="store_true", help="Enforce large design")
-
-        parser.add_argument('-v', action="store_true", help="verbose output")
 
         # The config file is mutually exclusive to all other command line parameters
         # and has precedence
@@ -413,95 +352,50 @@ class CardBox:
         self.__init_base()
 
     def __init_base(self):
-        #            a b   c      d    e      f         g                    h          i     j    k      m   n o
-        #
-        # p                       10--------------------------------------------------------------52
-        #                         |                                                                |
-        #                         |                                                                |
-        # q                       11--20                                                      44--53
-        #                              |                                                      |
-        #                              |                                                      |
-        # r                6------12--21----28          32------------------36          40----45--54-----62
-        #                  |      |          |          |thickness           |          |          |      |
-        #                  |      |          |          |                    |          |          |      |
-        # s          0-----7      |          29--------33                    37--------41          |      63---68
-        #            |            |           slot_width                                           |            |
-        #            |            |                                                                |            |
-        # t          1            |                                                                |            69
-        # u          \            13--22                                                      46--55            /
-        #             \                |  nosewidth                                           |                /
-        # v            4----------14--23                                                      47---56--------66     w
-        #        w     neckheight |                                                                |                i
-        #        i                |                                                                |                d
-        #        d funnel         |  funnelbottomwidth                                             |                d
-        #        t top width      |                                                                |                t
-        #        h                |                                                                |                h
-        # w            5----------15--24                                                      48---57--------67
-        #             /                |  nosewidth                                           |                \
-        # x          /            16--25                                                      49--58            \
-        # y          2            |                                                                |            70
-        #            |            |                                                                |            |
-        #            |            |                                                                |            |
-        # z          3-----8      |          30--------34                    38--------42          |      64---71
-        #                  |      |          |          |                    |          |          |      |
-        #                  |      |          |          |                    |          |          |      |
-        #  aa              9------17--26----31          35------------------39          43----50---59----65
-        #                              |                                                      |
-        #                              |                                                      |
-        #  ab                     18--27                                                      51--60
-        #                         |                                                                |
-        #                         |                          length                                |
-        #  ac                     19--------------------------------------------------------------61
 
-        #            a b   c      d    e      f         g                    h          i     j    k      m   n o
-        #                ba   bb                                                                       be   bf
-        # p                       10--------------------------------------------------------------52
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #    ca                   80--86                                                      90--94
-        #                              |                                                      |
-        #                              |                                                      |
-        #    cb                   81--87                                                      91--95
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        # r              72---76  12--21----28          32------------------36          40----45--54  A0----A4
-        #                |     |  |          |          |thickness           |          |          |   |    |
-        #                |     |  |          |          |                    |          |          |   |    |
-        # s          0--73    77-82          29--------33                    37--------41          96-A1    A5-68
-        #            |            |           slot_width                                           |            |
-        #            |            |                                                                |            |
-        # t          1            |                                                                |            69
-        # u          \            13--22                                                      46--55            /
-        #             \                |  nosewidth                                           |                /
-        # v            4----------14--23                                                      47---56--------66     w
-        #        w     neckheight |                                                                |                i
-        #        i                |                                                                |                d
-        #        d funnel         |  funnelbottomwidth                                             |                d
-        #        t top width      |                                                                |                t
-        #        h                |                                                                |                h
-        # w            5----------15--24                                                      48---57--------67
-        #             /                |  nosewidth                                           |                \
-        # x          /            16--25                                                      49--58            \
-        # y          2            |                                                                |            70
-        #            |            |                                                                |            |
-        #            |            |                                                                |            |
-        # z          3--74    78-83          30--------34                    38--------42          97-A2    A6-71
-        #                |     |  |          |          |                    |          |          |   |    |
-        #                |     |  |          |          |                    |          |          |   |    |
-        #  aa            75---79  17--26----31          35------------------39          43----50---59 A3----A7
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #     cc                  84--88                                                      92--98
-        #                              |                                                      |
-        #                              |                                                      |
-        #     cd                  85--89                                                      93--99
-        #                         |                                                                |
-        #                         |                          length                                |
-        #                         |                          length                                |
-        #  ac                     19--------------------------------------------------------------61
+
+        # -------------------------------------------------------------------------------------
+        #
+        #    X--X------X     X------X--X
+        #    |         |     |         |
+        #    |         X-----X         |
+        #    X                         X
+        #    |                         |
+        #    X-X                     X-X
+        #      |                     |
+        #      |                     |
+        #    X-X                     X-X
+        #    |                         |
+        #    X                         X
+        #    |         X-----X         |         X-----X                   X-----X                   X-----X
+        #    |         |     |         |         |     |                   |     |                   |     |
+        #    X--X------X     X------X--X--X------X     X------X--X--X------X     X------X--X--X------X     X------X--X
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #       |                   |     |                   |     |                   |     |                   |
+        #    X--X------X     X------X--X--X------X     X------X--X--X------X     X------X--X--X------X     X------X--X
+        #    |         |     |         |         |     |                   |     |                   |     |
+        #    |         X-----X         |         X-----X                   X-----X                   X-----X
+        #    X                         X
+        #    |                         |
+        #    X-X                     X-X
+        #      |                     |
+        #      |                     |
+        #    X-X                     X-X
+        #    |                         |
+        #    X                         X
+        #    |         X-----X         |
+        #    |         |     |         |
+        #    X--X------X     X------X--X
+
+
+
 
         length = self.length
         height = self.height
