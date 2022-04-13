@@ -2,8 +2,10 @@ import os
 import sys
 import argparse
 import configparser
-from classes.Design import Design
 from datetime import datetime
+from classes.Design import Design
+from classes.Direction import Direction
+from classes.PathStyle import PathStyle
 
 
 class Corner:
@@ -129,10 +131,6 @@ class Corner:
                     'y offset': self.__DEFAULT_Y_OFFSET,
                     'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
                     'slot width': self.__DEFAULT_SLOT_WIDTH, 'corner_gap': self.__DEFAULT_CORNER_GAP,
-                    'funnel top width': self.__DEFAULT_FUNNEL_TOP_WIDTH,
-                    'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
-                    'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT, 'thickness': self.__DEFAULT_THICKNESS,
-                    'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
                     'length': 0,
                     'width': 0,
                     'height': 0,
@@ -519,87 +517,87 @@ class Corner:
         if (height <= self.small_height or self.enforce_small_design) and not self.enforce_large_design:
             self.cutlines = [
                 # left upper
-                [Design.LINE, [6, 7, 0, 1, 4, 23, 22, 13, 12]],
+                [PathStyle.LINE, [6, 7, 0, 1, 4, 23, 22, 13, 12]],
                 # left lower
-                [Design.LINE, [9, 8, 3, 2, 5, 24, 25, 16, 17]],
+                [PathStyle.LINE, [9, 8, 3, 2, 5, 24, 25, 16, 17]],
                 # middle upper
-                [Design.LINE, [6, 28, 29, 33, 32, 36, 37, 41, 40, 62]],
+                [PathStyle.LINE, [6, 28, 29, 33, 32, 36, 37, 41, 40, 62]],
                 # middle lower
-                [Design.LINE, [9, 31, 30, 34, 35, 39, 38, 42, 43, 65]],
+                [PathStyle.LINE, [9, 31, 30, 34, 35, 39, 38, 42, 43, 65]],
                 # bottom
-                [Design.LINE, [26, 27, 18, 19, 61, 60, 51, 50]],
+                [PathStyle.LINE, [26, 27, 18, 19, 61, 60, 51, 50]],
                 # top
-                [Design.LINE, [21, 20, 11, 10, 52, 53, 44, 45]],
+                [PathStyle.LINE, [21, 20, 11, 10, 52, 53, 44, 45]],
 
             ]
 
             if self.singlefunnel:
                 # right single wall top cutline
-                self.cutlines.append([Design.LINE, [62, 63, 68, 71, 64, 65]])
+                self.cutlines.append([PathStyle.LINE, [62, 63, 68, 71, 64, 65]])
                 # right single wall upper cutline
-                self.cutlines.append([Design.LINE, [54, 55, 46, 47, 56]])
+                self.cutlines.append([PathStyle.LINE, [54, 55, 46, 47, 56]])
                 # right single wall lower cutline
-                self.cutlines.append([Design.LINE, [59, 58, 49, 48, 57]])
+                self.cutlines.append([PathStyle.LINE, [59, 58, 49, 48, 57]])
             else:
                 # right upper
-                self.cutlines.append([Design.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]])
+                self.cutlines.append([PathStyle.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]])
                 # right lower
-                self.cutlines.append([Design.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]])
+                self.cutlines.append([PathStyle.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]])
         else:
             # Height is greater than 20
             self.cutlines = [
                 # left upper
-                [Design.LINE, [82, 77, 76, 72, 73, 0, 1, 4, 23, 22, 13, 81]],
+                [PathStyle.LINE, [82, 77, 76, 72, 73, 0, 1, 4, 23, 22, 13, 81]],
                 # left lower
-                [Design.LINE, [83, 78, 79, 75, 74, 3, 2, 5, 24, 25, 16, 84]],
+                [PathStyle.LINE, [83, 78, 79, 75, 74, 3, 2, 5, 24, 25, 16, 84]],
                 # middle upper
-                [Design.LINE, [12, 28, 29, 33, 32, 36, 37, 41, 40, 54]],
+                [PathStyle.LINE, [12, 28, 29, 33, 32, 36, 37, 41, 40, 54]],
                 # middle lower
-                [Design.LINE, [17, 31, 30, 34, 35, 39, 38, 42, 43, 59]],
+                [PathStyle.LINE, [17, 31, 30, 34, 35, 39, 38, 42, 43, 59]],
                 # top
-                [Design.LINE, [81, 87, 86, 80, 10, 52, 94, 90, 91, 95]],
+                [PathStyle.LINE, [81, 87, 86, 80, 10, 52, 94, 90, 91, 95]],
                 # bottom
-                [Design.LINE, [84, 88, 89, 85, 19, 61, 99, 93, 92, 98]],
+                [PathStyle.LINE, [84, 88, 89, 85, 19, 61, 99, 93, 92, 98]],
                 # right top
-                [Design.LINE, [96, 101, 100, 104, 105, 68]],
+                [PathStyle.LINE, [96, 101, 100, 104, 105, 68]],
                 # right bottom
-                [Design.LINE, [97, 102, 103, 107, 106, 71]],
-                [Design.LINE, [95, 55, 46, 47]],
-                [Design.LINE, [98, 58, 49, 48]],
+                [PathStyle.LINE, [97, 102, 103, 107, 106, 71]],
+                [PathStyle.LINE, [95, 55, 46, 47]],
+                [PathStyle.LINE, [98, 58, 49, 48]],
             ]
 
             if self.singlefunnel:
                 # right single wall top
-                self.cutlines.append([Design.LINE, [68, 71]])
-                self.cutlines.append([Design.LINE, [47, 56]])
-                self.cutlines.append([Design.LINE, [48, 57]])
+                self.cutlines.append([PathStyle.LINE, [68, 71]])
+                self.cutlines.append([PathStyle.LINE, [47, 56]])
+                self.cutlines.append([PathStyle.LINE, [48, 57]])
             else:
-                self.cutlines.append([Design.LINE, [68, 69, 66, 47]])
-                self.cutlines.append([Design.LINE, [71, 70, 67, 48]])
+                self.cutlines.append([PathStyle.LINE, [68, 69, 66, 47]])
+                self.cutlines.append([PathStyle.LINE, [71, 70, 67, 48]])
 
         if self.thumbhole:
-            self.cutlines.append([Design.HALFCIRCLE, [14, 15, Design.VERTICAL]])
+            self.cutlines.append([PathStyle.HALFCIRCLE, [14, 15, Direction.VERTICAL]])
             if self.singlethumbhole:
-                self.cutlines.append([Design.LINE, [56, 57]])
+                self.cutlines.append([PathStyle.LINE, [56, 57]])
             else:
-                self.cutlines.append([Design.HALFCIRCLE, [57, 56, Design.VERTICAL]])
+                self.cutlines.append([PathStyle.HALFCIRCLE, [57, 56, Direction.VERTICAL]])
         else:
-            self.cutlines.append([Design.LINE, [14, 15]])
-            self.cutlines.append([Design.LINE, [56, 57]])
+            self.cutlines.append([PathStyle.LINE, [14, 15]])
+            self.cutlines.append([PathStyle.LINE, [56, 57]])
 
         self.fullright = [
-            [Design.LINE, [57, 48, 49, 58, 59, 100, 101, 105, 104, 107, 106, 103, 102, 98, 99, 54, 55, 46, 47, 56]]]
+            [PathStyle.LINE, [57, 48, 49, 58, 59, 100, 101, 105, 104, 107, 106, 103, 102, 98, 99, 54, 55, 46, 47, 56]]]
 
         self.cutlines_top = [
-            [Design.LINE, [10, 11, 20, 21, 28, 29, 33, 32, 36, 37, 41, 40, 45, 44, 53, 52, 10]]]
-        self.cutlines_center = [[Design.LINE,
+            [PathStyle.LINE, [10, 11, 20, 21, 28, 29, 33, 32, 36, 37, 41, 40, 45, 44, 53, 52, 10]]]
+        self.cutlines_center = [[PathStyle.LINE,
                                  [12, 13, 22, 23, 14, 15, 24, 25, 16, 17, 31, 30, 34, 35, 39, 38, 42, 43, 59, 58, 49,
                                   48, 57, 56, 47, 46, 55, 54, 40, 41, 37, 36, 32, 33, 29, 28, 12]]]
-        self.cutlines_bottom = [[Design.LINE, [26, 27, 18, 19, 61, 60, 51, 50, 43, 42, 383, 9, 35, 34, 30, 31, 26]]]
-        self.cutlines_left_top = [[Design.LINE, [12, 6, 7, 0, 1, 4, 23, 22, 13, 12]]]
-        self.cutlines_left_bottom = [[Design.LINE, [17, 16, 25, 24, 5, 2, 3, 8, 9, 17]]]
-        self.cutlines_right_top = [[Design.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]]]
-        self.cutlines_right_bottom = [[Design.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]]]
+        self.cutlines_bottom = [[PathStyle.LINE, [26, 27, 18, 19, 61, 60, 51, 50, 43, 42, 383, 9, 35, 34, 30, 31, 26]]]
+        self.cutlines_left_top = [[PathStyle.LINE, [12, 6, 7, 0, 1, 4, 23, 22, 13, 12]]]
+        self.cutlines_left_bottom = [[PathStyle.LINE, [17, 16, 25, 24, 5, 2, 3, 8, 9, 17]]]
+        self.cutlines_right_top = [[PathStyle.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]]]
+        self.cutlines_right_bottom = [[PathStyle.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]]]
 
         # detect boundaries of drawing
 

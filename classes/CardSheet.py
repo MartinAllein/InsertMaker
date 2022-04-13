@@ -4,6 +4,8 @@ from datetime import datetime
 import os
 import sys
 from classes.Design import Design
+from classes.Direction import Direction
+from classes.PathStyle import PathStyle
 
 
 class CardSheet:
@@ -82,7 +84,7 @@ class CardSheet:
         config_file = 'config/' + filename + ".config"
         # Read default values from the config file
         if not os.path.isfile(config_file):
-            print("Config file config/" + filename + ".config not found")
+            print("Config file config/" + filename + " not found")
             sys.exit()
 
         # read entries from the configuration file
@@ -281,12 +283,12 @@ class CardSheet:
 
         self.cutlines = [
             # Top upper, middle left and right, Bottom lower
-            [Design.PAIR,
+            [PathStyle.PAIR,
              [1, 2, 4, 8, 13, 14, 7, 11]],
-            [Design.QUARTERCIRCLE, [1, 4, Design.NORTH]],
-            [Design.QUARTERCIRCLE, [8, 13, Design.EAST]],
-            [Design.QUARTERCIRCLE, [14, 11, Design.SOUTH]],
-            [Design.QUARTERCIRCLE, [7, 2, Design.WEST]]
+            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
         ]
 
         # detect boundaries of drawing

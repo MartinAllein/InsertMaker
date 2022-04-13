@@ -4,7 +4,8 @@ from datetime import datetime
 import os
 import sys
 from classes.Design import Design
-
+from classes.Direction import Direction
+from classes.PathStyle import PathStyle
 
 class ItemBox:
     __DEFAULT_FILENAME = "ItemBox"
@@ -472,19 +473,19 @@ class ItemBox:
         self.outer_dimensions = [Design.thoudpi_to_mm(k - d), Design.thoudpi_to_mm(y - t), Design.thoudpi_to_mm(e - a)]
 
         # right with no thumbhole
-        right_full = [Design.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]]
-        left_full = [Design.LINE, [14, 7, 6, 2, 3, 0, 1, 4, 5, 9, 8, 17]]
+        right_full = [PathStyle.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]]
+        left_full = [PathStyle.LINE, [14, 7, 6, 2, 3, 0, 1, 4, 5, 9, 8, 17]]
 
         self.cutlines = [
             # Top upper, middle left and right, Bottom lower
-            [Design.LINE,
+            [PathStyle.LINE,
              [10, 11, 22, 23, 12, 15, 24, 25, 16, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 56, 47, 46,
               55, 52, 45,
               44, 51, 50, 10]],
             # middle upper
-            [Design.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]],
+            [PathStyle.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]],
             # middle lower
-            [Design.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
+            [PathStyle.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
         ]
 
         if not self.thumbhole:
@@ -493,17 +494,17 @@ class ItemBox:
         else:
             #
             self.cutlines.append(
-                [Design.THUMBHOLE, [82, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.SOUTH]])
-            self.cutlines.append([Design.LINE, [14, 7, 6, 2, 3, 0, 82]])
-            self.cutlines.append([Design.LINE, [83, 1, 4, 5, 9, 8, 17]])
+                [PathStyle.THUMBHOLE, [82, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Direction.SOUTH]])
+            self.cutlines.append([PathStyle.LINE, [14, 7, 6, 2, 3, 0, 82]])
+            self.cutlines.append([PathStyle.LINE, [83, 1, 4, 5, 9, 8, 17]])
 
             if self.singlethumbhole:
                 self.cutlines.append(right_full)
             else:
                 self.cutlines.append(
-                    [Design.THUMBHOLE, [85, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Design.NORTH]])
-                self.cutlines.append([Design.LINE, [54, 63, 62, 66, 67, 70, 84]])
-                self.cutlines.append([Design.LINE, [85, 71, 68, 69, 65, 64, 57]])
+                    [PathStyle.THUMBHOLE, [85, self.__THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Direction.NORTH]])
+                self.cutlines.append([PathStyle.LINE, [54, 63, 62, 66, 67, 70, 84]])
+                self.cutlines.append([PathStyle.LINE, [85, 71, 68, 69, 65, 64, 57]])
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
