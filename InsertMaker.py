@@ -14,6 +14,6 @@ if __name__ == "__main__":
     # cardbox = CardBox("-c CardBox -C CARDBOX")
     # cardbox.create()
 
-    cardsheet = CardSheet("-c CardSheet -C CARDSHEET")
+    cardsheet = CardSheet()
     cardsheet.create()
 

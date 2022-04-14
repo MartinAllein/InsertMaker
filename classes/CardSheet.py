@@ -31,10 +31,9 @@ class CardSheet:
     __DEFAULT_Y_MEASURE = 55
 
     def __init__(self, arguments=""):
-        self.__init_variables()
 
         # parse vom cli
-        self.args = self.parse_arguments(arguments)
+        self.args = self.parse_arguments()
 
         if self.args.v:
             self.verbose = True
@@ -44,7 +43,7 @@ class CardSheet:
             if not self.args.C:
                 print("No section of config file\n-c <config-file> -C <section of config file>")
                 sys.exit()
-            self.__config_from_file(self.args.c, self.args.C)
+            self.__read_config(self.args.c, self.args.C)
 
         temp_name = f"{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
                     f"-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -55,9 +54,7 @@ class CardSheet:
         if not self.outfile:
             self.outfile = temp_name
 
-        # Set extension of outfile to .svg
-        if self.outfile[-4:] != '.svg':
-            self.outfile += '.svg'
+        self.outfile = Design.set_svg_extension(self.outfile)
 
         if self.verbose:
             self.__print_variables()
@@ -65,23 +62,25 @@ class CardSheet:
         # Convert all measures to thousands dpi
         self.__convert_all_to_thoudpi()
 
-    def __config_from_file(self, filename: str, section: str):
-        defaults = {'x offset': self.__DEFAULT_X_OFFSET,
-                    'y offset': self.__DEFAULT_Y_OFFSET,
-                    'x separation': self.__DEFAULT_X_SEPARATION,
-                    'y separation': self.__DEFAULT_Y_SEPARATION,
-                    'rows': self.__DEFAULT_COLUMNS,
-                    'columns': self.__DEFAULT_ROWS,
-                    'x measure': self.__DEFAULT_X_MEASURE,
-                    'y measure': self.__DEFAULT_Y_MEASURE,
-                    'corner radius': self.__DEFAULT_CORNER_RADIUS,
-                    'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
+    def __read_config(self, filename: str, section: str):
+        self.__set_defaults()
+
+        defaults = {'x offset': self.x_offset,
+                    'y offset': self.y_offset,
+                    'x separation': self.x_separation,
+                    'y separation': self.y_separation,
+                    'rows': self.column_count,
+                    'columns': self.row_count,
+                    'x measure': self.x_measure,
+                    'y measure': self.y_measure,
+                    'corner radius': self.corner_radius,
+                    'vertical separation': self.vertical_separation,
                     'project': "",
                     'filename': "",
                     'title': "",
                     }
 
-        config_file = 'config/' + filename + ".config"
+        config_file = 'config/' + Design.set_config_extension(filename)
         # Read default values from the config file
         if not os.path.isfile(config_file):
             print("Config file config/" + filename + " not found")
@@ -95,8 +94,8 @@ class CardSheet:
             print("Section " + section + " in config file config/" + filename + ".config not found")
             sys.exit()
 
-        self.project = config.get(section, 'project').strip('"')
-        self.outfile = config.get(section, 'filename').strip('"')
+        self.project = config.get(section, 'project')
+        self.outfile = config.get(section, 'filename')
         self.title = config.get(section, 'title').strip('"')
         self.x_offset = int(config.get(section, 'x offset'))
         self.y_offset = int(config.get(section, 'y offset'))
@@ -109,9 +108,10 @@ class CardSheet:
         self.corner_radius = int(config.get(section, 'corner radius'))
         self.vertical_separation = int(config.get(section, 'vertical separation'))
 
-        self.__print_variables()
+        if self.verbose:
+            self.__print_variables()
 
-    def __init_variables(self):
+    def __set_defaults(self):
 
         self.args_string = ' '.join(sys.argv[1:])
 
@@ -144,17 +144,14 @@ class CardSheet:
         self.verbose = False
 
     @staticmethod
-    def parse_arguments(arguments: str):
+    def parse_arguments():
         parser = argparse.ArgumentParser(add_help=False)
 
         parser.add_argument('-c', type=str, help="config File")
         parser.add_argument('-C', type=str, help="config section")
         parser.add_argument('-v', action="store_true", help="verbose")
 
-        if not arguments:
-            return parser.parse_args()
-
-        return parser.parse_args(arguments.split())
+        return parser.parse_args()
 
     def create(self):
         self.__init_design()
@@ -171,8 +168,6 @@ class CardSheet:
         output = ""
         for row in range(self.row_count):
             for col in range(self.column_count):
-                print(f"row {row}, column {col}")
-                print(f"{self.y_measure}, {self.y_measure}")
                 template = {'$ID$': row * self.column_count + col,
                             '$CUT$': base_cut,
                             '$TRANSLATE$': str(
@@ -185,8 +180,6 @@ class CardSheet:
                     temp = temp.replace(key, str(template[key]))
 
                 output += temp
-
-        print(output)
 
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
         self.template["$CUT$"] = output
@@ -294,7 +287,8 @@ class CardSheet:
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
 
-    def __draw_slot_hole_line(self, xml_string, start, delta):
+    @staticmethod
+    def __draw_slot_hole_line(xml_string, start, delta):
 
         # https://stackoverflow.com/questions/25640628/python-adding-lists-of-numbers-with-other-lists-of-numbers
         stop = [sum(values) for values in zip(start, delta)]
@@ -304,22 +298,13 @@ class CardSheet:
         return xml_string, stop
 
     def __print_variables(self):
-        print("-------------")
-        print(f"Length: {self.x_measure}\n"
-              f"Width: {self.y_measure}\n"
-              f"Project: {self.project}\n"
-              f"Filename: {self.outfile}\n"
-              f"Title: {self.title}\n"
-              f"corner radius: {self.corner_radius}"
-              )
+        print(self.__dict__)
 
     def __convert_all_to_thoudpi(self):
-        # convert all mm to thoudpi
-        self.x_offset = Design.mm_to_thoudpi(self.x_offset)
-        self.y_offset = Design.mm_to_thoudpi(self.y_offset)
-        self.x_measure = Design.mm_to_thoudpi(self.x_measure)
-        self.y_measure = Design.mm_to_thoudpi(self.y_measure)
-        self.x_separation = Design.mm_to_thoudpi(self.x_separation)
-        self.y_separation = Design.mm_to_thoudpi(self.y_separation)
-        self.corner_radius = Design.mm_to_thoudpi(self.corner_radius)
-        self.vertical_separation = Design.mm_to_thoudpi(self.vertical_separation)
+        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
+
+        toconvert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation", "y_separation", "corner_radius",
+                     "vertical_separation"]
+
+        for item in toconvert:
+            setattr(self, item, Design.mm_to_thoudpi(getattr(self, item)))

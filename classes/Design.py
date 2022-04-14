@@ -31,9 +31,9 @@ class Design(ABC):
     __DEFAULT_Y_LINE_SEPARATION = 7
 
     # Default path  and extension definitions
-    __DEFAULT_CONFIG_EXTENSION = "config"
-    __DEFAULT_CONFIG_PATH = "config"
-    __DEFAULT_TEMPLATE_PATH = "templates"
+    __CONFIG_EXTENSION = "config"
+    __CONFIG_PATH = "config"
+    __TEMPLATE_PATH = "templates"
 
     # Names for Configuration file elements
     __X_ORIGIN_CONFIG_NAME = "x origin"
@@ -132,13 +132,13 @@ class Design(ABC):
 
         delta = {
             Direction.NORTH: [[-smallradius, -smallradius, direction], [0, -2 * thumbholeradius, 1 - direction],
-                                [smallradius, -smallradius, direction]],
+                              [smallradius, -smallradius, direction]],
             Direction.SOUTH: [[smallradius, smallradius, direction], [0, 2 * thumbholeradius, 1 - direction],
-                                [-smallradius, smallradius, direction]],
+                              [-smallradius, smallradius, direction]],
             Direction.WEST: [[-smallradius, -smallradius, 1 - direction], [-2 * thumbholeradius, 0, direction],
-                               [-smallradius, +smallradius, 1 - direction]],
+                             [-smallradius, +smallradius, 1 - direction]],
             Direction.EAST: [[smallradius, smallradius, 1 - direction], [2 * thumbholeradius, 0, direction],
-                               [smallradius, -smallradius, 1 - direction]],
+                             [smallradius, -smallradius, 1 - direction]],
         }
 
         xmlstring = ""
@@ -217,13 +217,13 @@ class Design(ABC):
             f.write(template)
 
     @classmethod
-    def read_template(cls, template: str):
+    def read_template(cls, template: str) -> str:
         """Import the template"""
         string = ""
         if not template:
             raise "No template name given"
 
-        template_file = os.path.join(cls.__DEFAULT_TEMPLATE_PATH, template)
+        template_file = os.path.join(cls.__TEMPLATE_PATH, template)
         if not os.path.isfile(template_file):
             raise "Template file does not exist"
 
@@ -233,27 +233,24 @@ class Design(ABC):
         return string
 
     @staticmethod
-    def thoudpi_to_mm(value):
+    def thoudpi_to_mm(value: int) -> float:
         """ Convert values from tenthousandth of dpi to dpi """
         return round(value / Design.FACTOR, 2)
 
     @staticmethod
-    def mm_to_thoudpi(value):
+    def mm_to_thoudpi(value: float) -> int:
         return int(float(value) * Design.FACTOR)
 
-    def foobar(self):
-        pass
-
     @classmethod
-    def read_config(cls, filename, section=None, defaults=None):
+    def read_config(cls, filename: str, section: str = None, defaults: str = None):
         """ Read configuration from file"""
 
         # if the filename does not have the extension config, then add ist to the filename
-        print(cls.__DEFAULT_CONFIG_EXTENSION)
-        if filename[-7:] != "." + cls.__DEFAULT_CONFIG_EXTENSION:
-            filename += cls.__DEFAULT_CONFIG_EXTENSION
+        # +1 because of the dot in front of the extension
+        if filename[-len(cls.__CONFIG_EXTENSION + 1):] != "." + cls.__CONFIG_EXTENSION:
+            filename += cls.__CONFIG_EXTENSION
 
-        filename = os.path.join(cls.__DEFAULT_CONFIG_PATH, filename)
+        filename = os.path.join(cls.__CONFIG_PATH, filename)
 
         # Read default values from the config file
         if not os.path.isfile(filename):
@@ -302,6 +299,21 @@ class Design(ABC):
 
         cls.__initialized = True
 
+    @staticmethod
+    def set_svg_extension(filename: str) -> str:
+        return Design.set_file_extenstion(filename, "svg")
 
-Design.default_config()
+    @staticmethod
+    def set_config_extension(filename: str) -> str:
+        return Design.set_file_extenstion(filename, "config")
 
+    @staticmethod
+    def set_file_extenstion(filename: str, extension: str) -> str:
+        if not extension[0] == '.':
+            extension = "." + extension
+
+        # Set extension of outfile to .svg
+        if filename[-(len(extension)):] != extension:
+            filename += extension
+
+        return filename
