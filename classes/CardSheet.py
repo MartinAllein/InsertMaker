@@ -6,6 +6,7 @@ import sys
 from classes.Design import Design
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
+from classes.Config import Config
 
 
 class CardSheet:
@@ -30,16 +31,18 @@ class CardSheet:
     __DEFAULT_X_MEASURE = 89
     __DEFAULT_Y_MEASURE = 55
 
-    def __init__(self, arguments=""):
+    def __init__(self):
 
         # parse vom cli
         self.args = self.parse_arguments()
 
+        # Verbose output
         if self.args.v:
             self.verbose = True
 
+        # configuration file
         if self.args.c:
-            # config file was chosen
+            # configuration section
             if not self.args.C:
                 print("No section of config file\n-c <config-file> -C <section of config file>")
                 sys.exit()
@@ -63,8 +66,12 @@ class CardSheet:
         self.__convert_all_to_thoudpi()
 
     def __read_config(self, filename: str, section: str):
+        """ Read configuration from file"""
+
+        # load built in default values
         self.__set_defaults()
 
+        # set default values for reading the config file
         defaults = {'x offset': self.x_offset,
                     'y offset': self.y_offset,
                     'x separation': self.x_separation,
@@ -80,20 +87,9 @@ class CardSheet:
                     'title': "",
                     }
 
-        config_file = 'config/' + Design.set_config_extension(filename)
-        # Read default values from the config file
-        if not os.path.isfile(config_file):
-            print("Config file config/" + filename + " not found")
-            sys.exit()
+        config = Config.read_config(defaults, filename, section)
 
-        # read entries from the configuration file
-        config = configparser.ConfigParser(defaults=defaults)
-        config.read(config_file)
-
-        if not config.has_section(section):
-            print("Section " + section + " in config file config/" + filename + ".config not found")
-            sys.exit()
-
+        # Set all configuration values
         self.project = config.get(section, 'project')
         self.outfile = config.get(section, 'filename')
         self.title = config.get(section, 'title').strip('"')
@@ -108,10 +104,12 @@ class CardSheet:
         self.corner_radius = int(config.get(section, 'corner radius'))
         self.vertical_separation = int(config.get(section, 'vertical separation'))
 
+        # if verbose, then print all variables to the console
         if self.verbose:
             self.__print_variables()
 
     def __set_defaults(self):
+        """ Set default values for all variables from built in values"""
 
         self.args_string = ' '.join(sys.argv[1:])
 
@@ -303,8 +301,8 @@ class CardSheet:
     def __convert_all_to_thoudpi(self):
         """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
 
-        toconvert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation", "y_separation", "corner_radius",
-                     "vertical_separation"]
+        to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation", "y_separation", "corner_radius",
+                      "vertical_separation"]
 
-        for item in toconvert:
+        for item in to_convert:
             setattr(self, item, Design.mm_to_thoudpi(getattr(self, item)))
