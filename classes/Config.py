@@ -7,17 +7,17 @@ from classes.File import File
 class Config:
 
     __CONFIG_EXTENSION = "config"
-    __CONFIG_PATH =  "config" + os.path.sep
+    __CONFIG_PATH = "config" + os.path.sep
 
     @classmethod
     def read_config(cls, defaults: [], filename: str, section: str):
         """ Read configuration from file"""
 
-        config_file = cls.__config_path_and_extension(filename)
+        config_file = File.path_and_extension(cls.__CONFIG_PATH, filename, cls.__CONFIG_EXTENSION)
 
         # Test if configuration file exists
         if not os.path.isfile(config_file):
-            print("Config file " + config_file + " not found")
+            print("Config file " + config_file + " does not exist")
             sys.exit()
 
         # read entries from the configuration file
@@ -30,7 +30,3 @@ class Config:
             sys.exit()
 
         return config
-
-    @classmethod
-    def __config_path_and_extension(cls, filename: str) -> str:
-        return cls.__CONFIG_PATH + File.set_file_extenstion(filename, cls.__CONFIG_EXTENSION)

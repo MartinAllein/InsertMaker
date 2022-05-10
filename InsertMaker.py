@@ -14,6 +14,11 @@ if __name__ == "__main__":
     # cardbox = CardBox("-c CardBox -C CARDBOX")
     # cardbox.create()
 
+    # -c and -C indicate single item
+
+    # -p Project file that consits of multiple single items
+
+
     cardsheet = CardSheet()
     cardsheet.create()
 

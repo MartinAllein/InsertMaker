@@ -1,19 +1,18 @@
 import argparse
-import configparser
 from datetime import datetime
-import os
 import sys
 from classes.Design import Design
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 from classes.Config import Config
+from classes.Template import Template
+from classes.File import File
 
 
 class CardSheet:
     __DEFAULT_FILENAME = "CardSheet"
-    __DEFAULT_TEMPLATE = "templates/CardSheet.svg"
+    __DEFAULT_TEMPLATE = "CardSheet.svg"
     __DEFAULT_TEMPLATE_CARD = "Card.svg"
-    __DEFAULT_TEMPLATE_SEPARATED = "templates/CardSheet.svg"
 
     __DEFAULT_X_OFFSET = Design.x_offset
     __DEFAULT_Y_OFFSET = Design.y_offset
@@ -48,6 +47,7 @@ class CardSheet:
                 sys.exit()
             self.__read_config(self.args.c, self.args.C)
 
+        # Default filename
         temp_name = f"{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
                     f"-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
@@ -57,7 +57,7 @@ class CardSheet:
         if not self.outfile:
             self.outfile = temp_name
 
-        self.outfile = Design.set_svg_extension(self.outfile)
+        self.outfile = File.set_svg_extension(self.outfile)
 
         if self.verbose:
             self.__print_variables()
@@ -160,7 +160,7 @@ class CardSheet:
         self.template["$FILENAME$"] = self.outfile
         self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
 
-        card_template = Design.read_template(self.__DEFAULT_TEMPLATE_CARD)
+        card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
         base_cut = Design.draw_lines(self.corners, self.cutlines)
 
         output = ""

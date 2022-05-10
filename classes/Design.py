@@ -4,6 +4,7 @@ import xml.dom.minidom
 from abc import ABC, abstractmethod
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
+from classes.Template import Template
 
 import configparser
 
@@ -48,6 +49,7 @@ class Design(ABC):
     __UNIT_MM_TEXT = 'mm'
     __UNIT_MIL_TEXT = 'mil'
     __DEFAULT_UNIT = __UNIT_MM_TEXT
+
 
     xml_line = __DEFAULT_XML_LINE
     xml_path = __DEFAULT_XML_PATH
@@ -196,11 +198,7 @@ class Design(ABC):
         if TEMPLATE not in items:
             raise " No tamplate given"
 
-        if not os.path.isfile(items[TEMPLATE]):
-            raise "Template file does not exist"
-
-        with open(items[TEMPLATE], 'r') as f:
-            template = f.read()
+        template = Template.load_template(items[TEMPLATE])
 
         # modify FILENAME with leading and trailing $
         items["$FILENAME$"] = items[FILENAME]
@@ -217,7 +215,7 @@ class Design(ABC):
             f.write(template)
 
     @classmethod
-    def read_template(cls, template: str) -> str:
+    def read_template(cls, template: str, template_path: str) -> str:
         """Import the template"""
         string = ""
         if not template:
@@ -299,21 +297,4 @@ class Design(ABC):
 
         cls.__initialized = True
 
-    @staticmethod
-    def set_svg_extension(filename: str) -> str:
-        return Design.set_file_extenstion(filename, "svg")
 
-    @staticmethod
-    def set_config_extension(filename: str) -> str:
-        return Design.set_file_extenstion(filename, "config")
-
-    @staticmethod
-    def set_file_extenstion(filename: str, extension: str) -> str:
-        if not extension[0] == '.':
-            extension = "." + extension
-
-        # Set extension of outfile to .svg
-        if filename[-(len(extension)):] != extension:
-            filename += extension
-
-        return filename
