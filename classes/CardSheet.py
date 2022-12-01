@@ -87,7 +87,7 @@ class CardSheet:
                     'title': "",
                     }
 
-        config = Config.read_config(defaults, filename, section)
+        config = Config.read_config(filename, section, defaults)
 
         # Set all configuration values
         self.project = config.get(section, 'project')
