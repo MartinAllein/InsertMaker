@@ -71,9 +71,8 @@ class Project:
     def create(self):
         items = json.loads(self.items)
 
+        # iterate over all items in the project file
         for item in items:
-            print(f"-- {item} --")
-
             if len(item) == 1:
                 # Section is in the Project file
                 Single.create(self.project, item[self.__SECTION_ONLY], self.verbose)
