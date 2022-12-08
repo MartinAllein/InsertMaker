@@ -10,7 +10,13 @@ class Config:
 
     @classmethod
     def read_config(cls, filename: str, section: str, defaults=None):
-        """ Read configuration from file"""
+        """ Read the given section from a configuration file
+
+        :param filename: config filename
+        :param section: section of config file to read
+        :param defaults:
+        :return:
+        """
 
         if defaults is None:
             defaults = []
@@ -35,6 +41,12 @@ class Config:
 
     @classmethod
     def get_style(cls, filename: str, section: str):
+        """ Returns the style from a configuration within a configuration file
+
+        :param filename: configuration file
+        :param section: section of the configuration file where to look for the style
+        :return: style of the item (CardSheet, CardBox, ....)
+        """
         defaults = {'style': ""}
 
         config = cls.read_config(filename, section, defaults=defaults)
@@ -49,6 +61,11 @@ class Config:
 
     @classmethod
     def get_sections(cls, file_and_path: str):
+        """ Returns a list of all sections in a config file
+
+        :param file_and_path: filename and path of the config file to get all the sections
+        :return: list of section names that are in the given config file
+        """
         cls.file_exists(file_and_path)
         config = configparser.ConfigParser()
         try:
@@ -61,18 +78,30 @@ class Config:
 
             sys.exit()
 
+        # return all sections in the project file
         return config.sections()
 
     @staticmethod
     def section_exists(sections, section):
+        """ Test if a section exists in a list of sections
+
+        :param sections: list of sections
+        :param section: section to test
+        :return: true if found, fals if not found
+        """
         if section in sections:
             return True
         return False
 
     @staticmethod
     def file_exists(file):
+        """ Test if file exists
+
+        :param file: file wirh path to test
+        :return: true if exists, false if not
+        """
         # Test if configuration file exists
         if not os.path.isfile(file):
-            print("Config file " + file + " does not exist")
+            print("File " + file + " does not exist")
             sys.exit()
         return True
