@@ -13,7 +13,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(add_help=False)
 
     parser.add_argument('-c', type=str, help="Config File")
-    parser.add_argument('-C', type=str, required='-c' in sys.argv,  help="Config Section")
+    parser.add_argument('-C', type=str, required='-c' in sys.argv, help="Config Section")
     parser.add_argument('-p', type=str, help="Project File")
     # parser.add_argument('-P', type=str, required='-p' in sys.argv, help="Project Section")
     parser.add_argument('-v', action="store_true", help="verbose")
@@ -35,21 +35,25 @@ def single_file():
     # read config file and extract the style to dynamically load the class
     style = Config.get_style(args.c, args.C)
 
-    if style is None:
-        print(f"No style in config file {args.c} Section {args.C}")
+    # Import the style from the config file and load the same named class
+    try:
+        module = importlib.import_module("classes." + style)
+        class_ = getattr(module, style)
+    except ModuleNotFoundError:
+        print(f"Unknown style \"{style}\" in config file {args.c} section {args.C}")
+        sys.exit()
+    except Exception as inst:
+        print("Unknown Error")
+        print(type(inst))  # the exception instance
+        print(inst.args)  # arguments stored in .args
+        print(inst)
         sys.exit()
 
-    # Import the style from the config file and load the same named class
-    module = importlib.import_module("classes." + style)
-    class_ = getattr(module, style)
-    # invoke creation of the item
-    # class_().create()
-    foo = class_()
-    foo.create()
-
-    print("fdafdasfd")
+        # invoke creation of the item
+    design = class_()
 
     # execute the content
+    design.create()
 
 
 def project_file():

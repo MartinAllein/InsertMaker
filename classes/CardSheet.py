@@ -215,6 +215,7 @@ class CardSheet:
                             f" {viewport_y}"
 
         Design.write_to_file(self.template)
+        print(f"CardSheet \"{self.outfile}\" created")
 
     def __init_design(self):
         self.__init_base()
