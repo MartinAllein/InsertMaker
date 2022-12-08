@@ -9,7 +9,6 @@ def parse_arguments():
 
     :return: parsed arguments from command line
     """
-    # https://stackoverflow.com/questions/25626109/python-argparse-conditionally-required-arguments/70716254#70716254
     parser = argparse.ArgumentParser(add_help=False)
 
     parser.add_argument('-c', type=str, help="Config File")
@@ -23,21 +22,6 @@ def parse_arguments():
 
 if __name__ == "__main__":
     outfile = ""
-
-    # https://stackoverflow.com/questions/3430372/how-do-i-get-the-full-path-of-the-current-files-directory
-    # print(os.path.abspath(os.getcwd()))
-
-    # -l141 -w 97 -h 17.5 -d 5 -s 1.5 -o mbox
-    # itembox = ItemBox("-c ItemBox -C ITEMBOX -v")
-    # itembox.create()
-
-    # -l90 -w 60 -h 25.5  -b -f 20 -F 30 -u 5 -n 6 -o cardBox -c CardBox -C CARDBOX -v
-    # cardbox = CardBox("-c CardBox -C CARDBOX")
-    # cardbox.create()
-
-    # -c and -C indicate single item
-
-    # -p Project file that consits of multiple single items
 
     # parse vom cli
     args = parse_arguments()

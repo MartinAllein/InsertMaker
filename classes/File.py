@@ -3,6 +3,9 @@ import os
 
 class File:
 
+    # https://stackoverflow.com/questions/3430372/how-do-i-get-the-full-path-of-the-current-files-directory
+    # print(os.path.abspath(os.getcwd()))
+
     @classmethod
     def path_and_extension(cls, path: str, filename: str, extension: str) -> str:
         return os.path.join(path, cls.set_file_extension(filename, extension))
