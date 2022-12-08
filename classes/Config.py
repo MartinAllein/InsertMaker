@@ -6,7 +6,6 @@ from classes.File import File
 
 class Config:
     __CONFIG_EXTENSION = "config"
-    __CONFIG_PATH = "config" + os.path.sep
 
     @classmethod
     def read_config(cls, filename: str, section: str, defaults=None):
@@ -21,7 +20,7 @@ class Config:
         if defaults is None:
             defaults = []
 
-        config_file = File.path_and_extension(cls.__CONFIG_PATH, filename, cls.__CONFIG_EXTENSION)
+        config_file = File.path_and_extension("", filename, cls.__CONFIG_EXTENSION)
 
         # Test if configuration file exists
         if not os.path.isfile(config_file):

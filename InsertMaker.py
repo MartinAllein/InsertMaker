@@ -1,7 +1,7 @@
 import argparse
 import sys
-from classes.Config import Config
-import importlib
+from classes.Project import Project
+from classes.Single import Single
 
 
 def parse_arguments():
@@ -21,65 +21,11 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def single_file():
-    """ Single config file design
-
-    :return:
-    """
-
-    # configuration section is mandatory
-    if not args.c:
-        print("No section for config file\n-c <config-file> -C <section of config file>")
-        sys.exit()
-
-    # read config file and extract the style to dynamically load the class
-    style = Config.get_style(args.c, args.C)
-
-    # Import the style from the config file and load the same named class
-    try:
-        module = importlib.import_module("classes." + style)
-        class_ = getattr(module, style)
-    except ModuleNotFoundError:
-        print(f"Unknown style \"{style}\" in config file {args.c} section {args.C}")
-        sys.exit()
-    except Exception as inst:
-        print("Unknown Error")
-        print(type(inst))  # the exception instance
-        print(inst.args)  # arguments stored in .args
-        print(inst)
-        sys.exit()
-
-        # invoke creation of the item
-    design = class_()
-
-    # execute the content
-    design.create()
-
-
-def project_file():
-    """ Project with multiple configurations
-
-    """
-    # -p argument is mandatory
-    if not args.p:
-        print("No project file.\n-p <project-file>")
-        sys.exit()
-
-    # Test if "Project" section exists in project file
-    sections = Config.get_sections(args.p)
-    if not Config.section_exists(sections, "Project"):
-        print(f"Missing section Project in file {args.p}")
-
-    # read Project section
-
-    # read names of all other sections
-    for section in sections:
-        if not section == "Project":
-            print(section)
-
-
 if __name__ == "__main__":
     outfile = ""
+
+    # https://stackoverflow.com/questions/3430372/how-do-i-get-the-full-path-of-the-current-files-directory
+    # print(os.path.abspath(os.getcwd()))
 
     # -l141 -w 97 -h 17.5 -d 5 -s 1.5 -o mbox
     # itembox = ItemBox("-c ItemBox -C ITEMBOX -v")
@@ -97,15 +43,19 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     # Verbose output
+    verbose = False
+
     if args.v:
         verbose = True
 
     # configuration file
     if args.c:
-        single_file()
-    else:
-        if args.p:
-            project_file()
+        # single_file()
+        single = Single.create(args.c, args.C, verbose)
+        sys.exit(0)
 
-    # cardsheet = CardSheet()
-    # cardsheet.create()
+    if args.p:
+        project = Project(args.p, verbose)
+        project.create()
+        sys.exit(0)
+

@@ -33,7 +33,6 @@ class Design(ABC):
 
     # Default path  and extension definitions
     __CONFIG_EXTENSION = "config"
-    __CONFIG_PATH = "config"
     __TEMPLATE_PATH = "templates"
 
     # Names for Configuration file elements
@@ -223,7 +222,7 @@ class Design(ABC):
 
         template_file = os.path.join(cls.__TEMPLATE_PATH, template)
         if not os.path.isfile(template_file):
-            raise "Template file does not exist"
+            raise f"Template file {template_file} does not exist"
 
         with open(template_file, 'r') as f:
             string = f.read()
@@ -247,8 +246,6 @@ class Design(ABC):
         # +1 because of the dot in front of the extension
         if filename[-len(cls.__CONFIG_EXTENSION + 1):] != "." + cls.__CONFIG_EXTENSION:
             filename += cls.__CONFIG_EXTENSION
-
-        filename = os.path.join(cls.__CONFIG_PATH, filename)
 
         # Read default values from the config file
         if not os.path.isfile(filename):

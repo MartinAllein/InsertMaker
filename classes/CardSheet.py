@@ -30,22 +30,19 @@ class CardSheet:
     __DEFAULT_X_MEASURE = 89
     __DEFAULT_Y_MEASURE = 55
 
-    def __init__(self):
+    def __init__(self, config: str, section: str, verbose=False):
 
-        # parse vom cli
-        self.args = self.parse_arguments()
+        if config is None or config == "":
+            print(f"No configuration file for Design CardSheet.")
+            sys.exit()
 
-        # Verbose output
-        if self.args.v:
-            self.verbose = True
+        if section is None or section == "":
+            print(f"No section for configuration file {config}")
+            sys.exit()
 
-        # configuration file
-        if self.args.c:
-            # configuration section
-            if not self.args.C:
-                print("No section of config file\n-c <config-file> -C <section of config file>")
-                sys.exit()
-            self.__read_config(self.args.c, self.args.C)
+        self.verbose = verbose
+
+        self.__read_config(config, section)
 
         # Default filename
         temp_name = f"{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
