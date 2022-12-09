@@ -30,7 +30,7 @@ class CardSheet:
     __DEFAULT_X_MEASURE = 89
     __DEFAULT_Y_MEASURE = 55
 
-    def __init__(self, config: str, section: str, verbose=False):
+    def __init__(self, config: str, section: str, verbose=False, **kwargs):
 
         if config is None or config == "":
             print(f"No configuration file for Design CardSheet.")
@@ -39,6 +39,10 @@ class CardSheet:
         if section is None or section == "":
             print(f"No section for configuration file {config}")
             sys.exit()
+
+        self.options = {}
+        if 'options' in kwargs:
+            self.options = kwargs['options']
 
         self.verbose = verbose
 
@@ -87,19 +91,33 @@ class CardSheet:
         config = Config.read_config(filename, section, defaults)
 
         # Set all configuration values
-        self.project = config.get(section, 'project')
+        if 'project name' in self.options:
+            self.project = self.options['project name']
+        else:
+            self.project = config.get(section, 'project')
+
         self.outfile = config.get(section, 'filename')
         self.title = config.get(section, 'title').strip('"')
-        self.x_offset = int(config.get(section, 'x offset'))
-        self.y_offset = int(config.get(section, 'y offset'))
-        self.x_separation = int(config.get(section, 'x separation'))
-        self.y_separation = int(config.get(section, 'y separation'))
+
+        if 'x offset' in self.options:
+            self.project = self.options['x offset']
+        else:
+            self.x_offset = float(config.get(section, 'x offset'))
+
+        if 'y offset' in self.options:
+            self.project = self.options['y offset']
+        else:
+            self.y_offset = float(config.get(section, 'y offset'))
+
+        self.x_separation = float(config.get(section, 'x separation'))
+        self.y_separation = float(config.get(section, 'y separation'))
         self.row_count = int(config.get(section, 'rows'))
         self.column_count = int(config.get(section, 'columns'))
-        self.x_measure = int(config.get(section, 'x measure'))
-        self.y_measure = int(config.get(section, 'y measure'))
-        self.corner_radius = int(config.get(section, 'corner radius'))
-        self.vertical_separation = int(config.get(section, 'vertical separation'))
+        self.x_measure = float(config.get(section, 'x measure'))
+        self.y_measure = float(config.get(section, 'y measure'))
+        self.corner_radius = float(config.get(section, 'corner radius'))
+        self.vertical_separation = float(config.get(section, 'vertical separation'))
+
 
         # if verbose, then print all variables to the console
         if self.verbose:
@@ -135,8 +153,6 @@ class CardSheet:
         self.bottom_y = 0
         self.inner_dimensions = []
         self.outer_dimensions = []
-
-        self.verbose = False
 
     @staticmethod
     def parse_arguments():

@@ -7,8 +7,10 @@ from classes.Design import Design
 
 
 class Project:
-    __DEFAULT_X_OFFSET = Design.x_offset
-    __DEFAULT_Y_OFFSET = Design.y_offset
+    # __DEFAULT_X_OFFSET = Design.x_offset
+    # __DEFAULT_Y_OFFSET = Design.y_offset
+    # __DEFAULT_THICKNESS = Design.thickness
+
     __PROJECT_SECTION = "Project"
     __CONFIG = 0
     __SECTION = 1
@@ -44,29 +46,40 @@ class Project:
         # load built in default values
         self.__set_defaults()
 
-        # set default values for reading the config file
-        defaults = {'x offset': self.x_offset,
-                    'y offset': self.y_offset,
-                    'name': self.name,
-                    'items': self.items,
-                    }
-        config = Config.read_config(filename, section, defaults)
+        config = Config.read_config(filename, section)
 
-        self.name = config.get(self.__PROJECT_SECTION, 'name')
+        if not config.has_option(self.__PROJECT_SECTION,'items'):
+            print(f"Project configuration {filename} has no items!")
+            sys.exit()
+
         self.items = config.get(self.__PROJECT_SECTION, 'items')
-        self.x_offset = int(config.get(section, 'x offset'))
-        self.y_offset = int(config.get(section, 'y offset'))
-        print(self.items)
-        print(self.name)
-        print(self.x_offset)
-        print(self.y_offset)
+
+        self.options = {}
+
+        if config.has_option(self.__PROJECT_SECTION,'name'):
+            self.name = config.get(self.__PROJECT_SECTION, 'name')
+            self.options["project name"] = self.name
+
+        if config.has_option(self.__PROJECT_SECTION,'x offset'):
+            self.x_offset = float(config.get(section, 'x offset'))
+            self.options['x offset'] = self.x_offset
+
+        if config.has_option(self.__PROJECT_SECTION,'y offset'):
+            self.y_offset = float(config.get(section, 'y offset'))
+            self.options['y offset'] = self.y_offset
+
+        if config.has_option(self.__PROJECT_SECTION,'thickness'):
+            self.thickness = float(config.get(section, 'thickness'))
+            self.options['thickness'] = self.thickness
 
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
-        self.name = ""
-        self.x_offset = self.__DEFAULT_X_OFFSET
-        self.y_offset = self.__DEFAULT_Y_OFFSET
+        self.name = None
+        self.thickness = None
+        self.x_offset = None
+        self.y_offset = None
         self.items = []
+        self.options = None
 
     def create(self):
         items = json.loads(self.items)
@@ -75,7 +88,7 @@ class Project:
         for item in items:
             if len(item) == 1:
                 # Section is in the Project file
-                Single.create(self.project, item[self.__SECTION_ONLY], self.verbose)
+                Single.create(self.project, item[self.__SECTION_ONLY], self.verbose, options=self.options)
             elif len(item) == 2:
                 # section is in a separate file
-                Single.create(item[self.__CONFIG], item[self.__SECTION], self.verbose)
+                Single.create(item[self.__CONFIG], item[self.__SECTION], self.verbose, options=self.options)

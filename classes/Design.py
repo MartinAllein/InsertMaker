@@ -2,6 +2,7 @@ import sys
 import os
 import xml.dom.minidom
 from abc import ABC, abstractmethod
+from classes.Config import Config
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 from classes.Template import Template
@@ -22,14 +23,15 @@ class Design(ABC):
 
     __DEFAULT_SECTION_NAME = "STANDARD"
 
-    __DEFAULT_CONFIG_FILE = "InsertMaker.config"
+    __DEFAULT_CONFIG_FILE = "config/InsertMaker.config"
     __DEFAULT_X_ORIGIN = 0
     __DEFAULT_Y_ORIGIN = 0
 
-    # Fallback settings when Design.config is missing
+    # Fallback settings when InsertMaker.config is missing
     __DEFAULT_X_OFFSET = 0
     __DEFAULT_Y_OFFSET = 0
     __DEFAULT_Y_LINE_SEPARATION = 7
+    __DEFAULT_THICKNESS = 1.5
 
     # Default path  and extension definitions
     __CONFIG_EXTENSION = "config"
@@ -40,6 +42,7 @@ class Design(ABC):
     __Y_ORIGIN_CONFIG_NAME = "y origin"
     __X_OFFSET_CONFIG_NAME = "x offset"
     __Y_OFFSET_CONFIG_NAME = "y offset"
+    __THICKNESS_CONFIG_NAME = "thickness"
     __Y_LINE_SEPARATION_NAME = "y line separation"
     __UNIT_CONFIG_NAME = "unit"
     __XML_LINE_CONFIG_NAME = "xml line"
@@ -49,13 +52,13 @@ class Design(ABC):
     __UNIT_MIL_TEXT = 'mil'
     __DEFAULT_UNIT = __UNIT_MM_TEXT
 
-
     xml_line = __DEFAULT_XML_LINE
     xml_path = __DEFAULT_XML_PATH
     x_origin = __DEFAULT_X_ORIGIN
     y_origin = __DEFAULT_Y_ORIGIN
     x_offset = __DEFAULT_X_OFFSET
     y_offset = __DEFAULT_Y_OFFSET
+    thickness = __DEFAULT_THICKNESS
     y_line_separation = __DEFAULT_Y_LINE_SEPARATION
     unit_mm = True
 
@@ -272,19 +275,20 @@ class Design(ABC):
                     cls.__Y_ORIGIN_CONFIG_NAME: 0,
                     cls.__X_OFFSET_CONFIG_NAME: 0,
                     cls.__Y_OFFSET_CONFIG_NAME: 0,
+                    cls.__DEFAULT_THICKNESS: cls.__DEFAULT_THICKNESS,
                     cls.__Y_LINE_SEPARATION_NAME: cls.__DEFAULT_Y_LINE_SEPARATION,
                     cls.__XML_LINE_CONFIG_NAME: cls.__DEFAULT_XML_LINE,
                     cls.__XML_PATH_CONFIG_NAME: cls.__DEFAULT_XML_PATH,
                     cls.__UNIT_CONFIG_NAME: cls.__DEFAULT_UNIT
                     }
 
-        configuration = cls.read_config(filename=cls.__DEFAULT_CONFIG_FILE, section=cls.__DEFAULT_SECTION_NAME,
-                                        defaults=defaults)
+        configuration = Config.read_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
 
         cls.x_origin = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__X_ORIGIN_CONFIG_NAME))
         cls.y_origin = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_ORIGIN_CONFIG_NAME))
         cls.x_offset = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__X_OFFSET_CONFIG_NAME))
         cls.y_offset = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_OFFSET_CONFIG_NAME))
+        cls.thickness = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__THICKNESS_CONFIG_NAME))
         cls.y_line_separation = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_LINE_SEPARATION_NAME))
         cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_NAME)
         cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_NAME)
@@ -295,3 +299,4 @@ class Design(ABC):
         cls.__initialized = True
 
 
+Design.default_config()
