@@ -100,12 +100,12 @@ class CardSheet:
         self.title = config.get(section, 'title').strip('"')
 
         if 'x offset' in self.options:
-            self.project = self.options['x offset']
+            self.x_offset = self.options['x offset']
         else:
             self.x_offset = float(config.get(section, 'x offset'))
 
         if 'y offset' in self.options:
-            self.project = self.options['y offset']
+            self.y_offset = self.options['y offset']
         else:
             self.y_offset = float(config.get(section, 'y offset'))
 
@@ -143,6 +143,7 @@ class CardSheet:
         self.column_count = self.__DEFAULT_ROWS
         self.vertical_separation = self.__DEFAULT_VERTICAL_SEPARATION
 
+        # noinspection DuplicatedCode
         self.template = {}
 
         self.corners = []
@@ -165,6 +166,7 @@ class CardSheet:
         return parser.parse_args()
 
     def create(self):
+        # noinspection DuplicatedCode
         self.__init_design()
 
         self.template["FILENAME"] = self.outfile
@@ -251,18 +253,39 @@ class CardSheet:
         #       |                              |
         #  p    3--7-----------------------11-15
 
+        # Separation x = 0
+        # |--------|--------|
+        # |        |        |
+        # |--------|--------|
+        #
+        # |--------|--------|
+        # |        |        |
+        # |--------|--------|
+
+        # Separation y = 0
+        # |--------| |--------|
+        # |        | |        |
+        # |--------| |--------|
+        # |        | |        |
+        # |--------| |--------|
+
+        # Separation x = 0, y = 0
+        # |--------|--------|
+        # |        |        |
+        # |--------|--------|
+        # |        |        |
+        # |--------|--------|
+
         x_measure = self.x_measure
         y_meaure = self.y_measure
         corner_radius = self.corner_radius
 
-        # noinspection DuplicatedCode
         # X - Points
         a = int(self.x_offset)
         b = a + corner_radius
         d = a + x_measure
         c = d - corner_radius
 
-        # noinspection DuplicatedCode
         # Y - Points
         m = int(self.y_offset)
         n = m + corner_radius
