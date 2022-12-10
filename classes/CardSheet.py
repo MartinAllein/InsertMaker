@@ -54,8 +54,13 @@ class CardSheet:
         self.__read_config(config, section)
 
         # Default filename
-        temp_name = f"{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
-                    f"-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        temp_name = ""
+
+        if self.options != "":
+            temp_name = f"{self.project}-"
+
+        temp_name = f"{temp_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
+                    f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         if not self.title:
             self.title = temp_name
