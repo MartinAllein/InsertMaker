@@ -112,6 +112,9 @@ class Design(ABC):
         else:
             diameter = abs(end_x - start_x)
 
+        if diameter == 0:
+            return ""
+
         return Design.__draw_arc(start_x, start_y, int(diameter / 2), Direction.CW, end_x, end_y)
 
     @staticmethod
@@ -126,6 +129,9 @@ class Design(ABC):
             radius = abs(end_y - start_y)
         else:
             radius = abs(end_x - start_x)
+
+        if radius == 0:
+            return ""
 
         return Design.__draw_arc(start_x, start_y, int(radius), 1, end_x, end_y)
 
@@ -233,7 +239,7 @@ class Design(ABC):
         return string
 
     @staticmethod
-    def thoudpi_to_mm(value: int) -> float:
+    def thoudpi_to_mm(value: float) -> float:
         """ Convert values from tenthousandth of dpi to dpi """
         return round(value / Design.FACTOR, 2)
 

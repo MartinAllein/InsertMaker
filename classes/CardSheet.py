@@ -30,6 +30,11 @@ class CardSheet:
     __DEFAULT_X_MEASURE = 89
     __DEFAULT_Y_MEASURE = 55
 
+    __CUTLINES_CARD_FULL = 0
+    __CUTLINES_CARD_LEFT_OPEN = 1
+    __CUTLINES_CARD_TOP_OPEN = 2
+    __CUTLINES_CARD_TOPLEFT_OPEN = 3
+
     def __init__(self, config: str, section: str, verbose=False, **kwargs):
 
         if config is None or config == "":
@@ -118,7 +123,6 @@ class CardSheet:
         self.corner_radius = float(config.get(section, 'corner radius'))
         self.vertical_separation = float(config.get(section, 'vertical separation'))
 
-
         # if verbose, then print all variables to the console
         if self.verbose:
             self.__print_variables()
@@ -176,13 +180,45 @@ class CardSheet:
         self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
 
         card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
-        base_cut = Design.draw_lines(self.corners, self.cutlines)
+
+        base_cut = [None] * 4
+        base_cut[self.__CUTLINES_CARD_FULL] = Design.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL])
+        base_cut[self.__CUTLINES_CARD_TOP_OPEN] = Design.draw_lines(self.corners,
+                                                                    self.cutlines[self.__CUTLINES_CARD_TOP_OPEN])
+        base_cut[self.__CUTLINES_CARD_LEFT_OPEN] = Design.draw_lines(self.corners,
+                                                                     self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN])
+        base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN] = Design.draw_lines(self.corners, self.cutlines[
+            self.__CUTLINES_CARD_TOPLEFT_OPEN])
+        # base_cut = Design.draw_lines(self.corners, self.cutlines)
 
         output = ""
         for row in range(self.row_count):
             for col in range(self.column_count):
-                template = {'$ID$': row * self.column_count + col,
-                            '$CUT$': base_cut,
+                cut = base_cut[self.__CUTLINES_CARD_FULL]
+
+                if self.x_separation == 0.0 and self.y_separation != 0.0:
+                    # Cards are ordered in rows. Left is full others left open
+                    if col != 0:
+                        cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
+
+                if self.x_separation != 0.0 and self.y_separation == 0.0:
+                    # Cards are ordered in columns. Top is full others left open
+                    if row != 0:
+                        cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
+
+                if self.x_separation == 0.0 and self.y_separation == 0.0:
+                    # No Separation
+                    if row == 0 and col != 0:
+                        if col != 0:
+                            cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
+                    elif row != 0 and col == 0:
+                        if row != 0:
+                            cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
+                    elif row != 0 and col != 0:
+                        cut = base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN]
+
+                template = {'$ID$': f"{row} - {col}",
+                            '$CUT$': cut,
                             '$TRANSLATE$': str(
                                 Design.thoudpi_to_dpi((self.x_measure + self.x_separation) * col)) + ", " + str(
                                 Design.thoudpi_to_dpi((self.y_measure + self.y_separation) * row))
@@ -255,25 +291,25 @@ class CardSheet:
 
         # Separation x = 0
         # |--------|--------|
-        # |        |        |
+        # |  F     |  LO    |
         # |--------|--------|
         #
         # |--------|--------|
-        # |        |        |
+        # |  F     |  LO    |
         # |--------|--------|
 
         # Separation y = 0
         # |--------| |--------|
-        # |        | |        |
+        # |   F    | |   F    |
         # |--------| |--------|
-        # |        | |        |
+        # |   TO   | |   TO   |
         # |--------| |--------|
 
         # Separation x = 0, y = 0
         # |--------|--------|
-        # |        |        |
+        # |   F    |  LO    |
         # |--------|--------|
-        # |        |        |
+        # |   TO   |  TLO   |
         # |--------|--------|
 
         x_measure = self.x_measure
@@ -309,10 +345,41 @@ class CardSheet:
                         [d, m], [d, n], [d, o], [d, p]
                         ]
 
-        self.cutlines = [
+        self.cutlines = [None] * 4
+        self.cutlines[self.__CUTLINES_CARD_FULL] = [
             # Top upper, middle left and right, Bottom lower
             [PathStyle.PAIR,
              [1, 2, 4, 8, 13, 14, 7, 11]],
+            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+        ]
+
+        self.cutlines[self.__CUTLINES_CARD_TOP_OPEN] = [
+            # Top upper, middle left and right, Bottom lower
+            [PathStyle.PAIR,
+             [1, 2, 13, 14, 7, 11]],
+            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+        ]
+
+        self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN] = [
+            # Top upper, middle left and right, Bottom lower
+            [PathStyle.PAIR,
+             [4, 8, 13, 14, 7, 11]],
+            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+        ]
+
+        self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN] = [
+            # Top upper, middle left and right, Bottom lower
+            [PathStyle.PAIR,
+             [13, 14, 7, 11]],
             [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
             [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
             [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
