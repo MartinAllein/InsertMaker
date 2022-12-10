@@ -6,11 +6,9 @@ from classes.Config import Config
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 from classes.Template import Template
-
-import configparser
+from classes.File import File
 
 FILENAME = 'FILENAME'
-
 TEMPLATE = 'TEMPLATE'
 
 
@@ -28,8 +26,8 @@ class Design(ABC):
     __DEFAULT_Y_ORIGIN = 0
 
     # Fallback settings when InsertMaker.config is missing
-    __DEFAULT_X_OFFSET = 0
-    __DEFAULT_Y_OFFSET = 0
+    _DEFAULT_X_OFFSET = 1.0
+    _DEFAULT_Y_OFFSET = 2.0
     __DEFAULT_Y_LINE_SEPARATION = 7
     __DEFAULT_THICKNESS = 1.5
 
@@ -56,14 +54,19 @@ class Design(ABC):
     xml_path = __DEFAULT_XML_PATH
     x_origin = __DEFAULT_X_ORIGIN
     y_origin = __DEFAULT_Y_ORIGIN
-    x_offset = __DEFAULT_X_OFFSET
-    y_offset = __DEFAULT_Y_OFFSET
     thickness = __DEFAULT_THICKNESS
     y_line_separation = __DEFAULT_Y_LINE_SEPARATION
     unit_mm = True
 
     FACTOR = 720000 / 25.4
     __default_configuration = {}
+
+    def __init__(self):
+        self.outfile = ""
+        self.title = ""
+        self.x_offset = self._DEFAULT_X_OFFSET
+        self.y_offset = self._DEFAULT_Y_OFFSET
+        self.project = ""
 
     @abstractmethod
     def create(self):
@@ -303,6 +306,66 @@ class Design(ABC):
             cls.unit_mm = False
 
         cls.__initialized = True
+
+    def banane(self):
+        print(self.x_offset)
+
+    @staticmethod
+    def validate_config_and_section(classname, config: str, section: str):
+        if config is None or config == "":
+            print(f"No configuration file for Design {classname}")
+            sys.exit()
+
+        if section is None or section == "":
+            print(f"No section for configuration file {config}")
+            sys.exit()
+
+    @staticmethod
+    def get_options(value):
+        options = {}
+        if 'options' in value:
+            options = value['options']
+
+        return options
+
+    def convert_all_to_thoudpi(self, to_convert):
+        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
+
+        for item in to_convert:
+            setattr(self, item, Design.mm_to_thoudpi(getattr(self, item)))
+
+    def import_from_config(self, config, section, options):
+        # Set all configuration values
+        if 'project name' in options:
+            self.project = options['project name']
+        else:
+            self.project = config.get(section, 'project')
+
+        self.outfile = config.get(section, 'filename')
+
+        self.title = config.get(section, 'title').strip('"')
+
+        if 'x offset' in options:
+            self.x_offset = options['x offset']
+        else:
+            self.x_offset = float(config.get(section, 'x offset'))
+
+        if 'y offset' in options:
+            self.y_offset = options['y offset']
+        else:
+            self.y_offset = float(config.get(section, 'y offset'))
+
+        if 'project' in options:
+            self.project = options['project']
+
+    def set_title_and_outfile(self, name: str):
+        if not self.title:
+            self.title = name
+
+        if not self.outfile:
+            self.outfile = name
+
+        self.outfile = File.set_svg_extension(self.outfile)
 
 
 Design.default_config()

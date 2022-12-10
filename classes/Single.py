@@ -14,7 +14,7 @@ class Single:
 
         # configuration section is mandatory
         if not config or config == "":
-            print("No section for config file\n-c <config-file> -C <section of config file>")
+            print(f"No section for config file {config}\n-c <config-file> -C <section of config file>")
             sys.exit()
 
         # read config file and extract the style to dynamically load the class

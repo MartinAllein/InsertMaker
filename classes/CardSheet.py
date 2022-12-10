@@ -9,13 +9,10 @@ from classes.Template import Template
 from classes.File import File
 
 
-class CardSheet:
+class CardSheet(Design):
     __DEFAULT_FILENAME = "CardSheet"
     __DEFAULT_TEMPLATE = "CardSheet.svg"
     __DEFAULT_TEMPLATE_CARD = "Card.svg"
-
-    __DEFAULT_X_OFFSET = Design.x_offset
-    __DEFAULT_Y_OFFSET = Design.y_offset
 
     __DEFAULT_COLUMNS = 1
     __DEFAULT_ROWS = 1
@@ -36,19 +33,10 @@ class CardSheet:
     __CUTLINES_CARD_TOPLEFT_OPEN = 3
 
     def __init__(self, config: str, section: str, verbose=False, **kwargs):
+        super().__init__()
+        self.validate_config_and_section(__class__.__name__, config, section)
 
-        if config is None or config == "":
-            print(f"No configuration file for Design CardSheet.")
-            sys.exit()
-
-        if section is None or section == "":
-            print(f"No section for configuration file {config}")
-            sys.exit()
-
-        self.options = {}
-        if 'options' in kwargs:
-            self.options = kwargs['options']
-
+        self.options = self.get_options(kwargs)
         self.verbose = verbose
 
         self.__read_config(config, section)
@@ -56,25 +44,23 @@ class CardSheet:
         # Default filename
         temp_name = ""
 
-        if self.options != "":
+        if self.project != "":
             temp_name = f"{self.project}-"
 
+        # name is dependend of the design
         temp_name = f"{temp_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
                     f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        if not self.title:
-            self.title = temp_name
-
-        if not self.outfile:
-            self.outfile = temp_name
-
-        self.outfile = File.set_svg_extension(self.outfile)
+        self.set_title_and_outfile(temp_name)
 
         if self.verbose:
             self.__print_variables()
 
         # Convert all measures to thousands dpi
-        self.__convert_all_to_thoudpi()
+        to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation",
+                      "y_separation", "corner_radius", "vertical_separation"]
+
+        self.convert_all_to_thoudpi(to_convert)
 
     def __read_config(self, filename: str, section: str):
         """ Read configuration from file"""
@@ -100,24 +86,7 @@ class CardSheet:
 
         config = Config.read_config(filename, section, defaults)
 
-        # Set all configuration values
-        if 'project name' in self.options:
-            self.project = self.options['project name']
-        else:
-            self.project = config.get(section, 'project')
-
-        self.outfile = config.get(section, 'filename')
-        self.title = config.get(section, 'title').strip('"')
-
-        if 'x offset' in self.options:
-            self.x_offset = self.options['x offset']
-        else:
-            self.x_offset = float(config.get(section, 'x offset'))
-
-        if 'y offset' in self.options:
-            self.y_offset = self.options['y offset']
-        else:
-            self.y_offset = float(config.get(section, 'y offset'))
+        self.import_from_config(config, section, self.options)
 
         self.x_separation = float(config.get(section, 'x separation'))
         self.y_separation = float(config.get(section, 'y separation'))
@@ -140,12 +109,7 @@ class CardSheet:
         self.x_measure = 0.0
         self.y_measure = 0.0
         self.corner_radius = 0.0
-        self.project = ""
-        self.outfile = ""
-        self.title = ""
 
-        self.x_offset = self.__DEFAULT_X_OFFSET
-        self.y_offset = self.__DEFAULT_Y_OFFSET
         self.x_separation = self.__DEFAULT_X_SEPARATION
         self.y_separation = self.__DEFAULT_Y_SEPARATION
         self.row_count = self.__DEFAULT_COLUMNS
@@ -407,7 +371,7 @@ class CardSheet:
     def __print_variables(self):
         print(self.__dict__)
 
-    def __convert_all_to_thoudpi(self):
+    def __convert_all_to_thoudpi_old(self):
         """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
 
         to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation", "y_separation", "corner_radius",

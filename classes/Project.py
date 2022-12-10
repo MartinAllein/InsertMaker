@@ -3,13 +3,9 @@ import json
 import sys
 from classes.Single import Single
 from classes.Config import Config
-from classes.Design import Design
 
 
 class Project:
-    # __DEFAULT_X_OFFSET = Design.x_offset
-    # __DEFAULT_Y_OFFSET = Design.y_offset
-    # __DEFAULT_THICKNESS = Design.thickness
 
     __PROJECT_SECTION = "Project"
     __CONFIG = 0
@@ -72,6 +68,10 @@ class Project:
             self.thickness = float(config.get(section, 'thickness'))
             self.options['thickness'] = self.thickness
 
+        if config.has_option(self.__PROJECT_SECTION,'thickness'):
+            self.thickness = float(config.get(section, 'thickness'))
+            self.options['thickness'] = self.thickness
+
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
         self.name = None
@@ -80,6 +80,7 @@ class Project:
         self.y_offset = None
         self.items = []
         self.options = None
+        self.config_path = None
 
     def create(self):
         items = json.loads(self.items)
