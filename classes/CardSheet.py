@@ -1,12 +1,10 @@
 import argparse
-from datetime import datetime
 import sys
+from datetime import datetime
 from classes.Design import Design
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
-from classes.Config import Config
 from classes.Template import Template
-from classes.File import File
 
 
 class CardSheet(Design):
@@ -34,59 +32,41 @@ class CardSheet(Design):
 
     def __init__(self, config: str, section: str, verbose=False, **kwargs):
         super().__init__()
-        self.validate_config_and_section(__class__.__name__, config, section)
-
-        self.options = self.get_options(kwargs)
-        self.verbose = verbose
-
-        self.__read_config(config, section)
-
-        # Default filename
-        temp_name = ""
-
-        if self.project != "":
-            temp_name = f"{self.project}-"
-
-        # name is dependend of the design
-        temp_name = f"{temp_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
-                    f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-
-        self.set_title_and_outfile(temp_name)
-
-        if self.verbose:
-            self.__print_variables()
-
-        # Convert all measures to thousands dpi
-        to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation",
-                      "y_separation", "corner_radius", "vertical_separation"]
-
-        self.convert_all_to_thoudpi(to_convert)
-
-    def __read_config(self, filename: str, section: str):
-        """ Read configuration from file"""
 
         # load built in default values
         self.__set_defaults()
 
-        # set default values for reading the config file
-        defaults = {'x offset': self.x_offset,
-                    'y offset': self.y_offset,
-                    'x separation': self.x_separation,
-                    'y separation': self.y_separation,
-                    'rows': self.column_count,
-                    'columns': self.row_count,
-                    'x measure': self.x_measure,
-                    'y measure': self.y_measure,
-                    'corner radius': self.corner_radius,
-                    'vertical separation': self.vertical_separation,
-                    'project': "",
-                    'filename': "",
-                    'title': "",
-                    }
+        payload = {}
 
-        config = Config.read_config(filename, section, defaults)
+        if 'options' in kwargs:
+            payload['options'] = kwargs['options']
 
-        self.import_from_config(config, section, self.options)
+        project_name = ""
+        if 'project name' in payload['options']:
+            project_name = f"{payload['options']['project name']}-"
+
+        payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
+                                  f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+        payload['convert_values'] = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation",
+                                     "y_separation", "corner_radius", "vertical_separation"]
+
+        payload['default_values'] = {'x offset': self.x_offset,
+                                     'y offset': self.y_offset,
+                                     'x separation': self.x_separation,
+                                     'y separation': self.y_separation,
+                                     'rows': self.column_count,
+                                     'columns': self.row_count,
+                                     'x measure': self.x_measure,
+                                     'y measure': self.y_measure,
+                                     'corner radius': self.corner_radius,
+                                     'vertical separation': self.vertical_separation,
+                                     'project name': "",
+                                     'filename': "",
+                                     'title': "",
+                                     }
+
+        config = super().configuration(config, section, verbose, payload)
 
         self.x_separation = float(config.get(section, 'x separation'))
         self.y_separation = float(config.get(section, 'y separation'))
@@ -97,9 +77,11 @@ class CardSheet(Design):
         self.corner_radius = float(config.get(section, 'corner radius'))
         self.vertical_separation = float(config.get(section, 'vertical separation'))
 
-        # if verbose, then print all variables to the console
-        if self.verbose:
-            self.__print_variables()
+        # Convert all measures to thousands dpi
+        to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation",
+                      "y_separation", "corner_radius", "vertical_separation"]
+
+        self.convert_all_to_thoudpi(to_convert)
 
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
@@ -128,22 +110,12 @@ class CardSheet(Design):
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-    @staticmethod
-    def parse_arguments():
-        parser = argparse.ArgumentParser(add_help=False)
-
-        parser.add_argument('-c', type=str, help="config File")
-        parser.add_argument('-C', type=str, help="config section")
-        parser.add_argument('-v', action="store_true", help="verbose")
-
-        return parser.parse_args()
-
     def create(self):
         # noinspection DuplicatedCode
         self.__init_design()
 
         self.template["FILENAME"] = self.outfile
-        self.template["$PROJECT$"] = self.project
+        self.template["$PROJECT$"] = self.project_name
         self.template["$TITLE$"] = self.title
         self.template["$FILENAME$"] = self.outfile
         self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)

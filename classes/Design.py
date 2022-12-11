@@ -1,6 +1,7 @@
 import sys
 import os
 import xml.dom.minidom
+from datetime import datetime
 from abc import ABC, abstractmethod
 from classes.Config import Config
 from classes.Direction import Direction
@@ -66,14 +67,13 @@ class Design(ABC):
         self.title = ""
         self.x_offset = self._DEFAULT_X_OFFSET
         self.y_offset = self._DEFAULT_Y_OFFSET
-        self.project = ""
+        self.project_name = ""
+        self.verbose = False
+        self.options = None
+        self.default_name = ""
 
     @abstractmethod
     def create(self):
-        pass
-
-    @abstractmethod
-    def parse_arguments(self):
         pass
 
     @staticmethod
@@ -251,31 +251,6 @@ class Design(ABC):
         return int(float(value) * Design.FACTOR)
 
     @classmethod
-    def read_config(cls, filename: str, section: str = None, defaults: str = None):
-        """ Read configuration from file"""
-
-        # if the filename does not have the extension config, then add ist to the filename
-        # +1 because of the dot in front of the extension
-        if filename[-len(cls.__CONFIG_EXTENSION + 1):] != "." + cls.__CONFIG_EXTENSION:
-            filename += cls.__CONFIG_EXTENSION
-
-        # Read default values from the config file
-        if not os.path.isfile(filename):
-            print("Config file " + filename + " not found")
-            sys.exit()
-
-        # read entries from the configuration file
-        configuration = configparser.RawConfigParser(defaults=defaults)
-        configuration.read(filename)
-
-        if section:
-            if not configuration.has_section(section):
-                print("Section " + section + " in config file " + filename + " not found")
-                sys.exit()
-
-        return configuration
-
-    @classmethod
     def default_config(cls):
         if cls.__initialized:
             return
@@ -337,9 +312,9 @@ class Design(ABC):
     def import_from_config(self, config, section, options):
         # Set all configuration values
         if 'project name' in options:
-            self.project = options['project name']
+            self.project_name = options['project name']
         else:
-            self.project = config.get(section, 'project')
+            self.project_name = config.get(section, 'project name')
 
         self.outfile = config.get(section, 'filename')
 
@@ -355,10 +330,10 @@ class Design(ABC):
         else:
             self.y_offset = float(config.get(section, 'y offset'))
 
-        if 'project' in options:
-            self.project = options['project']
-
     def set_title_and_outfile(self, name: str):
+        if name is None or name == "":
+            return
+
         if not self.title:
             self.title = name
 
@@ -366,6 +341,45 @@ class Design(ABC):
             self.outfile = name
 
         self.outfile = File.set_svg_extension(self.outfile)
+
+    def configuration(self, config: str, section: str, verbose: bool, payload=None):
+        self.validate_config_and_section(__class__.__name__, config, section)
+
+        if payload is None:
+            payload = {}
+
+        options = {}
+        if 'options' in payload:
+            options = payload['options']
+
+        default_values = []
+        if 'default_values' in payload:
+            default_values = payload['default_values']
+
+        config = self.__read_config(config, section, default_values, options)
+
+        default_name = ""
+        if 'default_name' in payload:
+            default_name = payload['default_name']
+        else:
+            default_name = f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        self.set_title_and_outfile(default_name)
+
+        self.verbose = verbose
+
+        return config
+
+    def __read_config(self, filename: str, section: str, defaults=None, options=None):
+        """ Read configuration from file"""
+        if defaults is None:
+            defaults = {}
+
+        if options is None:
+            options = {}
+
+        config = Config.read_config(filename, section, defaults)
+        self.import_from_config(config, section, options)
+        return config
 
 
 Design.default_config()

@@ -111,7 +111,7 @@ class ItemBox:
                     'length': 0,
                     'width': 0,
                     'height': 0,
-                    'project': "",
+                    'project name': "",
                     'filename': "",
                     'title': "",
 #                    'thumbhole': False,
@@ -132,7 +132,7 @@ class ItemBox:
             print("Section " + section + " in config file config/" + filename + ".config not found")
             sys.exit()
 
-        self.project = config[section]['project'].strip('"')
+        self.project = config[section]['project name'].strip('"')
         self.outfile = config[section]['filename'].strip('"')
         self.title = config[section]['title'].strip('"')
         self.x_offset = int(config[section]['x offset'])
