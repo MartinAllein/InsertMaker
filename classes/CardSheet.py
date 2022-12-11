@@ -118,51 +118,47 @@ class CardSheet(Design):
         self.template["$PROJECT$"] = self.project_name
         self.template["$TITLE$"] = self.title
         self.template["$FILENAME$"] = self.outfile
-        self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
+        self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
 
         base_cut = [None] * 4
-        base_cut[self.__CUTLINES_CARD_FULL] = Design.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL])
-        base_cut[self.__CUTLINES_CARD_TOP_OPEN] = Design.draw_lines(self.corners,
+        base_cut[self.__CUTLINES_CARD_FULL] = self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL])
+        base_cut[self.__CUTLINES_CARD_TOP_OPEN] = self.draw_lines(self.corners,
                                                                     self.cutlines[self.__CUTLINES_CARD_TOP_OPEN])
-        base_cut[self.__CUTLINES_CARD_LEFT_OPEN] = Design.draw_lines(self.corners,
+        base_cut[self.__CUTLINES_CARD_LEFT_OPEN] = self.draw_lines(self.corners,
                                                                      self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN])
-        base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN] = Design.draw_lines(self.corners, self.cutlines[
+        base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN] = self.draw_lines(self.corners, self.cutlines[
             self.__CUTLINES_CARD_TOPLEFT_OPEN])
-        # base_cut = Design.draw_lines(self.corners, self.cutlines)
+        # base_cut = self.draw_lines(self.corners, self.cutlines)
 
         output = ""
         for row in range(self.row_count):
             for col in range(self.column_count):
                 cut = base_cut[self.__CUTLINES_CARD_FULL]
 
-                if self.x_separation == 0.0 and self.y_separation != 0.0:
+                if self.x_separation == 0.0 and self.y_separation != 0.0 and col != 0:
                     # Cards are ordered in rows. Left is full others left open
-                    if col != 0:
-                        cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
+                    cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
 
-                if self.x_separation != 0.0 and self.y_separation == 0.0:
+                if self.x_separation != 0.0 and self.y_separation == 0.0 and row != 0:
                     # Cards are ordered in columns. Top is full others left open
-                    if row != 0:
-                        cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
+                    cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
 
                 if self.x_separation == 0.0 and self.y_separation == 0.0:
                     # No Separation
                     if row == 0 and col != 0:
-                        if col != 0:
-                            cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
+                        cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
                     elif row != 0 and col == 0:
-                        if row != 0:
-                            cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
+                        cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
                     elif row != 0 and col != 0:
                         cut = base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN]
 
                 template = {'$ID$': f"{row} - {col}",
                             '$CUT$': cut,
                             '$TRANSLATE$': str(
-                                Design.thoudpi_to_dpi((self.x_measure + self.x_separation) * col)) + ", " + str(
-                                Design.thoudpi_to_dpi((self.y_measure + self.y_separation) * row))
+                                self.thoudpi_to_dpi((self.x_measure + self.x_separation) * col)) + ", " + str(
+                                self.thoudpi_to_dpi((self.y_measure + self.y_separation) * row))
                             }
 
                 temp = card_template
@@ -177,36 +173,36 @@ class CardSheet(Design):
         ycoord = self.bottom_y + self.vertical_separation + (self.row_count - 1) * (self.y_measure + self.y_separation)
 
         ycoord += 2 * self.vertical_separation
-        self.template["$LABEL_PROJECT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_TITLE_Y$"] = self.thoudpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_FILENAME_Y$"] = self.thoudpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
+        self.template["$LABEL_OVERALL_WIDTH_Y$"] = self.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / self.FACTOR, 2))
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / Design.FACTOR, 2)
+        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = self.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / self.FACTOR, 2)
 
         ycoord += self.vertical_separation
-        self.template["$ARGS_STRING_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$ARGS_STRING_Y$"] = self.thoudpi_to_dpi(ycoord)
         self.template["$ARGS_STRING$"] = self.args_string
 
         ycoord += self.vertical_separation
 
-        viewport_x = Design.thoudpi_to_dpi(
-            round(self.right_x + (self.column_count - 1) * self.x_separation + 2 * Design.FACTOR))
-        viewport_y = Design.thoudpi_to_dpi(ycoord + (int(self.row_count) - 1) * int(self.y_separation))
+        viewport_x = self.thoudpi_to_dpi(
+            round(self.right_x + (self.column_count - 1) * self.x_separation + 2 * self.FACTOR))
+        viewport_y = self.thoudpi_to_dpi(ycoord + (int(self.row_count) - 1) * int(self.y_separation))
         self.template[
             "$VIEWPORT$"] = f"{viewport_x}," \
                             f" {viewport_y}"
 
-        Design.write_to_file(self.template)
+        self.write_to_file(self.template)
         print(f"CardSheet \"{self.outfile}\" created")
 
     def __init_design(self):
@@ -270,15 +266,15 @@ class CardSheet(Design):
         o = p - corner_radius
 
         if self.verbose:
-            print(f"a: {a} / {Design.thoudpi_to_mm(a)}")
-            print(f"b: {b}/ {Design.thoudpi_to_mm(b)}")
-            print(f"c: {c}/ {Design.thoudpi_to_mm(c)}")
-            print(f"d: {d}/ {Design.thoudpi_to_mm(d)}")
+            print(f"a: {a} / {self.thoudpi_to_mm(a)}")
+            print(f"b: {b}/ {self.thoudpi_to_mm(b)}")
+            print(f"c: {c}/ {self.thoudpi_to_mm(c)}")
+            print(f"d: {d}/ {self.thoudpi_to_mm(d)}")
 
-            print(f"m: {m}/ {Design.thoudpi_to_mm(m)}")
-            print(f"n: {n}/ {Design.thoudpi_to_mm(n)}")
-            print(f"o: {o}/ {Design.thoudpi_to_mm(o)}")
-            print(f"q: {p}/ {Design.thoudpi_to_mm(p)}")
+            print(f"m: {m}/ {self.thoudpi_to_mm(m)}")
+            print(f"n: {n}/ {self.thoudpi_to_mm(n)}")
+            print(f"o: {o}/ {self.thoudpi_to_mm(o)}")
+            print(f"q: {p}/ {self.thoudpi_to_mm(p)}")
 
         self.corners = [[a, m], [a, n], [a, o], [a, p],
                         [b, m], [b, n], [d, o], [b, p],
@@ -328,26 +324,8 @@ class CardSheet(Design):
         ]
 
         # detect boundaries of drawing
-        self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
-
-    @staticmethod
-    def __draw_slot_hole_line(xml_string, start, delta):
-
-        # https://stackoverflow.com/questions/25640628/python-adding-lists-of-numbers-with-other-lists-of-numbers
-        stop = [sum(values) for values in zip(start, delta)]
-
-        xml_string += Design.draw_line(start, stop)
-
-        return xml_string, stop
+        self.left_x, self.right_x, self.top_y, self.bottom_y = self.get_bounds(self.corners)
 
     def __print_variables(self):
         print(self.__dict__)
 
-    def __convert_all_to_thoudpi_old(self):
-        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
-
-        to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation", "y_separation", "corner_radius",
-                      "vertical_separation"]
-
-        for item in to_convert:
-            setattr(self, item, Design.mm_to_thoudpi(getattr(self, item)))
