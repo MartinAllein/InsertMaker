@@ -21,10 +21,10 @@ class CardSheet(Design):
 
     # __DEFAULT_VERTICAL_SEPARATION = 6
 
-    __DEFAULT_CORNER_RADIUS = 3
+    __DEFAULT_CORNER_RADIUS = 3.0
 
-    __DEFAULT_X_MEASURE = 89
-    __DEFAULT_Y_MEASURE = 55
+    __DEFAULT_X_MEASURE = 89.0
+    __DEFAULT_Y_MEASURE = 55.0
 
     __CUTLINES_CARD_FULL = int(0)
     __CUTLINES_CARD_LEFT_OPEN = int(1)
@@ -39,18 +39,15 @@ class CardSheet(Design):
 
         payload = {}
 
+        project_name = ""
         if 'options' in kwargs:
             payload['options'] = kwargs['options']
 
-        project_name = ""
-        if 'project name' in payload['options']:
-            project_name = f"{payload['options']['project name']}-"
+            if 'project name' in payload['options']:
+                project_name = f"{payload['options']['project name']}-"
 
         payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
                                   f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-
-        payload['convert_values'] = ["x_measure", "y_measure", "x_separation",
-                                     "y_separation", "corner_radius"]
 
         payload['default_values'] = {'x separation': self.x_separation,
                                      'y separation': self.y_separation,
@@ -59,9 +56,6 @@ class CardSheet(Design):
                                      'x measure': self.x_measure,
                                      'y measure': self.y_measure,
                                      'corner radius': self.corner_radius,
-                                     'project name': "",
-                                     'filename': "",
-                                     'title': "",
                                      }
 
         config = super().configuration(config_file, section, verbose, payload)
@@ -85,12 +79,13 @@ class CardSheet(Design):
 
         self.args_string = ' '.join(sys.argv[1:])
 
-        self.x_measure = 0.0
-        self.y_measure = 0.0
-        self.corner_radius = 0.0
+        self.x_measure = self.__DEFAULT_X_MEASURE
+        self.y_measure = self.__DEFAULT_Y_MEASURE
+        self.corner_radius = self.__DEFAULT_CORNER_RADIUS
 
         self.x_separation = self.__DEFAULT_X_SEPARATION
         self.y_separation = self.__DEFAULT_Y_SEPARATION
+
         self.row_count = self.__DEFAULT_COLUMNS
         self.column_count = self.__DEFAULT_ROWS
 

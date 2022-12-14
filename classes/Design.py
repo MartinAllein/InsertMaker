@@ -23,7 +23,7 @@ class Design(ABC):
 
     __DEFAULT_SECTION_NAME = "STANDARD"
 
-    __DEFAULT_CONFIG_FILE = "config/InsertMaker.config"
+    __DEFAULT_CONFIG_FILE = "InsertMaker.config"
 
     # Fallback settings when InsertMaker.config is missing
     __DEFAULT_X_OFFSET = 1.0
@@ -312,35 +312,6 @@ class Design(ABC):
         self.y_offset = Design.mm_to_thoudpi(self.y_offset)
         self.y_text_spacing = Design.mm_to_thoudpi(self.y_text_spacing)
 
-    def import_from_config(self, config, section, options):
-        # https://stackoverflow.com/questions/23662280/how-to-log-the-contents-of-a-configparser
-        print({section: dict(config[section]) for section in config.sections()})
-
-        # Set all configuration values
-        if 'project name' in options:
-            self.project_name = options['project name']
-        else:
-            self.project_name = config.get(section, 'project name')
-
-        self.outfile = config.get(section, 'filename')
-
-        self.title = config.get(section, 'title').strip('"')
-
-        if 'x offset' in options:
-            self.x_offset = options['x offset']
-        elif config.has_option(section, 'x offset '):
-            self.x_offset = config.get(section, 'x offset')
-
-        if 'y offset' in options:
-            self.y_offset = options['y offset']
-        elif config.has_option(section, 'y offset '):
-            self.y_offset = config.get(section, 'y offset')
-
-        if self.__Y_TEXT_SPACING_LABEL in options:
-            self.y_text_spacing = options[self.__Y_TEXT_SPACING_LABEL]
-        elif config.has_option(section, self.__Y_TEXT_SPACING_LABEL):
-            self.y_text_spacing = config.get(section, self.__Y_TEXT_SPACING_LABEL)
-
     def set_title_and_outfile(self, name: str):
         if name is None or name == "":
             return
@@ -369,12 +340,12 @@ class Design(ABC):
 
         config = self.__read_config(config_file, section, default_values, options)
 
-        default_name = ""
+        name = ""
         if 'default_name' in payload:
-            default_name = payload['default_name']
+            name = payload['default_name']
         else:
-            default_name = f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        self.set_title_and_outfile(default_name)
+            name = f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        self.set_title_and_outfile(name)
 
         self.verbose = verbose
 
@@ -389,7 +360,37 @@ class Design(ABC):
             options = {}
 
         config = Config.read_config(filename, section, defaults)
-        self.import_from_config(config, section, options)
+
+        # https://stackoverflow.com/questions/23662280/how-to-log-the-contents-of-a-configparser
+        print({section: dict(config[section]) for section in config.sections()})
+
+        # Set all configuration values
+        if 'project name' in options:
+            self.project_name = options['project name']
+        elif config.has_option(section, 'project name'):
+            self.project_name = config.get(section, 'project name')
+
+        if config.has_option(section, 'filename'):
+            self.outfile = config.get(section, 'filename')
+
+        if config.has_option(section, 'title'):
+            self.title = config.get(section, 'title').strip('"')
+
+        if 'x offset' in options:
+            self.x_offset = options['x offset']
+        elif config.has_option(section, 'x offset '):
+            self.x_offset = config.get(section, 'x offset')
+
+        if 'y offset' in options:
+            self.y_offset = options['y offset']
+        elif config.has_option(section, 'y offset '):
+            self.y_offset = config.get(section, 'y offset')
+
+        if self.__Y_TEXT_SPACING_LABEL in options:
+            self.y_text_spacing = options[self.__Y_TEXT_SPACING_LABEL]
+        elif config.has_option(section, self.__Y_TEXT_SPACING_LABEL):
+            self.y_text_spacing = config.get(section, self.__Y_TEXT_SPACING_LABEL)
+
         return config
 
 
