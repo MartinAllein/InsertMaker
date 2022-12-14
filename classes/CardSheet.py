@@ -1,5 +1,6 @@
 import argparse
 import sys
+from typing import Any, List
 from datetime import datetime
 from classes.Design import Design
 from classes.Direction import Direction
@@ -18,19 +19,19 @@ class CardSheet(Design):
     __DEFAULT_X_SEPARATION = 0
     __DEFAULT_Y_SEPARATION = 0
 
-    __DEFAULT_VERTICAL_SEPARATION = 6
+    # __DEFAULT_VERTICAL_SEPARATION = 6
 
     __DEFAULT_CORNER_RADIUS = 3
 
     __DEFAULT_X_MEASURE = 89
     __DEFAULT_Y_MEASURE = 55
 
-    __CUTLINES_CARD_FULL = 0
-    __CUTLINES_CARD_LEFT_OPEN = 1
-    __CUTLINES_CARD_TOP_OPEN = 2
-    __CUTLINES_CARD_TOPLEFT_OPEN = 3
+    __CUTLINES_CARD_FULL = int(0)
+    __CUTLINES_CARD_LEFT_OPEN = int(1)
+    __CUTLINES_CARD_TOP_OPEN = int(2)
+    __CUTLINES_CARD_TOPLEFT_OPEN = int(3)
 
-    def __init__(self, config: str, section: str, verbose=False, **kwargs):
+    def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
         super().__init__()
 
         # load built in default values
@@ -48,25 +49,22 @@ class CardSheet(Design):
         payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
                                   f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        payload['convert_values'] = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation",
-                                     "y_separation", "corner_radius", "vertical_separation"]
+        payload['convert_values'] = ["x_measure", "y_measure", "x_separation",
+                                     "y_separation", "corner_radius"]
 
-        payload['default_values'] = {'x offset': self.x_offset,
-                                     'y offset': self.y_offset,
-                                     'x separation': self.x_separation,
+        payload['default_values'] = {'x separation': self.x_separation,
                                      'y separation': self.y_separation,
                                      'rows': self.column_count,
                                      'columns': self.row_count,
                                      'x measure': self.x_measure,
                                      'y measure': self.y_measure,
                                      'corner radius': self.corner_radius,
-                                     'vertical separation': self.vertical_separation,
                                      'project name': "",
                                      'filename': "",
                                      'title': "",
                                      }
 
-        config = super().configuration(config, section, verbose, payload)
+        config = super().configuration(config_file, section, verbose, payload)
 
         self.x_separation = float(config.get(section, 'x separation'))
         self.y_separation = float(config.get(section, 'y separation'))
@@ -75,11 +73,10 @@ class CardSheet(Design):
         self.x_measure = float(config.get(section, 'x measure'))
         self.y_measure = float(config.get(section, 'y measure'))
         self.corner_radius = float(config.get(section, 'corner radius'))
-        self.vertical_separation = float(config.get(section, 'vertical separation'))
 
         # Convert all measures to thousands dpi
-        to_convert = ["x_offset", "y_offset", "x_measure", "y_measure", "x_separation",
-                      "y_separation", "corner_radius", "vertical_separation"]
+        to_convert = ["x_measure", "y_measure", "x_separation",
+                      "y_separation", "corner_radius"]
 
         self.convert_all_to_thoudpi(to_convert)
 
@@ -96,17 +93,7 @@ class CardSheet(Design):
         self.y_separation = self.__DEFAULT_Y_SEPARATION
         self.row_count = self.__DEFAULT_COLUMNS
         self.column_count = self.__DEFAULT_ROWS
-        self.vertical_separation = self.__DEFAULT_VERTICAL_SEPARATION
 
-        # noinspection DuplicatedCode
-        self.template = {}
-
-        self.corners = []
-        self.cutlines = []
-        self.left_x = 0
-        self.right_x = 0
-        self.top_y = 0
-        self.bottom_y = 0
         self.inner_dimensions = []
         self.outer_dimensions = []
 
@@ -115,22 +102,18 @@ class CardSheet(Design):
         self.__init_design()
 
         self.template["FILENAME"] = self.outfile
+        self.template["$FILENAME$"] = self.outfile
         self.template["$PROJECT$"] = self.project_name
         self.template["$TITLE$"] = self.title
-        self.template["$FILENAME$"] = self.outfile
         self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
 
-        base_cut = [None] * 4
-        base_cut[self.__CUTLINES_CARD_FULL] = self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL])
-        base_cut[self.__CUTLINES_CARD_TOP_OPEN] = self.draw_lines(self.corners,
-                                                                    self.cutlines[self.__CUTLINES_CARD_TOP_OPEN])
-        base_cut[self.__CUTLINES_CARD_LEFT_OPEN] = self.draw_lines(self.corners,
-                                                                     self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN])
-        base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN] = self.draw_lines(self.corners, self.cutlines[
-            self.__CUTLINES_CARD_TOPLEFT_OPEN])
-        # base_cut = self.draw_lines(self.corners, self.cutlines)
+        base_cut = [self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL]),
+                    self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOP_OPEN]),
+                    self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN]),
+                    self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN])
+                    ]
 
         output = ""
         for row in range(self.row_count):
@@ -170,30 +153,30 @@ class CardSheet(Design):
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
         self.template["$CUT$"] = output
 
-        ycoord = self.bottom_y + self.vertical_separation + (self.row_count - 1) * (self.y_measure + self.y_separation)
+        ycoord = self.bottom_y + self.y_text_spacing + (self.row_count - 1) * (self.y_measure + self.y_separation)
 
-        ycoord += 2 * self.vertical_separation
+        ycoord += 2 * self.y_text_spacing
         self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord)
 
-        ycoord += self.vertical_separation
+        ycoord += self.y_text_spacing
         self.template["$LABEL_TITLE_Y$"] = self.thoudpi_to_dpi(ycoord)
 
-        ycoord += self.vertical_separation
+        ycoord += self.y_text_spacing
         self.template["$LABEL_FILENAME_Y$"] = self.thoudpi_to_dpi(ycoord)
 
-        ycoord += self.vertical_separation
+        ycoord += self.y_text_spacing
         self.template["$LABEL_OVERALL_WIDTH_Y$"] = self.thoudpi_to_dpi(ycoord)
         self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / self.FACTOR, 2))
 
-        ycoord += self.vertical_separation
+        ycoord += self.y_text_spacing
         self.template["$LABEL_OVERALL_HEIGHT_Y$"] = self.thoudpi_to_dpi(ycoord)
         self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / self.FACTOR, 2)
 
-        ycoord += self.vertical_separation
+        ycoord += self.y_text_spacing
         self.template["$ARGS_STRING_Y$"] = self.thoudpi_to_dpi(ycoord)
         self.template["$ARGS_STRING$"] = self.args_string
 
-        ycoord += self.vertical_separation
+        ycoord += self.y_text_spacing
 
         viewport_x = self.thoudpi_to_dpi(
             round(self.right_x + (self.column_count - 1) * self.x_separation + 2 * self.FACTOR))
@@ -206,9 +189,6 @@ class CardSheet(Design):
         print(f"CardSheet \"{self.outfile}\" created")
 
     def __init_design(self):
-        self.__init_base()
-
-    def __init_base(self):
 
         # -----------------------------------------------------------------------------
         #       a  b                        c  d
@@ -266,15 +246,16 @@ class CardSheet(Design):
         o = p - corner_radius
 
         if self.verbose:
-            print(f"a: {a} / {self.thoudpi_to_mm(a)}")
-            print(f"b: {b}/ {self.thoudpi_to_mm(b)}")
-            print(f"c: {c}/ {self.thoudpi_to_mm(c)}")
-            print(f"d: {d}/ {self.thoudpi_to_mm(d)}")
+            values_mil = [self.thoudpi_to_mm(s) for s in [a, b, c, d, m, n, o, p]]
+            print(f"a: {a} / {values_mil[0]}")
+            print(f"b: {b} / {values_mil[1]}")
+            print(f"c: {c} / {values_mil[2]}")
+            print(f"d: {d} / {values_mil[3]}")
 
-            print(f"m: {m}/ {self.thoudpi_to_mm(m)}")
-            print(f"n: {n}/ {self.thoudpi_to_mm(n)}")
-            print(f"o: {o}/ {self.thoudpi_to_mm(o)}")
-            print(f"q: {p}/ {self.thoudpi_to_mm(p)}")
+            print(f"m: {m} / {values_mil[4]}")
+            print(f"n: {n} / {values_mil[5]}")
+            print(f"o: {o} / {values_mil[6]}")
+            print(f"q: {p} / {values_mil[7]}")
 
         self.corners = [[a, m], [a, n], [a, o], [a, p],
                         [b, m], [b, n], [d, o], [b, p],
@@ -282,50 +263,47 @@ class CardSheet(Design):
                         [d, m], [d, n], [d, o], [d, p]
                         ]
 
-        self.cutlines = [None] * 4
-        self.cutlines[self.__CUTLINES_CARD_FULL] = [
-            # Top upper, middle left and right, Bottom lower
-            [PathStyle.PAIR,
-             [1, 2, 4, 8, 13, 14, 7, 11]],
-            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
-        ]
-
-        self.cutlines[self.__CUTLINES_CARD_TOP_OPEN] = [
-            # Top upper, middle left and right, Bottom lower
-            [PathStyle.PAIR,
-             [1, 2, 13, 14, 7, 11]],
-            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
-        ]
-
-        self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN] = [
-            # Top upper, middle left and right, Bottom lower
-            [PathStyle.PAIR,
-             [4, 8, 13, 14, 7, 11]],
-            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
-        ]
-
-        self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN] = [
-            # Top upper, middle left and right, Bottom lower
-            [PathStyle.PAIR,
-             [13, 14, 7, 11]],
-            [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-            [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-            [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-            [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+        self.cutlines = [
+            [
+                # Top upper, middle left and right, Bottom lower
+                [PathStyle.PAIR,
+                 [1, 2, 4, 8, 13, 14, 7, 11]],
+                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+            ],
+            [
+                # Top upper, middle left and right, Bottom lower
+                [PathStyle.PAIR,
+                 [1, 2, 13, 14, 7, 11]],
+                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+            ],
+            [
+                # Top upper, middle left and right, Bottom lower
+                [PathStyle.PAIR,
+                 [4, 8, 13, 14, 7, 11]],
+                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+            ],
+            [
+                # Top upper, middle left and right, Bottom lower
+                [PathStyle.PAIR,
+                 [13, 14, 7, 11]],
+                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
+                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
+                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
+                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+            ]
         ]
 
         # detect boundaries of drawing
-        self.left_x, self.right_x, self.top_y, self.bottom_y = self.get_bounds(self.corners)
+        self.set_bounds(self.corners)
 
     def __print_variables(self):
         print(self.__dict__)
-

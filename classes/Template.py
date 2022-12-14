@@ -5,7 +5,6 @@ from classes.File import File
 
 
 class Template:
-
     __TEMPLATE_EXTENSION = "svg"
     __TEMPLATE_PATH = os.path.join(pathlib.Path(os.path.dirname(__file__)).parent, "templates")
 
@@ -28,3 +27,7 @@ class Template:
             string = f.read()
 
         return string
+
+    @classmethod
+    def load_and_create(cls, template: str, variables) -> str:
+        pass

@@ -1,6 +1,7 @@
 import sys
 import os
 import xml.dom.minidom
+import collections.abc
 from datetime import datetime
 from abc import ABC, abstractmethod
 from classes.Config import Config
@@ -23,13 +24,11 @@ class Design(ABC):
     __DEFAULT_SECTION_NAME = "STANDARD"
 
     __DEFAULT_CONFIG_FILE = "config/InsertMaker.config"
-    __DEFAULT_X_ORIGIN = 0
-    __DEFAULT_Y_ORIGIN = 0
 
     # Fallback settings when InsertMaker.config is missing
-    _DEFAULT_X_OFFSET = 1.0
-    _DEFAULT_Y_OFFSET = 2.0
-    __DEFAULT_Y_LINE_SEPARATION = 7
+    __DEFAULT_X_OFFSET = 1.0
+    __DEFAULT_Y_OFFSET = 2.0
+    __DEFAULT_Y_TEXT_SPACING = 7
     __DEFAULT_THICKNESS = 1.5
 
     # Default path  and extension definitions
@@ -37,15 +36,13 @@ class Design(ABC):
     __TEMPLATE_PATH = "templates"
 
     # Names for Configuration file elements
-    __X_ORIGIN_CONFIG_NAME = "x origin"
-    __Y_ORIGIN_CONFIG_NAME = "y origin"
-    __X_OFFSET_CONFIG_NAME = "x offset"
-    __Y_OFFSET_CONFIG_NAME = "y offset"
-    __THICKNESS_CONFIG_NAME = "thickness"
-    __Y_LINE_SEPARATION_NAME = "y line separation"
-    __UNIT_CONFIG_NAME = "unit"
-    __XML_LINE_CONFIG_NAME = "xml line"
-    __XML_PATH_CONFIG_NAME = "xml path"
+    __X_OFFSET_CONFIG_LABEL = "x offset"
+    __Y_OFFSET_CONFIG_LABEL = "y offset"
+    __THICKNESS_CONFIG_LABEL = "thickness"
+    __Y_TEXT_SPACING_LABEL = "y text spacing"
+    __UNIT_CONFIG_LABEL = "unit"
+    __XML_LINE_CONFIG_LABEL = "xml line"
+    __XML_PATH_CONFIG_LABEL = "xml path"
 
     __UNIT_MM_TEXT = 'mm'
     __UNIT_MIL_TEXT = 'mil'
@@ -53,10 +50,8 @@ class Design(ABC):
 
     xml_line = __DEFAULT_XML_LINE
     xml_path = __DEFAULT_XML_PATH
-    x_origin = __DEFAULT_X_ORIGIN
-    y_origin = __DEFAULT_Y_ORIGIN
     thickness = __DEFAULT_THICKNESS
-    y_line_separation = __DEFAULT_Y_LINE_SEPARATION
+    y_text_spacing = __DEFAULT_Y_TEXT_SPACING
     unit_mm = True
 
     FACTOR = 720000 / 25.4
@@ -65,12 +60,22 @@ class Design(ABC):
     def __init__(self):
         self.outfile = ""
         self.title = ""
-        self.x_offset = self._DEFAULT_X_OFFSET
-        self.y_offset = self._DEFAULT_Y_OFFSET
+        self.x_offset = self.__DEFAULT_X_OFFSET
+        self.y_offset = self.__DEFAULT_Y_OFFSET
+        self.y_text_spacing = self.__DEFAULT_Y_TEXT_SPACING
         self.project_name = ""
         self.verbose = False
         self.options = None
         self.default_name = ""
+
+        self.corners = []
+        self.cutlines = []
+        self.left_x = 0
+        self.right_x = 0
+        self.top_y = 0
+        self.bottom_y = 0
+
+        self.template = {}
 
     @abstractmethod
     def create(self):
@@ -190,15 +195,14 @@ class Design(ABC):
 
         return xml_lines
 
-    @staticmethod
-    def get_bounds(corners):
+    def set_bounds(self, corners):
 
-        left_x = min(a for (a, b) in corners)
-        top_y = min(b for (a, b) in corners)
-        right_x = max(a for (a, b) in corners)
-        bottom_y = max(b for (a, b) in corners)
+        self.left_x = min(a for (a, b) in corners)
+        self.top_y = min(b for (a, b) in corners)
+        self.right_x = max(a for (a, b) in corners)
+        self.bottom_y = max(b for (a, b) in corners)
 
-        return left_x, right_x, top_y, bottom_y
+        return self.left_x, self.right_x, self.top_y, self.bottom_y
 
     @classmethod
     def write_to_file(cls, items):
@@ -255,35 +259,30 @@ class Design(ABC):
         if cls.__initialized:
             return
 
-        defaults = {cls.__X_ORIGIN_CONFIG_NAME: 0,
-                    cls.__Y_ORIGIN_CONFIG_NAME: 0,
-                    cls.__X_OFFSET_CONFIG_NAME: 0,
-                    cls.__Y_OFFSET_CONFIG_NAME: 0,
+        defaults = {cls.__X_OFFSET_CONFIG_LABEL: 0,
+                    cls.__Y_OFFSET_CONFIG_LABEL: 0,
+                    cls.__Y_TEXT_SPACING_LABEL: cls.__DEFAULT_Y_TEXT_SPACING,
                     cls.__DEFAULT_THICKNESS: cls.__DEFAULT_THICKNESS,
-                    cls.__Y_LINE_SEPARATION_NAME: cls.__DEFAULT_Y_LINE_SEPARATION,
-                    cls.__XML_LINE_CONFIG_NAME: cls.__DEFAULT_XML_LINE,
-                    cls.__XML_PATH_CONFIG_NAME: cls.__DEFAULT_XML_PATH,
-                    cls.__UNIT_CONFIG_NAME: cls.__DEFAULT_UNIT
+                    cls.__XML_LINE_CONFIG_LABEL: cls.__DEFAULT_XML_LINE,
+                    cls.__XML_PATH_CONFIG_LABEL: cls.__DEFAULT_XML_PATH,
+                    cls.__UNIT_CONFIG_LABEL: cls.__DEFAULT_UNIT
                     }
 
         configuration = Config.read_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
 
-        cls.x_origin = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__X_ORIGIN_CONFIG_NAME))
-        cls.y_origin = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_ORIGIN_CONFIG_NAME))
-        cls.x_offset = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__X_OFFSET_CONFIG_NAME))
-        cls.y_offset = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_OFFSET_CONFIG_NAME))
-        cls.thickness = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__THICKNESS_CONFIG_NAME))
-        cls.y_line_separation = int(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_LINE_SEPARATION_NAME))
-        cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_NAME)
-        cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_NAME)
+        # print({section: dict(configuration[section]) for section in configuration.sections()})
 
-        if configuration[cls.__DEFAULT_SECTION_NAME][cls.__UNIT_CONFIG_NAME] == cls.__UNIT_MIL_TEXT:
+        cls.x_offset = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__X_OFFSET_CONFIG_LABEL))
+        cls.y_offset = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_OFFSET_CONFIG_LABEL))
+        cls.y_text_spacing = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_TEXT_SPACING_LABEL))
+        cls.thickness = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__THICKNESS_CONFIG_LABEL))
+        cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
+        cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
+
+        if configuration[cls.__DEFAULT_SECTION_NAME][cls.__UNIT_CONFIG_LABEL] == cls.__UNIT_MIL_TEXT:
             cls.unit_mm = False
 
         cls.__initialized = True
-
-    def banane(self):
-        print(self.x_offset)
 
     @staticmethod
     def validate_config_and_section(classname, config: str, section: str):
@@ -309,7 +308,14 @@ class Design(ABC):
         for item in to_convert:
             setattr(self, item, Design.mm_to_thoudpi(getattr(self, item)))
 
+        self.x_offset = Design.mm_to_thoudpi(self.x_offset)
+        self.y_offset = Design.mm_to_thoudpi(self.y_offset)
+        self.y_text_spacing = Design.mm_to_thoudpi(self.y_text_spacing)
+
     def import_from_config(self, config, section, options):
+        # https://stackoverflow.com/questions/23662280/how-to-log-the-contents-of-a-configparser
+        print({section: dict(config[section]) for section in config.sections()})
+
         # Set all configuration values
         if 'project name' in options:
             self.project_name = options['project name']
@@ -322,13 +328,18 @@ class Design(ABC):
 
         if 'x offset' in options:
             self.x_offset = options['x offset']
-        else:
-            self.x_offset = float(config.get(section, 'x offset'))
+        elif config.has_option(section, 'x offset '):
+            self.x_offset = config.get(section, 'x offset')
 
         if 'y offset' in options:
             self.y_offset = options['y offset']
-        else:
-            self.y_offset = float(config.get(section, 'y offset'))
+        elif config.has_option(section, 'y offset '):
+            self.y_offset = config.get(section, 'y offset')
+
+        if self.__Y_TEXT_SPACING_LABEL in options:
+            self.y_text_spacing = options[self.__Y_TEXT_SPACING_LABEL]
+        elif config.has_option(section, self.__Y_TEXT_SPACING_LABEL):
+            self.y_text_spacing = config.get(section, self.__Y_TEXT_SPACING_LABEL)
 
     def set_title_and_outfile(self, name: str):
         if name is None or name == "":
@@ -342,8 +353,8 @@ class Design(ABC):
 
         self.outfile = File.set_svg_extension(self.outfile)
 
-    def configuration(self, config: str, section: str, verbose: bool, payload=None):
-        self.validate_config_and_section(__class__.__name__, config, section)
+    def configuration(self, config_file: str, section: str, verbose: bool, payload=None):
+        self.validate_config_and_section(__class__.__name__, config_file, section)
 
         if payload is None:
             payload = {}
@@ -356,7 +367,7 @@ class Design(ABC):
         if 'default_values' in payload:
             default_values = payload['default_values']
 
-        config = self.__read_config(config, section, default_values, options)
+        config = self.__read_config(config_file, section, default_values, options)
 
         default_name = ""
         if 'default_name' in payload:

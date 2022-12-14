@@ -507,7 +507,7 @@ class ItemBox:
                 self.cutlines.append([PathStyle.LINE, [85, 71, 68, 69, 65, 64, 57]])
 
         # detect boundaries of drawing
-        self.left_x, self.right_x, self.top_y, self.bottom_y = Design.get_bounds(self.corners)
+        self.left_x, self.right_x, self.top_y, self.bottom_y = Design.set_bounds(self.corners)
 
     def __draw_slot_hole_line(self, xml_string, start, delta):
 

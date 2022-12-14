@@ -6,7 +6,6 @@ from classes.Config import Config
 
 
 class Project:
-
     __PROJECT_SECTION = "Project"
     __CONFIG = 0
     __SECTION = 1
@@ -44,7 +43,7 @@ class Project:
 
         config = Config.read_config(filename, section)
 
-        if not config.has_option(self.__PROJECT_SECTION,'items'):
+        if not config.has_option(self.__PROJECT_SECTION, 'items'):
             print(f"Project configuration {filename} has no items!")
             sys.exit()
 
@@ -52,25 +51,25 @@ class Project:
 
         self.options = {}
 
-        if config.has_option(self.__PROJECT_SECTION,'name'):
+        if config.has_option(self.__PROJECT_SECTION, 'name'):
             self.name = config.get(self.__PROJECT_SECTION, 'name')
             self.options["project name"] = self.name
 
-        if config.has_option(self.__PROJECT_SECTION,'x offset'):
+        if config.has_option(self.__PROJECT_SECTION, 'x offset'):
             self.x_offset = float(config.get(section, 'x offset'))
             self.options['x offset'] = self.x_offset
 
-        if config.has_option(self.__PROJECT_SECTION,'y offset'):
+        if config.has_option(self.__PROJECT_SECTION, 'y offset'):
             self.y_offset = float(config.get(section, 'y offset'))
             self.options['y offset'] = self.y_offset
 
-        if config.has_option(self.__PROJECT_SECTION,'thickness'):
+        if config.has_option(self.__PROJECT_SECTION, 'thickness'):
             self.thickness = float(config.get(section, 'thickness'))
             self.options['thickness'] = self.thickness
 
-        if config.has_option(self.__PROJECT_SECTION,'thickness'):
-            self.thickness = float(config.get(section, 'thickness'))
-            self.options['thickness'] = self.thickness
+        if config.has_option(self.__PROJECT_SECTION, 'y text spacing'):
+            self.thickness = float(config.get(section, 'y text spacing'))
+            self.options['y text spacing '] = self.y_text_spacing
 
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
@@ -78,6 +77,7 @@ class Project:
         self.thickness = None
         self.x_offset = None
         self.y_offset = None
+        self.y_text_spacing = None
         self.items = []
         self.options = None
         self.config_path = None
