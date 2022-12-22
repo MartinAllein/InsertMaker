@@ -10,7 +10,7 @@ from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.File import File
 
-FILENAME = 'FILENAME'
+FILENAME = '$FILENAME$'
 TEMPLATE = 'TEMPLATE'
 
 
@@ -57,29 +57,65 @@ class Design(ABC):
     FACTOR = 720000 / 25.4
     __default_configuration = {}
 
-    def __init__(self):
-        self.outfile = ""
-        self.title = ""
-        self.x_offset = self.__DEFAULT_X_OFFSET
-        self.y_offset = self.__DEFAULT_Y_OFFSET
-        self.y_text_spacing = self.__DEFAULT_Y_TEXT_SPACING
-        self.project_name = ""
-        self.verbose = False
-        self.options = None
-        self.default_name = ""
+    def __init__(self, args):
+        self.outfile: str = ""
+        self.title: str = ""
+        self.x_offset: float
+        self.y_offset: float
+        self.set_xyoffset_from_kwargs(args)
+        self.y_text_spacing: float = self.__DEFAULT_Y_TEXT_SPACING
+        self.project_name: str = self.get_project_name_from_kwargs(args)
+        self.verbose: bool = False
+        self.options: list[str] = []
+        self.default_name: str = ""
 
-        self.corners = []
-        self.cutlines = []
-        self.left_x = 0
-        self.right_x = 0
-        self.top_y = 0
-        self.bottom_y = 0
+        self.corners: list[float] = []
+        self.cutlines: list[float] = []
+        self.left_x: float = 0
+        self.right_x: float = 0
+        self.top_y: float = 0
+        self.bottom_y: float = 0
 
         self.template = {}
+        self.args_string: str = ' '.join(sys.argv[1:])
 
     @abstractmethod
     def create(self):
         pass
+
+    def set_xyoffset_from_kwargs(self, args):
+        self.x_offset = self.__DEFAULT_X_OFFSET
+        self.y_offset = self.__DEFAULT_Y_OFFSET
+
+        if 'options' in args:
+            payload = args['options']
+
+            if 'x offset' in payload:
+                self.x_offset = payload['x offset']
+
+            if 'y offset' in payload:
+                self.y_offset = payload['y offset']
+
+    def set_project_name_from_kwargs(self, args):
+        self.project_name = self.get_project_name_from_kwargs(args)
+
+    @staticmethod
+    def get_project_name_from_kwargs(args, prefix: str = "", postfix: str = ""):
+        """
+        Extracts the project name from the keyword argument list and adds a prefix and/or postfix
+        :param args: keyword arguments with 'options' inside
+        :param prefix: String to add before project name
+        :param postfix: String to add after project name
+        :return: project name with prefix and/or postfix. Empty if no project name available
+        """
+        project_name: str = ""
+        if 'options' in args:
+            payload = args['options']
+
+            if 'project name' in payload:
+                project_name = prefix + payload['project name'] + postfix
+
+        return project_name
 
     @staticmethod
     def __divide_dpi(coord: str):
@@ -204,10 +240,9 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    @classmethod
-    def write_to_file(cls, items):
+    def write_to_file(self, items):
 
-        if FILENAME not in items:
+        if self.outfile == "":
             raise "No filename given"
 
         if TEMPLATE not in items:
@@ -216,9 +251,10 @@ class Design(ABC):
         template = Template.load_template(items[TEMPLATE])
 
         # modify FILENAME with leading and trailing $
-        items["$FILENAME$"] = items[FILENAME]
-        filename = items[FILENAME]
-        del items[FILENAME]
+        self.template["$FILENAME$"] = self.outfile
+        self.template["$PROJECT$"] = self.project_name
+        self.template["$TITLE$"] = self.title
+        self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         for key in items:
             template = template.replace(key, str(items[key]))
@@ -226,7 +262,7 @@ class Design(ABC):
         dom = xml.dom.minidom.parseString(template)
         template = dom.toprettyxml(newl='')
 
-        with open(f"{filename}", 'w') as f:
+        with open(f"{self.outfile}", 'w') as f:
             f.write(template)
 
     @classmethod

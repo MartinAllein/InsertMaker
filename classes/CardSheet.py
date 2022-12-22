@@ -9,42 +9,58 @@ from classes.Template import Template
 
 
 class CardSheet(Design):
-    __DEFAULT_FILENAME = "CardSheet"
-    __DEFAULT_TEMPLATE = "CardSheet.svg"
-    __DEFAULT_TEMPLATE_CARD = "Card.svg"
 
-    __DEFAULT_COLUMNS = 1
-    __DEFAULT_ROWS = 1
+    # Default values
+    __DEFAULT_FILENAME: str = "CardSheet.svg"
+    __DEFAULT_TEMPLATE: str = "CardSheet.svg"
+    __DEFAULT_TEMPLATE_CARD: str = "Card.svg"
 
-    __DEFAULT_X_SEPARATION = 0
-    __DEFAULT_Y_SEPARATION = 0
+    __DEFAULT_COLUMNS: int = 1
+    __DEFAULT_ROWS: int = 1
 
-    # __DEFAULT_VERTICAL_SEPARATION = 6
+    __DEFAULT_X_SEPARATION: float = 0.0
+    __DEFAULT_Y_SEPARATION: float = 0.0
 
-    __DEFAULT_CORNER_RADIUS = 3.0
+    __DEFAULT_CORNER_RADIUS: float = 3.0
 
-    __DEFAULT_X_MEASURE = 89.0
-    __DEFAULT_Y_MEASURE = 55.0
+    # standard size is European
+    __DEFAULT_X_MEASURE: float = 89.0
+    __DEFAULT_Y_MEASURE: float = 55.0
 
-    __CUTLINES_CARD_FULL = int(0)
-    __CUTLINES_CARD_LEFT_OPEN = int(1)
-    __CUTLINES_CARD_TOP_OPEN = int(2)
-    __CUTLINES_CARD_TOPLEFT_OPEN = int(3)
+    # Enums
+    # TODO: Inner class enums?
+    __CUTLINES_CARD_FULL: int = 0
+    __CUTLINES_CARD_LEFT_OPEN: int = 1
+    __CUTLINES_CARD_TOP_OPEN: int = 2
+    __CUTLINES_CARD_TOPLEFT_OPEN: int = 3
 
     def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
-        super().__init__()
+        super().__init__(kwargs)
 
-        # load built in default values
-        self.__set_defaults()
+        # width of card
+        self.x_measure: float = self.__DEFAULT_X_MEASURE
+
+        # height of card
+        self.y_measure: float = self.__DEFAULT_Y_MEASURE
+
+        # corner radius for card
+        self.corner_radius: float = self.__DEFAULT_CORNER_RADIUS
+
+        # space between columns of cards
+        self.x_separation: float = self.__DEFAULT_X_SEPARATION
+
+        # space between rows of cards
+        self.y_separation: float = self.__DEFAULT_Y_SEPARATION
+
+        # number of rows
+        self.row_count: int = self.__DEFAULT_COLUMNS
+
+        # number of columns
+        self.column_count: int = self.__DEFAULT_ROWS
 
         payload = {}
 
-        project_name = ""
-        if 'options' in kwargs:
-            payload['options'] = kwargs['options']
-
-            if 'project name' in payload['options']:
-                project_name = f"{payload['options']['project name']}-"
+        project_name = self.get_project_name_from_kwargs(kwargs, postfix='-')
 
         payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
                                   f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -74,33 +90,9 @@ class CardSheet(Design):
 
         self.convert_all_to_thoudpi(to_convert)
 
-    def __set_defaults(self):
-        """ Set default values for all variables from built in values"""
-
-        self.args_string = ' '.join(sys.argv[1:])
-
-        self.x_measure = self.__DEFAULT_X_MEASURE
-        self.y_measure = self.__DEFAULT_Y_MEASURE
-        self.corner_radius = self.__DEFAULT_CORNER_RADIUS
-
-        self.x_separation = self.__DEFAULT_X_SEPARATION
-        self.y_separation = self.__DEFAULT_Y_SEPARATION
-
-        self.row_count = self.__DEFAULT_COLUMNS
-        self.column_count = self.__DEFAULT_ROWS
-
-        self.inner_dimensions = []
-        self.outer_dimensions = []
-
     def create(self):
         # noinspection DuplicatedCode
         self.__init_design()
-
-        self.template["FILENAME"] = self.outfile
-        self.template["$FILENAME$"] = self.outfile
-        self.template["$PROJECT$"] = self.project_name
-        self.template["$TITLE$"] = self.title
-        self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
 
@@ -150,6 +142,7 @@ class CardSheet(Design):
 
         ycoord = self.bottom_y + self.y_text_spacing + (self.row_count - 1) * (self.y_measure + self.y_separation)
 
+        # TODO: Test if project exists
         ycoord += 2 * self.y_text_spacing
         self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord)
 
@@ -176,9 +169,7 @@ class CardSheet(Design):
         viewport_x = self.thoudpi_to_dpi(
             round(self.right_x + (self.column_count - 1) * self.x_separation + 2 * self.FACTOR))
         viewport_y = self.thoudpi_to_dpi(ycoord + (int(self.row_count) - 1) * int(self.y_separation))
-        self.template[
-            "$VIEWPORT$"] = f"{viewport_x}," \
-                            f" {viewport_y}"
+        self.template["$VIEWPORT$"] = f"{viewport_x},  {viewport_y}"
 
         self.write_to_file(self.template)
         print(f"CardSheet \"{self.outfile}\" created")
