@@ -61,9 +61,9 @@ class Design(ABC):
     def __init__(self, args):
         self.outfile: str = ""
         self.title: str = ""
-        self.x_offset: float
-        self.y_offset: float
-        self.set_xyoffset_from_kwargs(args)
+        self.x_offset: float = self.__DEFAULT_X_OFFSET
+        self.y_offset: float = self.__DEFAULT_Y_OFFSET
+        self.__set_xyoffset_from_kwargs(args)
         self.y_text_spacing: float = self.__DEFAULT_Y_TEXT_SPACING
         self.project_name: str = self.get_project_name_from_kwargs(args)
         self.verbose: bool = False
@@ -84,9 +84,7 @@ class Design(ABC):
     def create(self):
         pass
 
-    def set_xyoffset_from_kwargs(self, args):
-        self.x_offset = self.__DEFAULT_X_OFFSET
-        self.y_offset = self.__DEFAULT_Y_OFFSET
+    def __set_xyoffset_from_kwargs(self, args):
 
         if 'options' in args:
             payload = args['options']
@@ -96,9 +94,6 @@ class Design(ABC):
 
             if 'y offset' in payload:
                 self.y_offset = payload['y offset']
-
-    def set_project_name_from_kwargs(self, args):
-        self.project_name = self.get_project_name_from_kwargs(args)
 
     @staticmethod
     def get_project_name_from_kwargs(args, prefix: str = "", postfix: str = ""):
@@ -362,6 +357,14 @@ class Design(ABC):
         self.outfile = File.set_svg_extension(self.outfile)
 
     def configuration(self, config_file: str, section: str, verbose: bool, payload=None):
+        """
+        Reads in a section from a configuration file.
+        :param config_file: filename with path of the config file
+        :param section: section from the config file to read
+        :param verbose: be verbose of the import
+        :param payload: default and optional values
+        :return: config object
+        """
         self.validate_config_and_section(__class__.__name__, config_file, section)
 
         if payload is None:
@@ -438,6 +441,12 @@ class Design(ABC):
             self.y_text_spacing = config.get(section, self.__Y_TEXT_SPACING_LABEL)
 
         return config
+
+    def get_project_name(self, prefix="", postfix=""):
+        if self.project_name == "":
+            return ""
+
+        return prefix + self.project_name + postfix
 
 
 Design.default_config()

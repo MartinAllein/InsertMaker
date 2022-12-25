@@ -69,13 +69,12 @@ class CardSheet(Design):
                                      'corner radius': self.corner_radius,
                                      }
 
-        project_name = self.project_name + "-" if self.project_name != "" else ""
+        project_name = self.get_project_name(postfix="-")
 
         # : encloses config values to replace
         payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L:x measure:-W:y measure:-" \
                                   f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        # b = re.findall(':.*?:', payload['default_name'])
         config = super().configuration(config_file, section, verbose, payload)
 
         self.x_separation = float(config.get(section, 'x separation'))
