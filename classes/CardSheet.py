@@ -11,7 +11,7 @@ from classes.Template import Template
 class CardSheet(Design):
 
     # Default values
-    __DEFAULT_FILENAME: str = "CardSheet.svg"
+    __DEFAULT_FILENAME: str = "CardSheet"
     __DEFAULT_TEMPLATE: str = "CardSheet.svg"
     __DEFAULT_TEMPLATE_CARD: str = "Card.svg"
 
