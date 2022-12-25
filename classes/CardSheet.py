@@ -1,4 +1,5 @@
 import argparse
+import re
 import sys
 from typing import Any, List
 from datetime import datetime
@@ -9,7 +10,6 @@ from classes.Template import Template
 
 
 class CardSheet(Design):
-
     # Default values
     __DEFAULT_FILENAME: str = "CardSheet"
     __DEFAULT_TEMPLATE: str = "CardSheet.svg"
@@ -60,11 +60,6 @@ class CardSheet(Design):
 
         payload = {}
 
-        project_name = self.get_project_name_from_kwargs(kwargs, postfix='-')
-
-        payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L{self.x_measure}-W{self.y_measure}-" \
-                                  f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-
         payload['default_values'] = {'x separation': self.x_separation,
                                      'y separation': self.y_separation,
                                      'rows': self.column_count,
@@ -74,6 +69,13 @@ class CardSheet(Design):
                                      'corner radius': self.corner_radius,
                                      }
 
+        project_name = self.project_name + "-" if self.project_name != "" else ""
+
+        # : encloses config values to replace
+        payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L:x measure:-W:y measure:-" \
+                                  f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+        # b = re.findall(':.*?:', payload['default_name'])
         config = super().configuration(config_file, section, verbose, payload)
 
         self.x_separation = float(config.get(section, 'x separation'))

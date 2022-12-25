@@ -1,3 +1,4 @@
+import re
 import sys
 import os
 import xml.dom.minidom
@@ -375,6 +376,15 @@ class Design(ABC):
             default_values = payload['default_values']
 
         config = self.__read_config(config_file, section, default_values, options)
+
+        for value in payload:
+            if isinstance(payload[value], str):
+                tokens = re.findall(':.*?:', payload[value])
+                for token in tokens:
+                    if config.has_option(section, token[1:-1]):
+                        payload[value] = payload[value].replace(token, config.get(section, token[1:-1]))
+                    else:
+                        payload[value] = payload[value].replace(token, "")
 
         name = ""
         if 'default_name' in payload:
