@@ -1,7 +1,3 @@
-import argparse
-import re
-import sys
-from typing import Any, List
 from datetime import datetime
 from classes.Design import Design
 from classes.Direction import Direction
@@ -141,36 +137,16 @@ class CardSheet(Design):
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
         self.template["$CUT$"] = output
 
-        ycoord = self.bottom_y + self.y_text_spacing + (self.row_count - 1) * (self.y_measure + self.y_separation)
+        self.template["$FOOTER_CARD_WIDTH$"] = str(round((self.right_x - self.left_x) / self.FACTOR, 2))
+        self.template["$FOOTER_CARD_HEIGHT$"] = round((self.bottom_y - self.top_y) / self.FACTOR, 2)
 
-        # TODO: Test if project exists
-        ycoord += 2 * self.y_text_spacing
-        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord)
+        viewbox_x = round(self.x_offset + (self.right_x - self.left_x) * self.column_count
+                          + self.x_separation * (self.column_count - 1))
+        viewbox_y = round(self.y_offset + (self.bottom_y - self.top_y) * self.row_count
+                          + self.y_separation * (self.row_count - 1))
 
-        ycoord += self.y_text_spacing
-        self.template["$LABEL_TITLE_Y$"] = self.thoudpi_to_dpi(ycoord)
-
-        ycoord += self.y_text_spacing
-        self.template["$LABEL_FILENAME_Y$"] = self.thoudpi_to_dpi(ycoord)
-
-        ycoord += self.y_text_spacing
-        self.template["$LABEL_OVERALL_WIDTH_Y$"] = self.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / self.FACTOR, 2))
-
-        ycoord += self.y_text_spacing
-        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = self.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / self.FACTOR, 2)
-
-        ycoord += self.y_text_spacing
-        self.template["$ARGS_STRING_Y$"] = self.thoudpi_to_dpi(ycoord)
-        self.template["$ARGS_STRING$"] = self.args_string
-
-        ycoord += self.y_text_spacing
-
-        viewport_x = self.thoudpi_to_dpi(
-            round(self.right_x + (self.column_count - 1) * self.x_separation + 2 * self.FACTOR))
-        viewport_y = self.thoudpi_to_dpi(ycoord + (int(self.row_count) - 1) * int(self.y_separation))
-        self.template["$VIEWPORT$"] = f"{viewport_x},  {viewport_y}"
+        self.template["VIEWBOX_X"] = viewbox_x
+        self.template["VIEWBOX_Y"] = viewbox_y
 
         self.write_to_file(self.template)
         print(f"CardSheet \"{self.outfile}\" created")

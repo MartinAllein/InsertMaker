@@ -68,7 +68,7 @@ class Project:
             self.options['thickness'] = self.thickness
 
         if config.has_option(self.__PROJECT_SECTION, 'y text spacing'):
-            self.thickness = float(config.get(section, 'y text spacing'))
+            self.y_text_spacing = float(config.get(section, 'y text spacing'))
             self.options['y text spacing '] = self.y_text_spacing
 
     def __set_defaults(self):

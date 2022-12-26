@@ -114,7 +114,7 @@ class Design(ABC):
         return project_name
 
     @staticmethod
-    def __divide_dpi(coord: str):
+    def __divide_dpi(coord: str) -> str:
         if coord == 0:
             value = "00000"
         else:
@@ -123,7 +123,7 @@ class Design(ABC):
         return value[:-4] + "." + value[-4:]
 
     @staticmethod
-    def thoudpi_to_dpi(coord):
+    def thoudpi_to_dpi(coord) -> str:
 
         if type(coord) is list:
             result = []
@@ -244,13 +244,33 @@ class Design(ABC):
         if TEMPLATE not in items:
             raise " No tamplate given"
 
+        if 'VIEWBOX_X' not in items:
+            raise "VIEWBOX X is missing"
+
+        if 'VIEWBOX_Y' not in items:
+            raise "VIEWBOX Y is missing"
+
         template = Template.load_template(items[TEMPLATE])
 
         # modify FILENAME with leading and trailing $
-        self.template["$FILENAME$"] = self.outfile
-        self.template["$PROJECT$"] = self.project_name
-        self.template["$TITLE$"] = self.title
+        self.template["$FOOTER_PROJECT_NAME$"] = self.project_name
+        self.template["$FOOTER_TITLE$"] = self.title
+        self.template["$HEADER_TITLE$"] = self.title
+
+        self.template["$FOOTER_FILENAME$"] = self.outfile
+        self.template["$FOOTER_ARGS_STRING$"] = self.args_string
+        self.template['$FOOTER_OVERALL_WIDTH$'] = self.template['VIEWBOX_X']
+        self.template['$FOOTER_OVERALL_HEIGHT'] = self.template['VIEWBOX_Y']
+
         self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
+
+        ycoord = self.template['VIEWBOX_Y']
+        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.y_text_spacing)
+        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.y_text_spacing)
+
+        all_footers = [i for i in self.template if i.startswith('$FOOTER_')]
+        self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])}," \
+                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.y_text_spacing)} "
 
         for key in items:
             template = template.replace(key, str(items[key]))
