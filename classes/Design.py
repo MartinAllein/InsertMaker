@@ -2,7 +2,6 @@ import re
 import sys
 import os
 import xml.dom.minidom
-import collections.abc
 from datetime import datetime
 from abc import ABC, abstractmethod
 from classes.Config import Config
@@ -269,7 +268,7 @@ class Design(ABC):
         self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.y_text_spacing)
 
         all_footers = [i for i in self.template if i.startswith('$FOOTER_')]
-        self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])}," \
+        self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])} " \
                                      f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.y_text_spacing)} "
 
         for key in items:
@@ -305,6 +304,10 @@ class Design(ABC):
     @staticmethod
     def mm_to_thoudpi(value: float) -> int:
         return int(float(value) * Design.FACTOR)
+
+    @staticmethod
+    def mm_to_dpi(value: float) -> float:
+        return int(value * Design.FACTOR) / 10000
 
     @classmethod
     def default_config(cls):
@@ -467,6 +470,14 @@ class Design(ABC):
             return ""
 
         return prefix + self.project_name + postfix
+
+    @staticmethod
+    def is_float(value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
 
 
 Design.default_config()

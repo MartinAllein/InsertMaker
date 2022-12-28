@@ -1,21 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg baseProfile='full' xmlns:svg="http://www.w3.org/2000/svg"
+<svg baseProfile='full'  xmlns:svg="http://www.w3.org/2000/svg"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 $VIEWBOX$"
-     id="CardSheet">
+     id="FreePath">
     <title>$HEADER_TITLE$</title>
-    <g id="card-group">
-        $CUT$
+    <g id="group" fill="none" stroke="#d41a5a" stroke-width="2">
+        <path  d="$CUT$"/>
     </g>
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
         <text x="$LABEL_X$" y="$LABEL_PROJECT_Y$">
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Project: $FOOTER_PROJECT_NAME$</tspan>
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Title: $FOOTER_TITLE$</tspan>
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">File: $FOOTER_FILENAME$</tspan>
-            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Overall Width: $FOOTER_OVERALL_WIDTH$</tspan>
-            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Overall Height: $FOOTER_OVERALL_HEIGHT$</tspan>
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Command Line Arguments: $FOOTER_ARGS_STRING$</tspan>
-            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Card Width: $FOOTER_CARD_WIDTH$</tspan>
-            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Card Height: $FOOTER_CARD_HEIGHT$</tspan>
         </text>
     </g>
 </svg>
