@@ -68,6 +68,7 @@ class Design(ABC):
         self.verbose: bool = False
         self.options: list[str] = []
         self.default_name: str = ""
+        self.template_name: str = ""
 
         self.corners: list[float] = []
         self.cutlines: list[float] = []
@@ -239,6 +240,9 @@ class Design(ABC):
 
         if self.outfile == "":
             raise "No filename given"
+
+        if self.template_name:
+            items['TEMPLATE'] = self.template_name
 
         if TEMPLATE not in items:
             raise " No tamplate given"
@@ -450,18 +454,23 @@ class Design(ABC):
 
         if 'x offset' in options:
             self.x_offset = options['x offset']
-        elif config.has_option(section, 'x offset '):
+        elif config.has_option(section, 'x offset'):
             self.x_offset = config.get(section, 'x offset')
 
         if 'y offset' in options:
             self.y_offset = options['y offset']
-        elif config.has_option(section, 'y offset '):
+        elif config.has_option(section, 'y offset'):
             self.y_offset = config.get(section, 'y offset')
 
         if self.__Y_TEXT_SPACING_LABEL in options:
             self.y_text_spacing = options[self.__Y_TEXT_SPACING_LABEL]
         elif config.has_option(section, self.__Y_TEXT_SPACING_LABEL):
             self.y_text_spacing = config.get(section, self.__Y_TEXT_SPACING_LABEL)
+
+        if 'template' in options:
+            self.template_name = options['template']
+        elif config.has_option(section, 'template'):
+            self.template_name = config.get(section, 'template')
 
         return config
 

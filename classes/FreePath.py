@@ -9,6 +9,7 @@ class FreePath(Design):
     # Default values
     __DEFAULT_FILENAME: str = "FreePath"
     __DEFAULT_TEMPLATE: str = "FreePath.svg"
+    __DEFAULT_TEMPLATE_GROUP: str = "FreePathGroup.svg"
 
     __DEFAULT_MAX_X = 210
     __DEFAULT_MAX_Y = 297
@@ -21,7 +22,9 @@ class FreePath(Design):
 
         payload['default_values'] = {'paths': [],
                                      'max x': self.__DEFAULT_MAX_X,
-                                     'max y': self.__DEFAULT_MAX_Y
+                                     'max y': self.__DEFAULT_MAX_Y,
+                                     'template': self.__DEFAULT_TEMPLATE,
+                                     'template group': self.__DEFAULT_TEMPLATE_GROUP
                                      }
 
         project_name = self.get_project_name(postfix="-")
@@ -33,9 +36,12 @@ class FreePath(Design):
         config = super().configuration(config_file, section, verbose, payload)
 
         # Paths are enclosed with "". split config string into parts with "..." and strip the ""
+        self.path_groups = config.get(section, 'paths').split("\n\n")
         self.paths = [i[1:-1].upper() for i in re.findall('".*?"', config.get(section, 'paths'))]
+
         self.max_x = config.get(section, 'max x')
         self.max_y = config.get(section, 'max y')
+        self.template_group_name = config.get(section, 'template group')
 
         # list of path elements with their method for indirect function call
         self.functions = {'R': self.__rectangle,
@@ -49,14 +55,26 @@ class FreePath(Design):
         self.__init_design()
 
         output = ""
+        card_template = Template.load_template(self.template_group_name)
+        id_count = 1
 
-        for path in self.paths:
-            command = path[0]
-            if command in self.functions:
-                f = self.functions[command]
-                output += f(path[2:])
+        for pathlist in self.path_groups:
+            paths = [i[1:-1].upper() for i in re.findall('".*?"', pathlist)]
+            group_output = ""
+            for path in paths:
+                command = path[0]
+                if command in self.functions:
+                    f = self.functions[command]
+                    group_output += f(path[2:])
 
-        self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
+            if group_output != "":
+                a = card_template
+                a = a.replace("$ID$", f"{id_count}")
+                id_count += 1
+                group_output = a.replace("$CUT$", group_output)
+
+                output += group_output
+
         self.template["$CUT$"] = output
 
         self.template["VIEWBOX_X"] = self.max_x
@@ -115,16 +133,17 @@ class FreePath(Design):
 
         start_xy = parameter[0].split(",")
         if len(start_xy) != 2:
-            error += 'Start point of rectangle must be x,y\n'
+            print('Start point of rectangle must be x,y\n')
+            sys.exit(1)
 
         if not [float(f) for f in start_xy]:
-            print("All parameter mus be of type float. C " + command)
+            print("All parameter must be of type float. C " + command)
+            sys.exit(1)
 
         start_x = Design.mm_to_dpi(float(start_xy[0]))
         start_y = Design.mm_to_dpi(float(start_xy[1]))
         radius = Design.mm_to_dpi(float(parameter[1]))
         start_x_left = start_x - radius
-        start_y_on_circle = 0
 
         # https: // www.mediaevent.de / tutorial / svg - circle - arc.html
         return f"M {start_x_left} {start_y} a {radius} {radius} 0 1 1 0 1 z "
