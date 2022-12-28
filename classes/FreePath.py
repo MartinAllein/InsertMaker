@@ -15,6 +15,8 @@ class FreePath(Design):
     __DEFAULT_MAX_Y = 297
     __DEFAULT_UNIT = "mm"
 
+    __DEFAULT_COLOR = "d41a5a"
+
     def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
         super().__init__(kwargs)
 
@@ -42,10 +44,12 @@ class FreePath(Design):
         self.max_x = config.get(section, 'max x')
         self.max_y = config.get(section, 'max y')
         self.template_group_name = config.get(section, 'template group')
+        self.color = self.stroke_color
 
         # list of path elements with their method for indirect function call
         self.functions = {'R': self.__rectangle,
-                          'C': self.__circle}
+                          'C': self.__circle,
+                          'F': self.__color}
 
         # Convert all measures to thousands dpi
         to_convert = ['max_x', 'max_y']
@@ -61,6 +65,8 @@ class FreePath(Design):
         for pathlist in self.path_groups:
             paths = [i[1:-1].upper() for i in re.findall('".*?"', pathlist)]
             group_output = ""
+            self.color = self.stroke_color
+
             for path in paths:
                 command = path[0]
                 if command in self.functions:
@@ -70,6 +76,7 @@ class FreePath(Design):
             if group_output != "":
                 a = card_template
                 a = a.replace("$ID$", f"{id_count}")
+                a = a.replace("$COLOR$", self.color)
                 id_count += 1
                 group_output = a.replace("$CUT$", group_output)
 
@@ -147,3 +154,7 @@ class FreePath(Design):
 
         # https: // www.mediaevent.de / tutorial / svg - circle - arc.html
         return f"M {start_x_left} {start_y} a {radius} {radius} 0 1 1 0 1 z "
+
+    def __color(self, command: str) -> str:
+        self.color = command
+        return ""

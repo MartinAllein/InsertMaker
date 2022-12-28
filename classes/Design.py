@@ -30,6 +30,7 @@ class Design(ABC):
     __DEFAULT_Y_OFFSET = 2.0
     __DEFAULT_Y_TEXT_SPACING = 7
     __DEFAULT_THICKNESS = 1.5
+    __DEFAULT_STROKE_COLOR = "#d41a5a"
 
     # Default path  and extension definitions
     __CONFIG_EXTENSION = "config"
@@ -43,6 +44,7 @@ class Design(ABC):
     __UNIT_CONFIG_LABEL = "unit"
     __XML_LINE_CONFIG_LABEL = "xml line"
     __XML_PATH_CONFIG_LABEL = "xml path"
+    __STROKE_COLOR_LABEL = "stroke color"
 
     __UNIT_MM_TEXT = 'mm'
     __UNIT_MIL_TEXT = 'mil'
@@ -69,6 +71,7 @@ class Design(ABC):
         self.options: list[str] = []
         self.default_name: str = ""
         self.template_name: str = ""
+        self.stroke_color = self.__DEFAULT_STROKE_COLOR
 
         self.corners: list[float] = []
         self.cutlines: list[float] = []
@@ -324,7 +327,8 @@ class Design(ABC):
                     cls.__DEFAULT_THICKNESS: cls.__DEFAULT_THICKNESS,
                     cls.__XML_LINE_CONFIG_LABEL: cls.__DEFAULT_XML_LINE,
                     cls.__XML_PATH_CONFIG_LABEL: cls.__DEFAULT_XML_PATH,
-                    cls.__UNIT_CONFIG_LABEL: cls.__DEFAULT_UNIT
+                    cls.__UNIT_CONFIG_LABEL: cls.__DEFAULT_UNIT,
+                    cls.__STROKE_COLOR_LABEL: cls.__DEFAULT_STROKE_COLOR
                     }
 
         configuration = Config.read_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
@@ -337,6 +341,7 @@ class Design(ABC):
         cls.thickness = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__THICKNESS_CONFIG_LABEL))
         cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
         cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
+        cls.stroke_color = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_COLOR_LABEL)
 
         if configuration[cls.__DEFAULT_SECTION_NAME][cls.__UNIT_CONFIG_LABEL] == cls.__UNIT_MIL_TEXT:
             cls.unit_mm = False
