@@ -11,11 +11,10 @@ class FreePath(Design):
     __DEFAULT_TEMPLATE: str = "FreePath.svg"
     __DEFAULT_TEMPLATE_GROUP: str = "FreePathGroup.svg"
 
+    # set defaults to A4 paper size
     __DEFAULT_MAX_X = 210
     __DEFAULT_MAX_Y = 297
     __DEFAULT_UNIT = "mm"
-
-    __DEFAULT_COLOR = "d41a5a"
 
     def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
         super().__init__(kwargs)
@@ -37,19 +36,21 @@ class FreePath(Design):
 
         config = super().configuration(config_file, section, verbose, payload)
 
-        # Paths are enclosed with "". split config string into parts with "..." and strip the ""
+        # groups are separated by an ampty line
         self.path_groups = config.get(section, 'paths').split("\n\n")
-        self.paths = [i[1:-1].upper() for i in re.findall('".*?"', config.get(section, 'paths'))]
 
         self.max_x = config.get(section, 'max x')
         self.max_y = config.get(section, 'max y')
         self.template_group_name = config.get(section, 'template group')
-        self.color = self.stroke_color
+        self.color = self.default_stroke_color
+        self.dasharray = self.default_stroke_dasharray
 
         # list of path elements with their method for indirect function call
         self.functions = {'R': self.__rectangle,
                           'C': self.__circle,
-                          'F': self.__color}
+                          'F': self.__color,
+                          'D': self.__dasharray,
+                          'L': self.__line}
 
         # Convert all measures to thousands dpi
         to_convert = ['max_x', 'max_y']
@@ -63,20 +64,35 @@ class FreePath(Design):
         id_count = 1
 
         for pathlist in self.path_groups:
-            paths = [i[1:-1].upper() for i in re.findall('".*?"', pathlist)]
+            # split path list for a group by carrage return
+            # there is only one command per line allowed
+            paths = [i.upper() for i in pathlist.split('\n')]
             group_output = ""
-            self.color = self.stroke_color
+            self.color = self.default_stroke_color
+            self.dasharray = self.default_stroke_dasharray
 
             for path in paths:
-                command = path[0]
+                # find in configuration entry the occurance of first ' '
+                # left of ' ' is the command, right of ' ' is the data for the command
+                split_index = path.find(' ')
+
+                command = path
+                data = ""
+                if split_index != -1:
+                    # split config line only if there is at least one ' ' in the line
+                    command = path[0:split_index]
+                    data = path[split_index + 1:]
+
                 if command in self.functions:
-                    f = self.functions[command]
-                    group_output += f(path[2:])
+                    # call the function inderectly that serves the command
+                    group_output += self.functions[command](data)
 
             if group_output != "":
                 a = card_template
                 a = a.replace("$ID$", f"{id_count}")
                 a = a.replace("$COLOR$", self.color)
+                a = a.replace("$DASHARRAY$", self.dasharray)
+
                 id_count += 1
                 group_output = a.replace("$CUT$", group_output)
 
@@ -129,7 +145,8 @@ class FreePath(Design):
 
         return f"M {start_x} {start_y} h {width} v {height} h {-width} z "
 
-    def __circle(self, command: str) -> str:
+    @staticmethod
+    def __circle(command: str) -> str:
         error = ""
         parameter = command.split(" ")
 
@@ -158,3 +175,43 @@ class FreePath(Design):
     def __color(self, command: str) -> str:
         self.color = command
         return ""
+
+    def __dasharray(self, command: str) -> str:
+        self.dasharray = command
+        return ""
+
+    @staticmethod
+    def __line(command: str) -> str:
+        error = ""
+        parameter = command.split(" ")
+
+        # test on validity
+        if len(parameter) != 2:
+            print('Number of parameters is wrong in L ' + command)
+            sys.exit()
+
+        start = parameter[0].split(",")
+        end = parameter[1].split(",")
+
+        if len(start) != 2:
+            print('Start point of rectangle must be x,y\n')
+            sys.exit(1)
+
+        if len(end) != 2:
+            print('End point of rectangle must be x,y\n')
+            sys.exit(1)
+
+        if not [float(f) for f in start]:
+            print("Start parameter must be of type float. C " + command)
+            sys.exit(1)
+
+        if not [float(f) for f in end]:
+            print("End parameter must be of type float. C " + command)
+            sys.exit(1)
+
+        start_x = Design.mm_to_dpi(float(start[0]))
+        start_y = Design.mm_to_dpi(float(start[1]))
+        end_x = Design.mm_to_dpi(float(end[0]))
+        end_y = Design.mm_to_dpi(float(end[1]))
+
+        return f"M {start_x} {start_y} L {end_x} {end_y}"

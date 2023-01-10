@@ -30,7 +30,9 @@ class Design(ABC):
     __DEFAULT_Y_OFFSET = 2.0
     __DEFAULT_Y_TEXT_SPACING = 7
     __DEFAULT_THICKNESS = 1.5
-    __DEFAULT_STROKE_COLOR = "#d41a5a"
+    __DEFAULT_STROKE_COLOR = "#aaaaaa"
+    __DEFAULT_STROKE_DASHARRAY = "20, 20"
+    __DEFAULT_STROKE_WIDTH = 2
 
     # Default path  and extension definitions
     __CONFIG_EXTENSION = "config"
@@ -44,7 +46,9 @@ class Design(ABC):
     __UNIT_CONFIG_LABEL = "unit"
     __XML_LINE_CONFIG_LABEL = "xml line"
     __XML_PATH_CONFIG_LABEL = "xml path"
-    __STROKE_COLOR_LABEL = "stroke color"
+    __STROKE_COLOR_LABEL = "default color"
+    __STROKE_WIDTH_LABEL = "default stroke width"
+    __STROKE_DASH_LABEL = "default stroke dasharray"
 
     __UNIT_MM_TEXT = 'mm'
     __UNIT_MIL_TEXT = 'mil'
@@ -71,7 +75,9 @@ class Design(ABC):
         self.options: list[str] = []
         self.default_name: str = ""
         self.template_name: str = ""
-        self.stroke_color = self.__DEFAULT_STROKE_COLOR
+        self.default_stroke_color = self.__DEFAULT_STROKE_COLOR
+        self.default_stroke_width = self.__DEFAULT_STROKE_WIDTH
+        self.default_stroke_dasharray = self.__DEFAULT_STROKE_DASHARRAY
 
         self.corners: list[float] = []
         self.cutlines: list[float] = []
@@ -328,7 +334,9 @@ class Design(ABC):
                     cls.__XML_LINE_CONFIG_LABEL: cls.__DEFAULT_XML_LINE,
                     cls.__XML_PATH_CONFIG_LABEL: cls.__DEFAULT_XML_PATH,
                     cls.__UNIT_CONFIG_LABEL: cls.__DEFAULT_UNIT,
-                    cls.__STROKE_COLOR_LABEL: cls.__DEFAULT_STROKE_COLOR
+                    cls.__STROKE_COLOR_LABEL: cls.__DEFAULT_STROKE_COLOR,
+                    cls.__STROKE_WIDTH_LABEL: cls.__DEFAULT_STROKE_WIDTH,
+                    cls.__STROKE_DASH_LABEL: cls.__DEFAULT_STROKE_DASHARRAY
                     }
 
         configuration = Config.read_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
@@ -342,6 +350,8 @@ class Design(ABC):
         cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
         cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
         cls.stroke_color = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_COLOR_LABEL)
+        cls.stroke_width = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_WIDTH_LABEL)
+        cls.stroke_dasharray = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_DASH_LABEL)
 
         if configuration[cls.__DEFAULT_SECTION_NAME][cls.__UNIT_CONFIG_LABEL] == cls.__UNIT_MIL_TEXT:
             cls.unit_mm = False
@@ -476,6 +486,21 @@ class Design(ABC):
             self.template_name = options['template']
         elif config.has_option(section, 'template'):
             self.template_name = config.get(section, 'template')
+
+        if 'default color' in options:
+            self.default_stroke_color = options['default color']
+        elif config.has_option(section, 'default color'):
+            self.default_stroke_color = config.get(section, 'default color')
+
+        if 'default stroke width' in options:
+            self.default_stroke_width = options['default stroke width']
+        elif config.has_option(section, 'default stroke width'):
+            self.default_stroke_width = config.get(section, 'default stroke width')
+
+        if 'default stroke dasharray' in options:
+            self.default_stroke_dasharray = options['default stroke dasharray']
+        elif config.has_option(section, 'default stroke dasharray'):
+            self.default_stroke_dasharray = config.get(section, 'default stroke dasharray')
 
         return config
 
