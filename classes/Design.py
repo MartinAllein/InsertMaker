@@ -63,13 +63,35 @@ class Design(ABC):
     FACTOR = 720000 / 25.4
     __default_configuration = {}
 
+    measures = {}
+
     def __init__(self, args):
+        self.measures = {}
         self.outfile: str = ""
         self.title: str = ""
         self.x_offset: float = self.__DEFAULT_X_OFFSET
         self.y_offset: float = self.__DEFAULT_Y_OFFSET
-        self.__set_xyoffset_from_kwargs(args)
         self.y_text_spacing: float = self.__DEFAULT_Y_TEXT_SPACING
+        self.__set_xyoffset_from_kwargs(args)
+
+        self.measures = {'x offset': self.__DEFAULT_X_OFFSET,
+                         'y offset': self.__DEFAULT_Y_OFFSET,
+                         'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
+                         'thickness': self.__DEFAULT_THICKNESS
+                         }
+        self.__set_measures_from_kwargs(args, self.measures.keys())
+
+        self.texts = {
+            'title': "",
+            'outfile': "",
+            'project name': "",
+            'name': "",
+            'template name': "",
+            'default stroke color': self.__DEFAULT_STROKE_COLOR,
+            'default stroke width': self.__DEFAULT_STROKE_WIDTH,
+            'default stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
+        }
+
         self.project_name: str = self.get_project_name_from_kwargs(args)
         self.verbose: bool = False
         self.options: list[str] = []
@@ -93,6 +115,10 @@ class Design(ABC):
     def create(self):
         pass
 
+    @property
+    def measure_keys(self):
+        return self.measures.keys()
+
     def __set_xyoffset_from_kwargs(self, args):
 
         if 'options' in args:
@@ -103,6 +129,11 @@ class Design(ABC):
 
             if 'y offset' in payload:
                 self.y_offset = payload['y offset']
+
+    def __set_measures_from_kwargs(self, args, keys: []):
+        if 'options' in args:
+            # iterate through the keys and if they exist in args['options'] then convert them to tdpi
+            self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
 
     @staticmethod
     def get_project_name_from_kwargs(args, prefix: str = "", postfix: str = ""):
@@ -385,6 +416,17 @@ class Design(ABC):
         self.x_offset = Design.mm_to_thoudpi(self.x_offset)
         self.y_offset = Design.mm_to_thoudpi(self.y_offset)
         self.y_text_spacing = Design.mm_to_thoudpi(self.y_text_spacing)
+
+    def convert_measures_to_tdpi(self):
+        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
+
+        # remove all keys ending with '_tdpi'
+        self.measures = {k: self.measures[k] for k in list(self.measures.keys()) if not k.endswith('_tdpi')}
+
+        # convert all keys to tdpi and add '_tdpi' to the key
+        self.measures.update({k + "_tdpi": Design.mm_to_thoudpi(self.measures[k]) for k in list(self.measures.keys())})
+
+        return
 
     def set_title_and_outfile(self, name: str):
         if name is None or name == "":

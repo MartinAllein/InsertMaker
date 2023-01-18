@@ -4,7 +4,7 @@
      id="CardSheet">
     <title>$HEADER_TITLE$</title>
     <g id="card-group">
-        $CUT$
+        $SVGPATH$
     </g>
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
         <text x="$LABEL_X$" y="$LABEL_PROJECT_Y$">

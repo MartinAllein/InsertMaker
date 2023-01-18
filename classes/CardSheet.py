@@ -102,27 +102,27 @@ class CardSheet(Design):
         output = ""
         for row in range(self.row_count):
             for col in range(self.column_count):
-                cut = base_cut[self.__CUTLINES_CARD_FULL]
+                svgpath = base_cut[self.__CUTLINES_CARD_FULL]
 
                 if self.x_separation == 0.0 and self.y_separation != 0.0 and col != 0:
                     # Cards are ordered in rows. Left is full others left open
-                    cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
+                    svgpath = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
 
                 if self.x_separation != 0.0 and self.y_separation == 0.0 and row != 0:
                     # Cards are ordered in columns. Top is full others left open
-                    cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
+                    svgpath = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
 
                 if self.x_separation == 0.0 and self.y_separation == 0.0:
                     # No Separation
                     if row == 0 and col != 0:
-                        cut = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
+                        svgpath = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
                     elif row != 0 and col == 0:
-                        cut = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
+                        svgpath = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
                     elif row != 0 and col != 0:
-                        cut = base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN]
+                        svgpath = base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN]
 
                 template = {'$ID$': f"{row} - {col}",
-                            '$CUT$': cut,
+                            '$SVGPATH$': svgpath,
                             '$TRANSLATE$': str(
                                 self.thoudpi_to_dpi((self.x_measure + self.x_separation) * col)) + ", " + str(
                                 self.thoudpi_to_dpi((self.y_measure + self.y_separation) * row))
@@ -135,7 +135,7 @@ class CardSheet(Design):
                 output += temp
 
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template["$CUT$"] = output
+        self.template["$SVGPATH$"] = output
 
         self.template["$FOOTER_CARD_WIDTH$"] = str(round((self.right_x - self.left_x) / self.FACTOR, 2))
         self.template["$FOOTER_CARD_HEIGHT$"] = round((self.bottom_y - self.top_y) / self.FACTOR, 2)

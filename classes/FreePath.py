@@ -36,14 +36,23 @@ class FreePath(Design):
 
         config = super().configuration(config_file, section, verbose, payload)
 
-        # groups are separated by an ampty line
+        # groups are separated by an empty line
         self.path_groups = config.get(section, 'paths').split("\n\n")
 
-        self.max_x = config.get(section, 'max x')
-        self.max_y = config.get(section, 'max y')
-        self.template_group_name = config.get(section, 'template group')
-        self.color = self.default_stroke_color
-        self.dasharray = self.default_stroke_dasharray
+        self.settings = {
+            "template group": config.get(section, 'template group'),
+            "color": self.default_stroke_color,
+            "dasharray": self.default_stroke_dasharray
+        }
+
+        self.measures["max x"] = int(config.get(section, 'max x'))
+        self.measures["max y"] = int(config.get(section, 'max y'))
+
+        #  self.max_x = config.get(section, 'max x')
+        # self.max_y = config.get(section, 'max y')
+        # self.template_group_name = config.get(section, 'template group')
+        # self.color = self.default_stroke_color
+        # self.dasharray = self.default_stroke_dasharray
 
         # list of path elements with their method for indirect function call
         self.functions = {'R': self.__rectangle,
@@ -53,14 +62,16 @@ class FreePath(Design):
                           'L': self.__line}
 
         # Convert all measures to thousands dpi
-        to_convert = ['max_x', 'max_y']
-        self.convert_all_to_thoudpi(to_convert)
+        # to_convert = ['max x', 'max_y']
+        # self.convert_all_to_thoudpi(to_convert)
+        self.measures['foo_tdpi'] = 123
+        self.convert_measures_to_tdpi()
 
     def create(self):
         self.__init_design()
 
         output = ""
-        card_template = Template.load_template(self.template_group_name)
+        card_template = Template.load_template(self.settings['template group'])
         id_count = 1
 
         for pathlist in self.path_groups:
@@ -68,8 +79,8 @@ class FreePath(Design):
             # there is only one command per line allowed
             paths = [i.upper() for i in pathlist.split('\n')]
             group_output = ""
-            self.color = self.default_stroke_color
-            self.dasharray = self.default_stroke_dasharray
+            self.settings['color'] = self.default_stroke_color
+            self.settings['dasharray'] = self.default_stroke_dasharray
 
             for path in paths:
                 # find in configuration entry the occurance of first ' '
@@ -90,18 +101,18 @@ class FreePath(Design):
             if group_output != "":
                 a = card_template
                 a = a.replace("$ID$", f"{id_count}")
-                a = a.replace("$COLOR$", self.color)
-                a = a.replace("$DASHARRAY$", self.dasharray)
+                a = a.replace("$COLOR$", self.settings['color'])
+                a = a.replace("$DASHARRAY$", self.settings['dasharray'])
 
                 id_count += 1
-                group_output = a.replace("$CUT$", group_output)
+                group_output = a.replace("$SVGPATH$", group_output)
 
                 output += group_output
 
-        self.template["$CUT$"] = output
+        self.template["$SVGPATH$"] = output
 
-        self.template["VIEWBOX_X"] = self.max_x
-        self.template["VIEWBOX_Y"] = self.max_y
+        self.template["VIEWBOX_X"] = self.measures['max x']
+        self.template["VIEWBOX_Y"] = self.measures['max y']
 
         self.write_to_file(self.template)
         print(f"FreePath \"{self.outfile}\" created")

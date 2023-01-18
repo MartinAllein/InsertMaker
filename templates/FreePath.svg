@@ -3,7 +3,7 @@
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 $VIEWBOX$"
      id="FreePath">
     <title>$HEADER_TITLE$</title>
-$CUT$
+$SVGPATH$
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
         <text x="$LABEL_X$" y="$LABEL_PROJECT_Y$">
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Project: $FOOTER_PROJECT_NAME$</tspan>
