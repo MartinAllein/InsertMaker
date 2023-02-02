@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 from classes.Design import Design
 from classes.Template import Template
+from classes.Config import Config
 
 
 class FreePath(Design):
@@ -66,6 +67,15 @@ class FreePath(Design):
         # self.convert_all_to_thoudpi(to_convert)
         self.measures['foo_tdpi'] = 123
         self.convert_measures_to_tdpi()
+
+        foo = ['stroke color', 'stroke dasharray']
+        foo = Config.read_config_list(config_file, section, foo, textmode=True)
+        print(f"---------------\n{foo}")
+
+        foo = ['x offset', 'y offset', 'thickness', 'y text spacing', 'stroke width']
+        foo = Config.read_config_list(config_file, section, foo)
+        print(f"---------------\n{foo}")
+        sys.exit()
 
     def create(self):
         self.__init_design()

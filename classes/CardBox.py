@@ -226,7 +226,7 @@ class CardBox:
         self.enforce_small_design = False
         self.enforce_large_design = False
 
-        self.template = {}
+        self.template : dict = {}
 
         # geometry variables
         self.corners = []

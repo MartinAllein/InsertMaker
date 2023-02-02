@@ -96,7 +96,7 @@ class Config:
     def file_exists(file):
         """ Test if file exists
 
-        :param file: file wirh path to test
+        :param file: file with path to test
         :return: true if exists, false if not
         """
         # Test if configuration file exists
@@ -104,3 +104,53 @@ class Config:
             print("File " + file + " does not exist")
             sys.exit()
         return True
+
+    @staticmethod
+    def read_config_list(file, section, items, with_empty=False, textmode=False):
+        """ Read all entries from list items from config file
+
+        """
+        # self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
+        # https://stackoverflow.com/questions/10308939/list-comprehensions-splitting-loop-variable
+        # foo = [(x[1], x[2]) for x in (x.split(";") for x in items.split("\n")) if x[1] != 5]
+
+        # create dictionary with empty values as defaults
+        defaults = {k: "" for k in items}
+        config = Config.read_config(file, section, defaults)
+        if with_empty:
+            # keep empty entries
+            result = {k: Config.cast_config(config.get(section, k), textmode) for k in items}
+        else:
+            # remove empty entries
+            result = {k: Config.cast_config(config.get(section, k), textmode) for k in items if
+                      config.get(section, k) != ''}
+        return result
+
+    @staticmethod
+    def cast_config(a: str, textmode=True):
+        # https://stackoverflow.com/questions/33645965/configparser-integers
+        if textmode:
+            return a
+
+        try:
+            # First, we try to convert to integer.
+            # (Note, that all integer can be interpreted as float and hex number.)
+            return int(a)
+        except Exception:
+            # The integer convertion has failed because `a` contains others than digits [0-9].
+            # Next try float, because the normal form (eg: 1E3 = 1000) can be converted to hex also.
+            # But if we need hex we will write 0x1E3 (= 483) starting with 0x
+            try:
+                return float(a)
+            except Exception:
+                try:
+                    return int(a, 16)
+                except Exception:
+                    return 0
+
+    @staticmethod
+    def write_config(filename: str, section: str, values: dict):
+        config = configparser.ConfigParser()
+        with open(filename+"CR", "r+") as configfile:
+            config.write_config(dict)
+

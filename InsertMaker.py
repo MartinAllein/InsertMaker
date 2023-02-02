@@ -32,6 +32,8 @@ if __name__ == "__main__":
     if args.v:
         verbose = True
 
+    # test if insertmaker.config exists
+
     # configuration file
     if args.c:
         # single_file()

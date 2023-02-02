@@ -13,6 +13,13 @@ from classes.File import File
 FILENAME = '$FILENAME$'
 TEMPLATE = 'TEMPLATE'
 
+""" Order of Configuration is
+    Default configuration in insertmaker.config
+    Project configuration
+    Item configuration
+
+    """
+
 
 class Design(ABC):
     __initialized = False
@@ -60,6 +67,10 @@ class Design(ABC):
     y_text_spacing = __DEFAULT_Y_TEXT_SPACING
     unit_mm = True
 
+    __CONFIG_STANDARD_MEASURES = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
+    __CONFIG_STANDARD_TEXTS = ["unit", "stroke color", "stroke dasharray", "unit"]
+    __CONFIG_NONSTANDARDS = ["title", "outfile", "project name", "name", "template name"]
+
     FACTOR = 720000 / 25.4
     __default_configuration = {}
 
@@ -74,23 +85,22 @@ class Design(ABC):
         self.y_text_spacing: float = self.__DEFAULT_Y_TEXT_SPACING
         self.__set_xyoffset_from_kwargs(args)
 
-        self.measures = {'x offset': self.__DEFAULT_X_OFFSET,
-                         'y offset': self.__DEFAULT_Y_OFFSET,
-                         'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
-                         'thickness': self.__DEFAULT_THICKNESS
-                         }
-        self.__set_measures_from_kwargs(args, self.measures.keys())
+        self.standards = {'x offset': self.__DEFAULT_X_OFFSET,
+                          'y offset': self.__DEFAULT_Y_OFFSET,
+                          'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
+                          'thickness': self.__DEFAULT_THICKNESS,
+                          'title': "",
+                          'outfile': "",
+                          'project name': "",
+                          'name': "",
+                          'template name': "",
+                          'unit': self.__DEFAULT_UNIT,
+                          'stroke color': self.__DEFAULT_STROKE_COLOR,
+                          'stroke width': self.__DEFAULT_STROKE_WIDTH,
+                          'stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
+                          }
 
-        self.texts = {
-            'title': "",
-            'outfile': "",
-            'project name': "",
-            'name': "",
-            'template name': "",
-            'default stroke color': self.__DEFAULT_STROKE_COLOR,
-            'default stroke width': self.__DEFAULT_STROKE_WIDTH,
-            'default stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
-        }
+        self.__update_standards_with_options(args)
 
         self.project_name: str = self.get_project_name_from_kwargs(args)
         self.verbose: bool = False
@@ -119,6 +129,20 @@ class Design(ABC):
     def measure_keys(self):
         return self.measures.keys()
 
+    @property
+    def text_keys(self):
+        return self.texts.keys()
+
+    def __update_standards_with_options(self, args: dict):
+
+        if 'options' not in args:
+            return
+
+        payload = args['options']
+        self.standards = self.standards | payload
+
+        return
+
     def __set_xyoffset_from_kwargs(self, args):
 
         if 'options' in args:
@@ -130,10 +154,11 @@ class Design(ABC):
             if 'y offset' in payload:
                 self.y_offset = payload['y offset']
 
-    def __set_measures_from_kwargs(self, args, keys: []):
-        if 'options' in args:
-            # iterate through the keys and if they exist in args['options'] then convert them to tdpi
-            self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
+    def __set_measures_from_standards(self, args, keys: []):
+        # if 'options' in args:
+        #     # iterate through the keys and if they exist in args['options'] then convert them to tdpi
+        #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
+        self.standards.update()
 
     @staticmethod
     def get_project_name_from_kwargs(args, prefix: str = "", postfix: str = ""):
@@ -276,7 +301,7 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    def write_to_file(self, items):
+    def write_to_file(self, items: dict):
 
         if self.outfile == "":
             raise "No filename given"
@@ -354,7 +379,7 @@ class Design(ABC):
         return int(value * Design.FACTOR) / 10000
 
     @classmethod
-    def default_config(cls):
+    def default_config(cls, restore=False):
         if cls.__initialized:
             return
 
@@ -386,6 +411,9 @@ class Design(ABC):
 
         if configuration[cls.__DEFAULT_SECTION_NAME][cls.__UNIT_CONFIG_LABEL] == cls.__UNIT_MIL_TEXT:
             cls.unit_mm = False
+
+        if restore:
+            Config.write_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
 
         cls.__initialized = True
 
