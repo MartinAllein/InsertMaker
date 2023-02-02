@@ -15,7 +15,7 @@ class Single:
         # configuration section is mandatory
         if not config or config == "":
             print(f"No section for config file {config}\n-c <config-file> -C <section of config file>")
-            sys.exit()
+            sys.exit(-1)
 
         # read config file and extract the style to dynamically load the class
         style = Config.get_style(config, section)
@@ -26,13 +26,13 @@ class Single:
             class_ = getattr(module, style)
         except ModuleNotFoundError:
             print(f"Unknown style \"{style}\" in config file {config} section {section}")
-            sys.exit()
+            sys.exit(-1)
         except Exception as inst:
             print("Unknown Error")
             print(type(inst))  # the exception instance
             print(inst.args)  # arguments stored in .args
             print(inst)
-            sys.exit()
+            sys.exit(-1)
 
             # invoke creation of the item
         design = class_(config, section, verbose, **kwargs)

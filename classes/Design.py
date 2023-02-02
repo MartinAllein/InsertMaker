@@ -9,6 +9,7 @@ from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.File import File
+import json
 
 FILENAME = '$FILENAME$'
 TEMPLATE = 'TEMPLATE'
@@ -28,8 +29,8 @@ class Design(ABC):
     __DEFAULT_XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
     __DEFAULT_XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
 
+    # Default filename and section for the InsertMaker configuration file
     __DEFAULT_SECTION_NAME = "STANDARD"
-
     __DEFAULT_CONFIG_FILE = "InsertMaker.config"
 
     # Fallback settings when InsertMaker.config is missing
@@ -45,138 +46,123 @@ class Design(ABC):
     __CONFIG_EXTENSION = "config"
     __TEMPLATE_PATH = "templates"
 
-    # Names for Configuration file elements
-    __X_OFFSET_CONFIG_LABEL = "x offset"
-    __Y_OFFSET_CONFIG_LABEL = "y offset"
-    __THICKNESS_CONFIG_LABEL = "thickness"
-    __Y_TEXT_SPACING_LABEL = "y text spacing"
-    __UNIT_CONFIG_LABEL = "unit"
-    __XML_LINE_CONFIG_LABEL = "xml line"
-    __XML_PATH_CONFIG_LABEL = "xml path"
-    __STROKE_COLOR_LABEL = "default color"
-    __STROKE_WIDTH_LABEL = "default stroke width"
-    __STROKE_DASH_LABEL = "default stroke dasharray"
-
+    # unit definitions
     __UNIT_MM_TEXT = 'mm'
     __UNIT_MIL_TEXT = 'mil'
     __DEFAULT_UNIT = __UNIT_MM_TEXT
 
     xml_line = __DEFAULT_XML_LINE
     xml_path = __DEFAULT_XML_PATH
-    thickness = __DEFAULT_THICKNESS
-    y_text_spacing = __DEFAULT_Y_TEXT_SPACING
-    unit_mm = True
+    # unit_mm = True
 
-    __CONFIG_STANDARD_MEASURES = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
-    __CONFIG_STANDARD_TEXTS = ["unit", "stroke color", "stroke dasharray", "unit"]
-    __CONFIG_NONSTANDARDS = ["title", "outfile", "project name", "name", "template name"]
+    # Default measure keys, text keys
+    __config_standard_measures = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
+    __config_standard_texts = ["unit", "stroke color", "stroke dasharray"]
 
-    FACTOR = 720000 / 25.4
+    # The nonstandard keys are design dependend and cannot be in the global settings InsertMaker.config
+    __config_nonstandards = ["title", "outfile", "project name", "name", "template name"]
+
+    # all measure keys
+    __settings_measures = __config_standard_measures
+
+    # all text keys. Standard and nonstandard
+    __config_texts = __config_standard_texts + __config_nonstandards
+
+    # FACTOR = 720000 / 25.4
+
+    # conversion values for mm<->tdpi and mil <-> tdpi
+    __factor = {"mm": 720000 / 25.4,
+                "mil": 720000
+                }
+
     __default_configuration = {}
 
     measures = {}
 
     def __init__(self, args):
-        self.measures = {}
-        self.outfile: str = ""
-        self.title: str = ""
-        self.x_offset: float = self.__DEFAULT_X_OFFSET
-        self.y_offset: float = self.__DEFAULT_Y_OFFSET
-        self.y_text_spacing: float = self.__DEFAULT_Y_TEXT_SPACING
-        self.__set_xyoffset_from_kwargs(args)
+        options = {}
+        if 'options' in args:
+            options = args["options"]
 
-        self.standards = {'x offset': self.__DEFAULT_X_OFFSET,
-                          'y offset': self.__DEFAULT_Y_OFFSET,
-                          'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
-                          'thickness': self.__DEFAULT_THICKNESS,
-                          'title': "",
-                          'outfile': "",
-                          'project name': "",
-                          'name': "",
-                          'template name': "",
-                          'unit': self.__DEFAULT_UNIT,
-                          'stroke color': self.__DEFAULT_STROKE_COLOR,
-                          'stroke width': self.__DEFAULT_STROKE_WIDTH,
-                          'stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
-                          }
+        self.settings = {'x offset': self.__DEFAULT_X_OFFSET,
+                         'y offset': self.__DEFAULT_Y_OFFSET,
+                         'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
+                         'thickness': self.__DEFAULT_THICKNESS,
+                         'title': "",
+                         'outfile': "",
+                         'project name': "",
+                         'name': "",
+                         'template name': "",
+                         'unit': self.__DEFAULT_UNIT,
+                         'stroke color': self.__DEFAULT_STROKE_COLOR,
+                         'stroke width': self.__DEFAULT_STROKE_WIDTH,
+                         'stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
+                         }
 
-        self.__update_standards_with_options(args)
+        self.__read_config(self.__DEFAULT_CONFIG_FILE, self.__DEFAULT_SECTION_NAME)
 
-        self.project_name: str = self.get_project_name_from_kwargs(args)
+        # Overwrite the default settings with the ones from the command line
+
+        self.__update_settings_with_options(options)
+
         self.verbose: bool = False
-        self.options: list[str] = []
         self.default_name: str = ""
-        self.template_name: str = ""
-        self.default_stroke_color = self.__DEFAULT_STROKE_COLOR
-        self.default_stroke_width = self.__DEFAULT_STROKE_WIDTH
-        self.default_stroke_dasharray = self.__DEFAULT_STROKE_DASHARRAY
 
+        # corner points for the designs
         self.corners: list[float] = []
+
+        # lines for cutting/drawing
         self.cutlines: list[float] = []
+
+        # x and y positions for the boundaries
         self.left_x: float = 0
         self.right_x: float = 0
         self.top_y: float = 0
         self.bottom_y: float = 0
 
+        # content for the template
         self.template = {}
+
+        # command line as string
         self.args_string: str = ' '.join(sys.argv[1:])
+
+        print(self.settings)
 
     @abstractmethod
     def create(self):
+        """ Create the design
+        """
         pass
 
-    @property
-    def measure_keys(self):
-        return self.measures.keys()
+    def __update_settings_with_options(self, options: dict):
+        """ Updates the settings with the items from the options
+        :param options: Options from the command line
+        :return:
+        """
+        self.settings = self.settings | options
+        return
 
-    @property
-    def text_keys(self):
-        return self.texts.keys()
+    def convert_measures_to_tdpi(self):
+        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
 
-    def __update_standards_with_options(self, args: dict):
+        # remove all keys ending with '_tdpi'
+        # https://stackoverflow.com/questions/11358411/silently-removing-key-from-a-python-dict
+        for k in self.__settings_measures:
+            self.settings.pop(k + '_tdpi', None)
 
-        if 'options' not in args:
-            return
-
-        payload = args['options']
-        self.standards = self.standards | payload
+        # convert all keys to tdpi and add '_tdpi' to the key
+        self.settings.update(
+            {k + "_tdpi": self.to_tdpi(self.settings[k]) for k in self.__settings_measures})
 
         return
 
-    def __set_xyoffset_from_kwargs(self, args):
+    def to_tdpi(self, value: float) -> int:
+        """ Convert mm/mil to thousand DPI depending in the selected unit
 
-        if 'options' in args:
-            payload = args['options']
-
-            if 'x offset' in payload:
-                self.x_offset = payload['x offset']
-
-            if 'y offset' in payload:
-                self.y_offset = payload['y offset']
-
-    def __set_measures_from_standards(self, args, keys: []):
-        # if 'options' in args:
-        #     # iterate through the keys and if they exist in args['options'] then convert them to tdpi
-        #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
-        self.standards.update()
-
-    @staticmethod
-    def get_project_name_from_kwargs(args, prefix: str = "", postfix: str = ""):
+        :param value:
+        :return:
         """
-        Extracts the project name from the keyword argument list and adds a prefix and/or postfix
-        :param args: keyword arguments with 'options' inside
-        :param prefix: String to add before project name
-        :param postfix: String to add after project name
-        :return: project name with prefix and/or postfix. Empty if no project name available
-        """
-        project_name: str = ""
-        if 'options' in args:
-            payload = args['options']
-
-            if 'project name' in payload:
-                project_name = prefix + payload['project name'] + postfix
-
-        return project_name
+        return int(float(value) * Design.__factor[self.settings['unit']])
 
     @staticmethod
     def __divide_dpi(coord: str) -> str:
@@ -303,11 +289,11 @@ class Design(ABC):
 
     def write_to_file(self, items: dict):
 
-        if self.outfile == "":
+        if self.settings["outfile"] == "":
             raise "No filename given"
 
-        if self.template_name:
-            items['TEMPLATE'] = self.template_name
+        if self.settings["template_name"]:
+            items['TEMPLATE'] = self.settings["template_name"]
 
         if TEMPLATE not in items:
             raise " No tamplate given"
@@ -321,11 +307,11 @@ class Design(ABC):
         template = Template.load_template(items[TEMPLATE])
 
         # modify FILENAME with leading and trailing $
-        self.template["$FOOTER_PROJECT_NAME$"] = self.project_name
-        self.template["$FOOTER_TITLE$"] = self.title
-        self.template["$HEADER_TITLE$"] = self.title
+        self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project_name"]
+        self.template["$FOOTER_TITLE$"] = self.settings["title"]
+        self.template["$HEADER_TITLE$"] = self.settings["title"]
 
-        self.template["$FOOTER_FILENAME$"] = self.outfile
+        self.template["$FOOTER_FILENAME$"] = self.settings["outfile"]
         self.template["$FOOTER_ARGS_STRING$"] = self.args_string
         self.template['$FOOTER_OVERALL_WIDTH$'] = self.template['VIEWBOX_X']
         self.template['$FOOTER_OVERALL_HEIGHT'] = self.template['VIEWBOX_Y']
@@ -346,7 +332,7 @@ class Design(ABC):
         dom = xml.dom.minidom.parseString(template)
         template = dom.toprettyxml(newl='')
 
-        with open(f"{self.outfile}", 'w') as f:
+        with open(f"{self.settings['outfile']}", 'w') as f:
             f.write(template)
 
     @classmethod
@@ -365,67 +351,33 @@ class Design(ABC):
 
         return string
 
-    @staticmethod
-    def thoudpi_to_mm(value: float) -> float:
-        """ Convert values from tenthousandth of dpi to dpi """
-        return round(value / Design.FACTOR, 2)
+    def tpi_to_unit(self, value: float) -> float:
+        """
+        Convert values from tdpi to the unit from the settings
 
-    @staticmethod
-    def mm_to_thoudpi(value: float) -> int:
-        return int(float(value) * Design.FACTOR)
+        :param value: tdpi to convert
+        :return: unit
+        """
 
-    @staticmethod
-    def mm_to_dpi(value: float) -> float:
-        return int(value * Design.FACTOR) / 10000
+        return round(value / self.__factor[self.settings["unit"]], 2)
 
-    @classmethod
-    def default_config(cls, restore=False):
-        if cls.__initialized:
-            return
-
-        defaults = {cls.__X_OFFSET_CONFIG_LABEL: 0,
-                    cls.__Y_OFFSET_CONFIG_LABEL: 0,
-                    cls.__Y_TEXT_SPACING_LABEL: cls.__DEFAULT_Y_TEXT_SPACING,
-                    cls.__DEFAULT_THICKNESS: cls.__DEFAULT_THICKNESS,
-                    cls.__XML_LINE_CONFIG_LABEL: cls.__DEFAULT_XML_LINE,
-                    cls.__XML_PATH_CONFIG_LABEL: cls.__DEFAULT_XML_PATH,
-                    cls.__UNIT_CONFIG_LABEL: cls.__DEFAULT_UNIT,
-                    cls.__STROKE_COLOR_LABEL: cls.__DEFAULT_STROKE_COLOR,
-                    cls.__STROKE_WIDTH_LABEL: cls.__DEFAULT_STROKE_WIDTH,
-                    cls.__STROKE_DASH_LABEL: cls.__DEFAULT_STROKE_DASHARRAY
-                    }
-
-        configuration = Config.read_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
-
-        # print({section: dict(configuration[section]) for section in configuration.sections()})
-
-        cls.x_offset = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__X_OFFSET_CONFIG_LABEL))
-        cls.y_offset = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_OFFSET_CONFIG_LABEL))
-        cls.y_text_spacing = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__Y_TEXT_SPACING_LABEL))
-        cls.thickness = float(configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__THICKNESS_CONFIG_LABEL))
-        cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
-        cls.xml_line = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__XML_LINE_CONFIG_LABEL)
-        cls.stroke_color = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_COLOR_LABEL)
-        cls.stroke_width = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_WIDTH_LABEL)
-        cls.stroke_dasharray = configuration.get(cls.__DEFAULT_SECTION_NAME, cls.__STROKE_DASH_LABEL)
-
-        if configuration[cls.__DEFAULT_SECTION_NAME][cls.__UNIT_CONFIG_LABEL] == cls.__UNIT_MIL_TEXT:
-            cls.unit_mm = False
-
-        if restore:
-            Config.write_config(cls.__DEFAULT_CONFIG_FILE, cls.__DEFAULT_SECTION_NAME, defaults)
-
-        cls.__initialized = True
+    def to_dpi(self, value: float) -> float:
+        """
+        convert measure from settings unit to DPI
+        :param value: value to convert
+        :return: DPI value
+        """
+        return int(value * self.__factor[self.settings["unit"]]) / 10000
 
     @staticmethod
     def validate_config_and_section(classname, config: str, section: str):
         if config is None or config == "":
             print(f"No configuration file for Design {classname}")
-            sys.exit()
+            sys.exit(-1)
 
         if section is None or section == "":
             print(f"No section for configuration file {config}")
-            sys.exit()
+            sys.exit(-1)
 
     @staticmethod
     def get_options(value):
@@ -435,40 +387,42 @@ class Design(ABC):
 
         return options
 
-    def convert_all_to_thoudpi(self, to_convert):
-        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
+    def add_settings_measures(self, measures: list):
+        """
+        Add list of config measure keys to standard measure keys for converting unit -> tdpi
+        :param measures: list of keys
+        :return:
+        """
+        self.__settings_measures = self.__settings_measures + measures
 
-        for item in to_convert:
-            setattr(self, item, Design.mm_to_thoudpi(getattr(self, item)))
-
-        self.x_offset = Design.mm_to_thoudpi(self.x_offset)
-        self.y_offset = Design.mm_to_thoudpi(self.y_offset)
-        self.y_text_spacing = Design.mm_to_thoudpi(self.y_text_spacing)
-
-    def convert_measures_to_tdpi(self):
-        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
-
-        # remove all keys ending with '_tdpi'
-        self.measures = {k: self.measures[k] for k in list(self.measures.keys()) if not k.endswith('_tdpi')}
-
-        # convert all keys to tdpi and add '_tdpi' to the key
-        self.measures.update({k + "_tdpi": Design.mm_to_thoudpi(self.measures[k]) for k in list(self.measures.keys())})
-
-        return
+    def add_config_texts(self, texts: list):
+        """
+        Add list of text config text keys. These are nonstandard keys
+        :param texts:
+        :return:
+        """
+        self.__config_texts += texts
 
     def set_title_and_outfile(self, name: str):
+        """
+        Set the title of the sheet and the filename for the output
+        :param name:
+        :return:
+        """
         if name is None or name == "":
             return
 
-        if not self.title:
-            self.title = name
+        if not self.settings["title"]:
+            # set default title
+            self.settings['title'] = name
 
-        if not self.outfile:
-            self.outfile = name
+        # set default filename for output
+        self.settings["outfile"] = name
 
-        self.outfile = File.set_svg_extension(self.outfile)
+        if self.settings["outfile"]:
+            self.settings['outfile'] = File.set_svg_extension(self.settings["outfile"])
 
-    def configuration(self, config_file: str, section: str, verbose: bool, payload=None):
+    def load_settings(self, config_file: str, section: str, verbose: bool):
         """
         Reads in a section from a configuration file.
         :param config_file: filename with path of the config file
@@ -479,106 +433,26 @@ class Design(ABC):
         """
         self.validate_config_and_section(__class__.__name__, config_file, section)
 
-        if payload is None:
-            payload = {}
-
-        options = {}
-        if 'options' in payload:
-            options = payload['options']
-
-        default_values = []
-        if 'default_values' in payload:
-            default_values = payload['default_values']
-
-        config = self.__read_config(config_file, section, default_values, options)
-
-        for value in payload:
-            if isinstance(payload[value], str):
-                tokens = re.findall(':.*?:', payload[value])
-                for token in tokens:
-                    if config.has_option(section, token[1:-1]):
-                        payload[value] = payload[value].replace(token, config.get(section, token[1:-1]))
-                    else:
-                        payload[value] = payload[value].replace(token, "")
-
-        name = ""
-        if 'default_name' in payload:
-            name = payload['default_name']
-        else:
-            name = f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        self.set_title_and_outfile(name)
+        self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
 
         self.verbose = verbose
+        self.__read_config(config_file, section)
 
+        return
+
+    def __read_config(self, filename: str, section: str):
+        """ Read configuration from file and convert numbers from string to int/float
+
+        """
+
+        config = Config.read_config(filename, section)
+
+        # copy values of all key in the config to the settings. Convert numbers from string to int/float
+        self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
+                              config.has_option(section, k)})
+
+        print(json.dumps(self.settings, indent=4))
         return config
-
-    def __read_config(self, filename: str, section: str, defaults=None, options=None):
-        """ Read configuration from file"""
-        if defaults is None:
-            defaults = {}
-
-        if options is None:
-            options = {}
-
-        config = Config.read_config(filename, section, defaults)
-
-        # https://stackoverflow.com/questions/23662280/how-to-log-the-contents-of-a-configparser
-        print({section: dict(config[section]) for section in config.sections()})
-
-        # Set all configuration values
-        if 'project name' in options:
-            self.project_name = options['project name']
-        elif config.has_option(section, 'project name'):
-            self.project_name = config.get(section, 'project name')
-
-        if config.has_option(section, 'filename'):
-            self.outfile = config.get(section, 'filename')
-
-        if config.has_option(section, 'title'):
-            self.title = config.get(section, 'title').strip('"')
-
-        if 'x offset' in options:
-            self.x_offset = options['x offset']
-        elif config.has_option(section, 'x offset'):
-            self.x_offset = config.get(section, 'x offset')
-
-        if 'y offset' in options:
-            self.y_offset = options['y offset']
-        elif config.has_option(section, 'y offset'):
-            self.y_offset = config.get(section, 'y offset')
-
-        if self.__Y_TEXT_SPACING_LABEL in options:
-            self.y_text_spacing = options[self.__Y_TEXT_SPACING_LABEL]
-        elif config.has_option(section, self.__Y_TEXT_SPACING_LABEL):
-            self.y_text_spacing = config.get(section, self.__Y_TEXT_SPACING_LABEL)
-
-        if 'template' in options:
-            self.template_name = options['template']
-        elif config.has_option(section, 'template'):
-            self.template_name = config.get(section, 'template')
-
-        if 'default color' in options:
-            self.default_stroke_color = options['default color']
-        elif config.has_option(section, 'default color'):
-            self.default_stroke_color = config.get(section, 'default color')
-
-        if 'default stroke width' in options:
-            self.default_stroke_width = options['default stroke width']
-        elif config.has_option(section, 'default stroke width'):
-            self.default_stroke_width = config.get(section, 'default stroke width')
-
-        if 'default stroke dasharray' in options:
-            self.default_stroke_dasharray = options['default stroke dasharray']
-        elif config.has_option(section, 'default stroke dasharray'):
-            self.default_stroke_dasharray = config.get(section, 'default stroke dasharray')
-
-        return config
-
-    def get_project_name(self, prefix="", postfix=""):
-        if self.project_name == "":
-            return ""
-
-        return prefix + self.project_name + postfix
 
     @staticmethod
     def is_float(value):
@@ -588,5 +462,20 @@ class Design(ABC):
         except ValueError:
             return False
 
+    @staticmethod
+    def try_float(value):
 
-Design.default_config()
+        try:
+            float(value)
+            return float(value)
+        except ValueError:
+            return value
+
+# found things to consider in later designs
+#     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
+
+# https://stackoverflow.com/questions/23662280/how-to-log-the-contents-of-a-configparser
+# print({section: dict(config[section]) for section in config.sections()})
+
+# How to pretty print nested dictionaries?
+# https://stackoverflow.com/questions/3229419/how-to-pretty-print-nested-dictionaries

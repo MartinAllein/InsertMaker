@@ -25,7 +25,7 @@ class Config:
         # Test if configuration file exists
         if not os.path.isfile(config_file):
             print("Config file " + config_file + " does not exist")
-            sys.exit()
+            sys.exit(-1)
 
         # read entries from the configuration file
         config = configparser.ConfigParser(defaults=defaults)
@@ -34,9 +34,10 @@ class Config:
         # Test if requested section exists
         if not config.has_section(section):
             print("Section " + section + " in config file " + config_file + " not found")
-            sys.exit()
+            sys.exit(-1)
 
         return config
+
 
     @classmethod
     def get_style(cls, filename: str, section: str):
@@ -54,7 +55,7 @@ class Config:
 
         if style is None:
             print(f"Config file {filename} with Section {section} has no style entry.")
-            sys.exit()
+            sys.exit(-1)
 
         return config.get(section, 'style')
 
@@ -75,7 +76,7 @@ class Config:
                 f"Duplicate Section {e.args[0]} in file {e.args[1]} in line {e.args[2]}"
                 f"\nPlease correct this line and run configMaker again.")
 
-            sys.exit()
+            sys.exit(-1)
 
         # return all sections in the project file
         return config.sections()
@@ -102,7 +103,7 @@ class Config:
         # Test if configuration file exists
         if not os.path.isfile(file):
             print("File " + file + " does not exist")
-            sys.exit()
+            sys.exit(-1)
         return True
 
     @staticmethod

@@ -18,7 +18,7 @@ class Project:
 
         if project is None or project == "":
             print("No project file.\n-p <project-file>")
-            sys.exit()
+            sys.exit(-1)
 
         # Test if "Project" section exists in project file
         sections = Config.get_sections(project)
@@ -45,7 +45,7 @@ class Project:
 
         if not config.has_option(self.__PROJECT_SECTION, 'items'):
             print(f"Project configuration {filename} has no items!")
-            sys.exit()
+            sys.exit(-1)
 
         self.items = config.get(self.__PROJECT_SECTION, 'items')
 

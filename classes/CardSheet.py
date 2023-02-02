@@ -71,7 +71,7 @@ class CardSheet(Design):
         payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L:x measure:-W:y measure:-" \
                                   f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        config = super().configuration(config_file, section, verbose, payload)
+        config = super().load_settings(config_file, section, verbose, payload)
 
         self.x_separation = float(config.get(section, 'x separation'))
         self.y_separation = float(config.get(section, 'y separation'))

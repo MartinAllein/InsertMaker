@@ -40,7 +40,7 @@ class ItemBox:
             # config file was chosen
             if not self.args.C:
                 print("No section of config file\n-c <config-file> -C <section of config file>")
-                sys.exit()
+                sys.exit(-1)
             self.__config_from_file(self.args.c, self.args.C)
         else:
             # CLI was chosen
@@ -122,7 +122,7 @@ class ItemBox:
         # Read default values from the config file
         if not os.path.isfile(config_file):
             print("Config file config/" + filename + ".config not found")
-            sys.exit()
+            sys.exit(-1)
 
         # read entries from the configuration file
         config = configparser.ConfigParser(defaults=defaults)
@@ -130,7 +130,7 @@ class ItemBox:
 
         if not config.has_section(section):
             print("Section " + section + " in config file config/" + filename + ".config not found")
-            sys.exit()
+            sys.exit(-1)
 
         self.project = config[section]['project name'].strip('"')
         self.outfile = config[section]['filename'].strip('"')

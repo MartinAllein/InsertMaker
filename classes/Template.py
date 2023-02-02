@@ -15,7 +15,7 @@ class Template:
         string = ""
         if not template:
             print("No template name given")
-            sys.exit()
+            sys.exit(-1)
 
         template_file = File.path_and_extension(cls.__TEMPLATE_PATH, template, cls.__TEMPLATE_EXTENSION)
 
