@@ -1,9 +1,7 @@
-import re
 import sys
 from datetime import datetime
 from classes.Design import Design
 from classes.Template import Template
-from classes.Config import Config
 
 
 class FreePath(Design):
@@ -23,7 +21,7 @@ class FreePath(Design):
         self.settings.update({'paths': [],
                               'max x': self.__DEFAULT_MAX_X,
                               'max y': self.__DEFAULT_MAX_Y,
-                              'template': self.__DEFAULT_TEMPLATE,
+                              'template name': self.__DEFAULT_TEMPLATE,
                               'template group': self.__DEFAULT_TEMPLATE_GROUP,
                               'name': f"{self.settings['project name']}{self.__DEFAULT_FILENAME}-"
                                       f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
@@ -86,8 +84,8 @@ class FreePath(Design):
             if group_output != "":
                 a = card_template
                 a = a.replace("$ID$", f"{id_count}")
-                a = a.replace("$COLOR$", self.settings['color'])
-                a = a.replace("$DASHARRAY$", self.settings['dasharray'])
+                a = a.replace("$COLOR$", self.settings['stroke color'])
+                a = a.replace("$DASHARRAY$", self.settings['stroke dasharray'])
 
                 id_count += 1
                 group_output = a.replace("$SVGPATH$", group_output)
@@ -96,8 +94,8 @@ class FreePath(Design):
 
         self.template["$SVGPATH$"] = output
 
-        self.template["VIEWBOX_X"] = self.measures['max x']
-        self.template["VIEWBOX_Y"] = self.measures['max y']
+        self.template["VIEWBOX_X"] = self.settings['max x']
+        self.template["VIEWBOX_Y"] = self.settings['max y']
 
         self.write_to_file(self.template)
         print(f"FreePath \"{self.settings['outfile']}\" created")
@@ -134,15 +132,14 @@ class FreePath(Design):
             print('Error in config file R ' + command + '\n' + error)
             sys.exit(-1)
 
-        start_x = Design.mm_to_dpi(float(start_xy[0]))
-        start_y = Design.mm_to_dpi(float(start_xy[1]))
-        width = Design.mm_to_dpi(float(parameter[2]))
-        height = Design.mm_to_dpi(float(parameter[4]))
+        start_x = self.to_dpi(float(start_xy[0]))
+        start_y = self.to_dpi(float(start_xy[1]))
+        width = self.to_dpi(float(parameter[2]))
+        height = self.to_dpi(float(parameter[4]))
 
         return f"M {start_x} {start_y} h {width} v {height} h {-width} z "
 
-    @staticmethod
-    def __circle(command: str) -> str:
+    def __circle(self, command: str) -> str:
         error = ""
         parameter = command.split(" ")
 
@@ -160,9 +157,9 @@ class FreePath(Design):
             print("All parameter must be of type float. C " + command)
             sys.exit(-1)
 
-        start_x = Design.mm_to_dpi(float(start_xy[0]))
-        start_y = Design.mm_to_dpi(float(start_xy[1]))
-        radius = Design.mm_to_dpi(float(parameter[1]))
+        start_x = self.to_dpi(float(start_xy[0]))
+        start_y = self.to_dpi(float(start_xy[1]))
+        radius = self.to_dpi(float(parameter[1]))
         start_x_left = start_x - radius
 
         # https: // www.mediaevent.de / tutorial / svg - circle - arc.html
@@ -174,8 +171,7 @@ class FreePath(Design):
     def __dasharray(self, command: str) -> dict:
         return {"dasharray": command}
 
-    @staticmethod
-    def __line(command: str) -> str:
+    def __line(self, command: str) -> str:
         error = ""
         parameter = command.split(" ")
 
@@ -203,9 +199,9 @@ class FreePath(Design):
             print("End parameter must be of type float. C " + command)
             sys.exit(1)
 
-        start_x = Design.mm_to_dpi(float(start[0]))
-        start_y = Design.mm_to_dpi(float(start[1]))
-        end_x = Design.mm_to_dpi(float(end[0]))
-        end_y = Design.mm_to_dpi(float(end[1]))
+        start_x = self.to_dpi(float(start[0]))
+        start_y = self.to_dpi(float(start[1]))
+        end_x = self.to_dpi(float(end[0]))
+        end_y = self.to_dpi(float(end[1]))
 
         return f"M {start_x} {start_y} L {end_x} {end_y}"

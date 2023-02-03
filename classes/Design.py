@@ -12,7 +12,7 @@ from classes.File import File
 import json
 
 FILENAME = '$FILENAME$'
-TEMPLATE = 'TEMPLATE'
+TEMPLATE = 'TEMPLATE NAME'
 
 """ Order of Configuration is
     Default configuration in insertmaker.config
@@ -126,7 +126,7 @@ class Design(ABC):
         # command line as string
         self.args_string: str = ' '.join(sys.argv[1:])
 
-        print(self.settings)
+        # print(self.settings)
 
     @abstractmethod
     def create(self):
@@ -292,11 +292,11 @@ class Design(ABC):
         if self.settings["outfile"] == "":
             raise "No filename given"
 
-        if self.settings["template_name"]:
-            items['TEMPLATE'] = self.settings["template_name"]
+        if self.settings["template name"]:
+            items['TEMPLATE NAME'] = self.settings["template name"]
 
         if TEMPLATE not in items:
-            raise " No tamplate given"
+            raise " No template given"
 
         if 'VIEWBOX_X' not in items:
             raise "VIEWBOX X is missing"
@@ -307,7 +307,7 @@ class Design(ABC):
         template = Template.load_template(items[TEMPLATE])
 
         # modify FILENAME with leading and trailing $
-        self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project_name"]
+        self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
         self.template["$FOOTER_TITLE$"] = self.settings["title"]
         self.template["$HEADER_TITLE$"] = self.settings["title"]
 
@@ -319,12 +319,12 @@ class Design(ABC):
         self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         ycoord = self.template['VIEWBOX_Y']
-        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.y_text_spacing)
-        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.y_text_spacing)
+        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing"])
+        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing"])
 
         all_footers = [i for i in self.template if i.startswith('$FOOTER_')]
         self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])} " \
-                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.y_text_spacing)} "
+                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing'])} "
 
         for key in items:
             template = template.replace(key, str(items[key]))
@@ -451,7 +451,7 @@ class Design(ABC):
         self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
                               config.has_option(section, k)})
 
-        print(json.dumps(self.settings, indent=4))
+        # print(json.dumps(self.settings, indent=4))
         return config
 
     @staticmethod
