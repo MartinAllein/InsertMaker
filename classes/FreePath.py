@@ -22,12 +22,13 @@ class FreePath(Design):
                               'max x': self.__DEFAULT_MAX_X,
                               'max y': self.__DEFAULT_MAX_Y,
                               'template name': self.__DEFAULT_TEMPLATE,
-                              'template group': self.__DEFAULT_TEMPLATE_GROUP,
-                              'name': f"{self.settings['project name']}{self.__DEFAULT_FILENAME}-"
-                                      f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                              'template group': self.__DEFAULT_TEMPLATE_GROUP
                               })
 
         self.add_settings_measures(["max x", "max y"])
+
+        self.settings[
+            "title"] = f"{self.settings['project name']}{self.__DEFAULT_FILENAME}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         # : encloses config values to replace
         self.load_settings(config_file, section, verbose)
@@ -98,7 +99,7 @@ class FreePath(Design):
         self.template["VIEWBOX_Y"] = self.settings['max y']
 
         self.write_to_file(self.template)
-        print(f"FreePath \"{self.settings['outfile']}\" created")
+        print(f"FreePath \"{self.settings['filename']}\" created")
 
     def __init_design(self):
         pass

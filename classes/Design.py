@@ -9,7 +9,6 @@ from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.File import File
-import json
 
 FILENAME = '$FILENAME$'
 TEMPLATE = 'TEMPLATE NAME'
@@ -24,6 +23,12 @@ TEMPLATE = 'TEMPLATE NAME'
 
 class Design(ABC):
     __initialized = False
+
+    # number of decimal places for tdpi values
+    __PRECISION = 4
+
+    # resolution of the SVG drawing. Standard for the Cricut is 72dpi
+    __RESOLUTION = 72
 
     # XML element definitions
     __DEFAULT_XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
@@ -56,11 +61,25 @@ class Design(ABC):
     # unit_mm = True
 
     # Default measure keys, text keys
+    # x offset       : left offset of the whole SVG drawing
+    # y offset       : top offset of the whole SVG drawing
+    # y text spacing : vertical spacing of the describing text lines at the bottom of the drawing
+    # thickness      : thickness of the uses material
+    # stroke width   : stroke width of the lines in the SVG drawing
     __config_standard_measures = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
-    __config_standard_texts = ["unit", "stroke color", "stroke dasharray"]
+
+    # unit             : used unit in the settings (mm or mil)
+    # stroke color     : color of the lines drawn in the SVG image
+    # stroke dasharray : pattern of the lines drawn in the SVG image
+    # resolution       : resolution of the SVG drawing
+    __config_standard_texts = ["unit", "stroke color", "stroke dasharray", "resolution"]
 
     # The nonstandard keys are design dependend and cannot be in the global settings InsertMaker.config
-    __config_nonstandards = ["title", "outfile", "project name", "name", "template name"]
+    # title         : title of the drawing
+    # filename      : filename of the utput file
+    # project name  : project (i.e. boardgame) to which the design belongs
+    # template name : SVG template to use for the design
+    __config_nonstandards = ["title", "filename", "project name", "template name"]
 
     # all measure keys
     __settings_measures = __config_standard_measures
@@ -68,12 +87,10 @@ class Design(ABC):
     # all text keys. Standard and nonstandard
     __config_texts = __config_standard_texts + __config_nonstandards
 
-    # FACTOR = 720000 / 25.4
-
     # conversion values for mm<->tdpi and mil <-> tdpi
-    __factor = {"mm": 720000 / 25.4,
-                "mil": 720000
-                }
+    __conversion_factor = {"mm": (__RESOLUTION * 10000) / 25.4,
+                           "mil": (__RESOLUTION * 10000)
+                           }
 
     __default_configuration = {}
 
@@ -84,29 +101,29 @@ class Design(ABC):
         if 'options' in args:
             options = args["options"]
 
+        # default settings
         self.settings = {'x offset': self.__DEFAULT_X_OFFSET,
                          'y offset': self.__DEFAULT_Y_OFFSET,
                          'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
                          'thickness': self.__DEFAULT_THICKNESS,
-                         'title': "",
-                         'outfile': "",
+                         'title':  f"{__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                         'filename': "",
                          'project name': "",
-                         'name': "",
                          'template name': "",
                          'unit': self.__DEFAULT_UNIT,
+                         'resolution': self.__RESOLUTION,
                          'stroke color': self.__DEFAULT_STROKE_COLOR,
                          'stroke width': self.__DEFAULT_STROKE_WIDTH,
                          'stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
                          }
 
+        # Overwrite the default config with the settings from the Insertmaker.config
         self.__read_config(self.__DEFAULT_CONFIG_FILE, self.__DEFAULT_SECTION_NAME)
 
-        # Overwrite the default settings with the ones from the command line
-
+        # Overwrite the combined default/InsertMaker settings with the ones from the command line
         self.__update_settings_with_options(options)
 
         self.verbose: bool = False
-        self.default_name: str = ""
 
         # corner points for the designs
         self.corners: list[float] = []
@@ -126,15 +143,13 @@ class Design(ABC):
         # command line as string
         self.args_string: str = ' '.join(sys.argv[1:])
 
-        # print(self.settings)
-
     @abstractmethod
-    def create(self):
-        """ Create the design
+    def create(self) -> None:
+        """ Create the design. Has to be overridden by the Designs
         """
         pass
 
-    def __update_settings_with_options(self, options: dict):
+    def __update_settings_with_options(self, options: dict) -> None:
         """ Updates the settings with the items from the options
         :param options: Options from the command line
         :return:
@@ -142,57 +157,121 @@ class Design(ABC):
         self.settings = self.settings | options
         return
 
-    def convert_measures_to_tdpi(self):
-        """ Shift comma of dpi four digits to the right to get acceptable accuracy and only integer numbers"""
+    def convert_measures_to_tdpi(self) -> None:
+        """
+            Convert the measures from their nativ unint (mm/mil) to dpi * 10000 (tdpi)
+        :return: nothing
+        """
 
-        # remove all keys ending with '_tdpi'
+        # remove all keys ending with '_tdpi'.
         # https://stackoverflow.com/questions/11358411/silently-removing-key-from-a-python-dict
         for k in self.__settings_measures:
+            # with pop missing keys will not raise an exception
             self.settings.pop(k + '_tdpi', None)
 
-        # convert all keys to tdpi and add '_tdpi' to the key
+        # convert all keys to tdpi and add '_tdpi' to the key from the list of measures to be converted
         self.settings.update(
             {k + "_tdpi": self.to_tdpi(self.settings[k]) for k in self.__settings_measures})
 
         return
 
-    def to_tdpi(self, value: float) -> int:
-        """ Convert mm/mil to thousand DPI depending in the selected unit
-
-        :param value:
-        :return:
+    def __factor(self) -> float:
         """
-        return int(float(value) * Design.__factor[self.settings['unit']])
+        Delivers the factor for a unit to tdpi conversion
+        :return: conversion factor
+        """
+        return Design.__conversion_factor[self.settings['unit']]
+
+    def to_tdpi(self, value: float) -> int:
+        """ Converts a native unit (mm/mil) to tdpi
+
+        :param value: value to be converted
+        :return: converted value
+        """
+        return int(float(value) * self.__factor())
 
     @staticmethod
-    def __divide_dpi(coord: str) -> str:
-        if coord == 0:
-            value = "00000"
-        else:
-            value = str(coord)
+    def __tdpi_to_dpi(value: str) -> str:
+        """
+        Converts tdpi to dpi
+        :param value: convert to dpi with 4 decimals
+        :return: dpi representation of value
+        """
+        value = str(value)
 
-        return value[:-4] + "." + value[-4:]
+        # if the length of the string, add leading 0 for the division
+        if len(value) < Design.__PRECISION + 1:
+            value = ("00000" + value)[-Design.__PRECISION + 1:]
+
+        # add decimal point
+        return value[:-Design.__PRECISION] + "." + value[-Design.__PRECISION:]
 
     @staticmethod
-    def thoudpi_to_dpi(coord) -> str:
-
-        if type(coord) is list:
-            result = []
-            for item in coord:
-                result.append(Design.__divide_dpi(item))
+    def thoudpi_to_dpi(value) -> str:
+        """
+        Convert tdpi to dpi
+        :param value: item or list to convert to dpi
+        :return: list of converted values
+        """
+        if type(value) is list:
+            result = [Design.__tdpi_to_dpi(item) for item in value]
         else:
-            result = Design.__divide_dpi(coord)
+            result = Design.__tdpi_to_dpi(value)
         return result
 
     @staticmethod
-    def draw_line(start, end):
+    def draw_line(start: str, end: str) -> str:
+        # TODO:
+        """
+        Draws a line from the start to the end coordinates
+        :param start: coordinates for the start point
+        :param end: coordinates for the end point
+        :return: XML string with <line/>
+        """
         start_x, start_y = Design.thoudpi_to_dpi(start)
         end_x, end_y = Design.thoudpi_to_dpi(end)
         return Design.__DEFAULT_XML_LINE % (start_x, start_y, end_x, end_y)
 
     @staticmethod
-    def draw_halfcircle(corners, path):
-        """Draws a half circle SVG path"""
+    def draw_halfcircle(corners: list, path: list) -> str:
+        """
+        Draws a half circle SVG path
+        :param corners: all points of the drawing
+        :param path: start and end points, directon of arc
+        :return: XML string with <path />
+        """
+
+        start_x, start_y, end_x, end_y, diameter = Design.get_ccords_for_arc(corners, path)
+
+        if diameter == 0:
+            return ""
+
+        return Design.__draw_arc(start_x, start_y, int(diameter / 2), Direction.CW, end_x, end_y)
+
+    @staticmethod
+    def draw_quartercircle(corners, path):
+        """
+        Draws a quarter circle SVG path
+        :param corners: all points of the drawing
+        :param path: start and end points, directon of arc
+        :return: XML string with <path />
+        """
+
+        start_x, start_y, end_x, end_y, radius = Design.get_ccords_for_arc(corners, path)
+
+        if radius == 0:
+            return ""
+
+        return Design.__draw_arc(start_x, start_y, int(radius), 1, end_x, end_y)
+
+    @staticmethod
+    def get_ccords_for_arc(corners: list, path: list):
+        """
+        Extracts start and end coordinates and radius for drawing an arc or arc segment
+        :param corners: all corners of drawings
+        :param path: start and end points, direction of arc
+        :return:
+        """
         start_x, start_y = corners[path[0]]
         end_x, end_y = corners[path[1]]
         orientation = path[2]
@@ -203,28 +282,7 @@ class Design(ABC):
         else:
             diameter = abs(end_x - start_x)
 
-        if diameter == 0:
-            return ""
-
-        return Design.__draw_arc(start_x, start_y, int(diameter / 2), Direction.CW, end_x, end_y)
-
-    @staticmethod
-    def draw_quartercircle(corners, path):
-        """Draws a quarter circle SVG path"""
-        start_x, start_y = corners[path[0]]
-        end_x, end_y = corners[path[1]]
-        orientation = path[2]
-
-        diameter = 0
-        if orientation == Direction.VERTICAL:
-            radius = abs(end_y - start_y)
-        else:
-            radius = abs(end_x - start_x)
-
-        if radius == 0:
-            return ""
-
-        return Design.__draw_arc(start_x, start_y, int(radius), 1, end_x, end_y)
+        return start_x, start_y, end_x, end_y, diameter
 
     @staticmethod
     def draw_thumbhole_path(corners, path):
@@ -289,7 +347,7 @@ class Design(ABC):
 
     def write_to_file(self, items: dict):
 
-        if self.settings["outfile"] == "":
+        if self.settings["filename"] == "":
             raise "No filename given"
 
         if self.settings["template name"]:
@@ -311,7 +369,7 @@ class Design(ABC):
         self.template["$FOOTER_TITLE$"] = self.settings["title"]
         self.template["$HEADER_TITLE$"] = self.settings["title"]
 
-        self.template["$FOOTER_FILENAME$"] = self.settings["outfile"]
+        self.template["$FOOTER_FILENAME$"] = self.settings["filename"]
         self.template["$FOOTER_ARGS_STRING$"] = self.args_string
         self.template['$FOOTER_OVERALL_WIDTH$'] = self.template['VIEWBOX_X']
         self.template['$FOOTER_OVERALL_HEIGHT'] = self.template['VIEWBOX_Y']
@@ -332,7 +390,7 @@ class Design(ABC):
         dom = xml.dom.minidom.parseString(template)
         template = dom.toprettyxml(newl='')
 
-        with open(f"{self.settings['outfile']}", 'w') as f:
+        with open(f"{self.settings['filename']}", 'w') as f:
             f.write(template)
 
     @classmethod
@@ -359,7 +417,7 @@ class Design(ABC):
         :return: unit
         """
 
-        return round(value / self.__factor[self.settings["unit"]], 2)
+        return round(value / self.__conversion_factor[self.settings["unit"]], 2)
 
     def to_dpi(self, value: float) -> float:
         """
@@ -367,7 +425,7 @@ class Design(ABC):
         :param value: value to convert
         :return: DPI value
         """
-        return int(value * self.__factor[self.settings["unit"]]) / 10000
+        return int(value * self.__conversion_factor[self.settings["unit"]]) / 10000
 
     @staticmethod
     def validate_config_and_section(classname, config: str, section: str):
@@ -417,10 +475,11 @@ class Design(ABC):
             self.settings['title'] = name
 
         # set default filename for output
-        self.settings["outfile"] = name
+        if not self.settings["filename"]:
+            self.settings["filename"] = name
 
-        if self.settings["outfile"]:
-            self.settings['outfile'] = File.set_svg_extension(self.settings["outfile"])
+        if self.settings["filename"]:
+            self.settings['filename'] = File.set_svg_extension(self.settings["filename"])
 
     def load_settings(self, config_file: str, section: str, verbose: bool):
         """
@@ -433,10 +492,11 @@ class Design(ABC):
         """
         self.validate_config_and_section(__class__.__name__, config_file, section)
 
-        self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
-
         self.verbose = verbose
+
         self.__read_config(config_file, section)
+
+        self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
 
         return
 
