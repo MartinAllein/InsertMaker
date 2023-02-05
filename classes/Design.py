@@ -201,7 +201,7 @@ class Design(ABC):
 
         # if the length of the string, add leading 0 for the division
         if len(value) < Design.__PRECISION + 1:
-            value = ("00000" + value)[-Design.__PRECISION + 1:]
+            value = ("00000" + value)[-Design.__PRECISION - 1:]
 
         # add decimal point
         return value[:-Design.__PRECISION] + "." + value[-Design.__PRECISION:]
@@ -286,6 +286,12 @@ class Design(ABC):
 
     @staticmethod
     def draw_thumbhole_path(corners, path):
+        """
+        Creates an --\----/--- for thumb retrieve
+        :param corners: Corners of design
+        :param path: path for the thumb hole
+        :return:
+        """
         start_x, start_y = corners[path[0]]
         smallradius, thumbholeradius, direction, orientation = path[1:]
 
@@ -337,7 +343,11 @@ class Design(ABC):
         return xml_lines
 
     def set_bounds(self, corners):
-
+        """
+        Extracts the top left and bottom right corner of all corner points
+        :param corners: all corners of the design
+        :return: min x, max x, min y, max y
+        """
         self.left_x = min(a for (a, b) in corners)
         self.top_y = min(b for (a, b) in corners)
         self.right_x = max(a for (a, b) in corners)
@@ -345,24 +355,29 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    def write_to_file(self, items: dict):
+    def write_to_file(self, template_values: dict):
+        """
+        Fills the template with the values from the dict and writes it to a file
+        :param template_values:
+        :return:
+        """
 
         if self.settings["filename"] == "":
             raise "No filename given"
 
         if self.settings["template name"]:
-            items['TEMPLATE NAME'] = self.settings["template name"]
+            template_values['TEMPLATE NAME'] = self.settings["template name"]
 
-        if TEMPLATE not in items:
+        if TEMPLATE not in template_values:
             raise " No template given"
 
-        if 'VIEWBOX_X' not in items:
+        if 'VIEWBOX_X' not in template_values:
             raise "VIEWBOX X is missing"
 
-        if 'VIEWBOX_Y' not in items:
+        if 'VIEWBOX_Y' not in template_values:
             raise "VIEWBOX Y is missing"
 
-        template = Template.load_template(items[TEMPLATE])
+        template_string = Template.load_template(template_values[TEMPLATE])
 
         # modify FILENAME with leading and trailing $
         self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
@@ -372,42 +387,26 @@ class Design(ABC):
         self.template["$FOOTER_FILENAME$"] = self.settings["filename"]
         self.template["$FOOTER_ARGS_STRING$"] = self.args_string
         self.template['$FOOTER_OVERALL_WIDTH$'] = self.template['VIEWBOX_X']
-        self.template['$FOOTER_OVERALL_HEIGHT'] = self.template['VIEWBOX_Y']
+        self.template['$FOOTER_OVERALL_HEIGHT '] = self.template['VIEWBOX_Y']
 
         self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         ycoord = self.template['VIEWBOX_Y']
-        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing"])
-        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing"])
+        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing_tdpi"])
+        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing_tdpi"])
 
         all_footers = [i for i in self.template if i.startswith('$FOOTER_')]
         self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])} " \
-                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing'])} "
+                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing_tdpi'])} "
 
-        for key in items:
-            template = template.replace(key, str(items[key]))
+        for key in template_values:
+            template_string = template_string.replace(key, str(template_values[key]))
 
-        dom = xml.dom.minidom.parseString(template)
-        template = dom.toprettyxml(newl='')
+        dom = xml.dom.minidom.parseString(template_string)
+        template_string = dom.toprettyxml(newl='')
 
         with open(f"{self.settings['filename']}", 'w') as f:
-            f.write(template)
-
-    @classmethod
-    def read_template(cls, template: str, template_path: str) -> str:
-        """Import the template"""
-        string = ""
-        if not template:
-            raise "No template name given"
-
-        template_file = os.path.join(cls.__TEMPLATE_PATH, template)
-        if not os.path.isfile(template_file):
-            raise f"Template file {template_file} does not exist"
-
-        with open(template_file, 'r') as f:
-            string = f.read()
-
-        return string
+            f.write(template_string)
 
     def tpi_to_unit(self, value: float) -> float:
         """
@@ -428,7 +427,14 @@ class Design(ABC):
         return int(value * self.__conversion_factor[self.settings["unit"]]) / 10000
 
     @staticmethod
-    def validate_config_and_section(classname, config: str, section: str):
+    def validate_config_and_section(classname, config: str, section: str) -> None:
+        """
+        Verifies if a configuration file and section is set.
+        :param classname: class to verify. Only needed for output
+        :param config: config file name
+        :param section: section name
+        :return:
+        """
         if config is None or config == "":
             print(f"No configuration file for Design {classname}")
             sys.exit(-1)
@@ -438,14 +444,14 @@ class Design(ABC):
             sys.exit(-1)
 
     @staticmethod
-    def get_options(value):
+    def get_options(value: dict) -> dict:
         options = {}
         if 'options' in value:
             options = value['options']
 
         return options
 
-    def add_settings_measures(self, measures: list):
+    def add_settings_measures(self, measures: list) -> None:
         """
         Add list of config measure keys to standard measure keys for converting unit -> tdpi
         :param measures: list of keys
@@ -453,7 +459,7 @@ class Design(ABC):
         """
         self.__settings_measures = self.__settings_measures + measures
 
-    def add_config_texts(self, texts: list):
+    def add_config_texts(self, texts: list) -> None:
         """
         Add list of text config text keys. These are nonstandard keys
         :param texts:
@@ -461,7 +467,7 @@ class Design(ABC):
         """
         self.__config_texts += texts
 
-    def set_title_and_outfile(self, name: str):
+    def set_title_and_outfile(self, name: str) -> None:
         """
         Set the title of the sheet and the filename for the output
         :param name:
@@ -481,7 +487,7 @@ class Design(ABC):
         if self.settings["filename"]:
             self.settings['filename'] = File.set_svg_extension(self.settings["filename"])
 
-    def load_settings(self, config_file: str, section: str, verbose: bool):
+    def load_settings(self, config_file: str, section: str, verbose: bool) -> None:
         """
         Reads in a section from a configuration file.
         :param config_file: filename with path of the config file
@@ -497,8 +503,6 @@ class Design(ABC):
         self.__read_config(config_file, section)
 
         self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
-
-        return
 
     def __read_config(self, filename: str, section: str):
         """ Read configuration from file and convert numbers from string to int/float

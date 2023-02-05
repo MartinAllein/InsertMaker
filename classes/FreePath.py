@@ -28,7 +28,8 @@ class FreePath(Design):
         self.add_settings_measures(["max x", "max y"])
 
         self.settings[
-            "title"] = f"{self.settings['project name']}{self.__DEFAULT_FILENAME}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            "title"] = f"{self.settings['project name']}{self.__DEFAULT_FILENAME}-" \
+                       f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         # : encloses config values to replace
         self.load_settings(config_file, section, verbose)
@@ -95,8 +96,8 @@ class FreePath(Design):
 
         self.template["$SVGPATH$"] = output
 
-        self.template["VIEWBOX_X"] = self.settings['max x']
-        self.template["VIEWBOX_Y"] = self.settings['max y']
+        self.template["VIEWBOX_X"] = self.settings['max x_tdpi']
+        self.template["VIEWBOX_Y"] = self.settings['max y_tdpi']
 
         self.write_to_file(self.template)
         print(f"FreePath \"{self.settings['filename']}\" created")
@@ -133,8 +134,8 @@ class FreePath(Design):
             print('Error in config file R ' + command + '\n' + error)
             sys.exit(-1)
 
-        start_x = self.to_dpi(float(start_xy[0]))
-        start_y = self.to_dpi(float(start_xy[1]))
+        start_x = self.to_dpi(float(start_xy[0]) + self.settings['x offset'])
+        start_y = self.to_dpi(float(start_xy[1]) + self.settings['y offset'])
         width = self.to_dpi(float(parameter[2]))
         height = self.to_dpi(float(parameter[4]))
 
@@ -158,8 +159,8 @@ class FreePath(Design):
             print("All parameter must be of type float. C " + command)
             sys.exit(-1)
 
-        start_x = self.to_dpi(float(start_xy[0]))
-        start_y = self.to_dpi(float(start_xy[1]))
+        start_x = self.to_dpi(float(start_xy[0]) + self.settings['x offset'])
+        start_y = self.to_dpi(float(start_xy[1]) + self.settings['y offset'])
         radius = self.to_dpi(float(parameter[1]))
         start_x_left = start_x - radius
 
@@ -200,9 +201,9 @@ class FreePath(Design):
             print("End parameter must be of type float. C " + command)
             sys.exit(1)
 
-        start_x = self.to_dpi(float(start[0]))
-        start_y = self.to_dpi(float(start[1]))
-        end_x = self.to_dpi(float(end[0]))
-        end_y = self.to_dpi(float(end[1]))
+        start_x = self.to_dpi(float(start[0]) + self.settings['x offset'])
+        start_y = self.to_dpi(float(start[1]) + self.settings['y offset'])
+        end_x = self.to_dpi(float(end[0]) + self.settings['x offset'])
+        end_y = self.to_dpi(float(end[1]) + self.settings['y offset'])
 
         return f"M {start_x} {start_y} L {end_x} {end_y}"
