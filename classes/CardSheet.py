@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from classes.Design import Design
 from classes.Direction import Direction
@@ -11,15 +12,19 @@ class CardSheet(Design):
     __DEFAULT_TEMPLATE: str = "CardSheet.svg"
     __DEFAULT_TEMPLATE_CARD: str = "Card.svg"
 
-    __DEFAULT_COLUMNS: int = 1
-    __DEFAULT_ROWS: int = 1
+    # number of rows and columns of cards per sheet
+    __DEFAULT_COLUMNS: int = 2
+    __DEFAULT_ROWS: int = 4
 
+    # distance between single rows and columns
     __DEFAULT_X_SEPARATION: float = 0.0
     __DEFAULT_Y_SEPARATION: float = 0.0
 
+    # corner radius of the cards. 0.0 produces rectangular cards
     __DEFAULT_CORNER_RADIUS: float = 3.0
 
-    # standard size is European
+    # standard size of cards is European
+    __DEFAULT_UNIT = "mm"
     __DEFAULT_X_MEASURE: float = 89.0
     __DEFAULT_Y_MEASURE: float = 55.0
 
@@ -33,59 +38,27 @@ class CardSheet(Design):
     def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
         super().__init__(kwargs)
 
-        # width of card
-        self.x_measure: float = self.__DEFAULT_X_MEASURE
+        self.settings.update({'x measure': self.__DEFAULT_X_MEASURE,
+                              'y measure': self.__DEFAULT_Y_MEASURE,
+                              'corner radius': self.__DEFAULT_CORNER_RADIUS,
+                              'x separation': self.__DEFAULT_X_SEPARATION,
+                              'y separation': self.__DEFAULT_Y_SEPARATION,
+                              'rows': self.__DEFAULT_ROWS,
+                              'columns': self.__DEFAULT_COLUMNS,
+                              'template name': self.__DEFAULT_TEMPLATE,
+                              'template card name': self.__DEFAULT_TEMPLATE,
 
-        # height of card
-        self.y_measure: float = self.__DEFAULT_Y_MEASURE
-
-        # corner radius for card
-        self.corner_radius: float = self.__DEFAULT_CORNER_RADIUS
-
-        # space between columns of cards
-        self.x_separation: float = self.__DEFAULT_X_SEPARATION
-
-        # space between rows of cards
-        self.y_separation: float = self.__DEFAULT_Y_SEPARATION
-
-        # number of rows
-        self.row_count: int = self.__DEFAULT_COLUMNS
-
-        # number of columns
-        self.column_count: int = self.__DEFAULT_ROWS
-
-        payload = {}
-
-        payload['default_values'] = {'x separation': self.x_separation,
-                                     'y separation': self.y_separation,
-                                     'rows': self.column_count,
-                                     'columns': self.row_count,
-                                     'x measure': self.x_measure,
-                                     'y measure': self.y_measure,
-                                     'corner radius': self.corner_radius,
-                                     }
-
-        project_name = self.get_project_name(postfix="-")
+                              })
+        self.add_settings_measures(["x measure", "y measure", "corner radius", "x separation", "y separation"])
 
         # : encloses config values to replace
-        payload['default_name'] = f"{project_name}{self.__DEFAULT_FILENAME}-L:x measure:-W:y measure:-" \
-                                  f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        self.settings[
+            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name']}" \
+                       f"{self.__DEFAULT_FILENAME}-{self.settings['x measure']}-{self.settings['y measure']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        config = super().load_settings(config_file, section, verbose, payload)
+        self.load_settings(config_file, section, verbose)
 
-        self.x_separation = float(config.get(section, 'x separation'))
-        self.y_separation = float(config.get(section, 'y separation'))
-        self.row_count = int(config.get(section, 'rows'))
-        self.column_count = int(config.get(section, 'columns'))
-        self.x_measure = float(config.get(section, 'x measure'))
-        self.y_measure = float(config.get(section, 'y measure'))
-        self.corner_radius = float(config.get(section, 'corner radius'))
-
-        # Convert all measures to thousands dpi
-        to_convert = ["x_measure", "y_measure", "x_separation",
-                      "y_separation", "corner_radius"]
-
-        self.convert_all_to_thoudpi(to_convert)
+        self.convert_measures_to_tdpi()
 
     def create(self):
         # noinspection DuplicatedCode
@@ -99,20 +72,27 @@ class CardSheet(Design):
                     self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN])
                     ]
 
+        rows = self.settings["rows"]
+        columns = self.settings["columns"]
+        x_separation = self.settings["x separation"]
+        y_separation = self.settings["y separation"]
+        x_measure = self.settings["x measure"]
+        y_measure = self.settings["y measure"]
+
         output = ""
-        for row in range(self.row_count):
-            for col in range(self.column_count):
+        for row in range(rows):
+            for col in range(columns):
                 svgpath = base_cut[self.__CUTLINES_CARD_FULL]
 
-                if self.x_separation == 0.0 and self.y_separation != 0.0 and col != 0:
+                if x_separation == 0.0 and y_separation != 0.0 and col != 0:
                     # Cards are ordered in rows. Left is full others left open
                     svgpath = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
 
-                if self.x_separation != 0.0 and self.y_separation == 0.0 and row != 0:
+                if x_separation != 0.0 and y_separation == 0.0 and row != 0:
                     # Cards are ordered in columns. Top is full others left open
                     svgpath = base_cut[self.__CUTLINES_CARD_TOP_OPEN]
 
-                if self.x_separation == 0.0 and self.y_separation == 0.0:
+                if x_separation == 0.0 and y_separation == 0.0:
                     # No Separation
                     if row == 0 and col != 0:
                         svgpath = base_cut[self.__CUTLINES_CARD_LEFT_OPEN]
@@ -124,8 +104,9 @@ class CardSheet(Design):
                 template = {'$ID$': f"{row} - {col}",
                             '$SVGPATH$': svgpath,
                             '$TRANSLATE$': str(
-                                self.thoudpi_to_dpi((self.x_measure + self.x_separation) * col)) + ", " + str(
-                                self.thoudpi_to_dpi((self.y_measure + self.y_separation) * row))
+                                self.to_dpi(
+                                    self.settings["x offset"] + (x_measure + x_separation) * col)) + ", " + str(
+                                self.to_dpi(self.settings["y offset"] + (y_measure + y_separation) * row))
                             }
 
                 temp = card_template
@@ -137,19 +118,19 @@ class CardSheet(Design):
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
         self.template["$SVGPATH$"] = output
 
-        self.template["$FOOTER_CARD_WIDTH$"] = str(round((self.right_x - self.left_x) / self.FACTOR, 2))
-        self.template["$FOOTER_CARD_HEIGHT$"] = round((self.bottom_y - self.top_y) / self.FACTOR, 2)
+        self.template["$FOOTER_CARD_WIDTH$"] = str(self.settings["x measure"]) + " " + self.settings["unit"]
+        self.template["$FOOTER_CARD_HEIGHT$"] = str(self.settings["y measure"]) + " " + self.settings["unit"]
 
-        viewbox_x = round(self.x_offset + (self.right_x - self.left_x) * self.column_count
-                          + self.x_separation * (self.column_count - 1))
-        viewbox_y = round(self.y_offset + (self.bottom_y - self.top_y) * self.row_count
-                          + self.y_separation * (self.row_count - 1))
+        viewbox_x = round(self.settings["x offset_tdpi"] + (self.right_x - self.left_x) * columns
+                          + x_separation * self.conversion_factor() * (columns - 1))
+        viewbox_y = round(self.settings["y offset_tdpi"] + (self.bottom_y - self.top_y) * rows
+                          + y_separation * self.conversion_factor() * (rows - 1))
 
         self.template["VIEWBOX_X"] = viewbox_x
         self.template["VIEWBOX_Y"] = viewbox_y
 
         self.write_to_file(self.template)
-        print(f"CardSheet \"{self.outfile}\" created")
+        print(f"CardSheet \"{self.settings['filename']}\" created")
 
     def __init_design(self):
 
@@ -192,33 +173,23 @@ class CardSheet(Design):
         # |   TO   |  TLO   |
         # |--------|--------|
 
-        x_measure = self.x_measure
-        y_meaure = self.y_measure
-        corner_radius = self.corner_radius
+        x_measure = self.settings["x measure_tdpi"]
+        y_meaure = self.settings["y measure_tdpi"]
+        corner_radius = self.settings["corner radius_tdpi"]
+        x_offset = self.settings["x offset_tdpi"]
+        y_offset = self.settings["y offset_tdpi"]
 
         # X - Points
-        a = int(self.x_offset)
+        a = 0
         b = a + corner_radius
         d = a + x_measure
         c = d - corner_radius
 
         # Y - Points
-        m = int(self.y_offset)
+        m = 0
         n = m + corner_radius
         p = m + y_meaure
         o = p - corner_radius
-
-        if self.verbose:
-            values_mil = [self.thoudpi_to_mm(s) for s in [a, b, c, d, m, n, o, p]]
-            print(f"a: {a} / {values_mil[0]}")
-            print(f"b: {b} / {values_mil[1]}")
-            print(f"c: {c} / {values_mil[2]}")
-            print(f"d: {d} / {values_mil[3]}")
-
-            print(f"m: {m} / {values_mil[4]}")
-            print(f"n: {n} / {values_mil[5]}")
-            print(f"o: {o} / {values_mil[6]}")
-            print(f"q: {p} / {values_mil[7]}")
 
         self.corners = [[a, m], [a, n], [a, o], [a, p],
                         [b, m], [b, n], [d, o], [b, p],

@@ -28,8 +28,8 @@ class FreePath(Design):
         self.add_settings_measures(["max x", "max y"])
 
         self.settings[
-            "title"] = f"{self.settings['project name']}{self.__DEFAULT_FILENAME}-" \
-                       f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name']}" \
+                       f"{self.__DEFAULT_FILENAME}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         # : encloses config values to replace
         self.load_settings(config_file, section, verbose)

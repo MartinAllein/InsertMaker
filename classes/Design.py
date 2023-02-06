@@ -1,6 +1,4 @@
-import re
 import sys
-import os
 import xml.dom.minidom
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -17,7 +15,6 @@ TEMPLATE = 'TEMPLATE NAME'
     Default configuration in insertmaker.config
     Project configuration
     Item configuration
-
     """
 
 
@@ -175,7 +172,7 @@ class Design(ABC):
 
         return
 
-    def __factor(self) -> float:
+    def conversion_factor(self) -> float:
         """
         Delivers the factor for a unit to tdpi conversion
         :return: conversion factor
@@ -188,7 +185,7 @@ class Design(ABC):
         :param value: value to be converted
         :return: converted value
         """
-        return int(float(value) * self.__factor())
+        return int(float(value) * self.conversion_factor())
 
     @staticmethod
     def __tdpi_to_dpi(value: str) -> str:
@@ -386,8 +383,8 @@ class Design(ABC):
 
         self.template["$FOOTER_FILENAME$"] = self.settings["filename"]
         self.template["$FOOTER_ARGS_STRING$"] = self.args_string
-        self.template['$FOOTER_OVERALL_WIDTH$'] = self.template['VIEWBOX_X']
-        self.template['$FOOTER_OVERALL_HEIGHT '] = self.template['VIEWBOX_Y']
+        self.template['$FOOTER_OVERALL_WIDTH$'] = round(self.template['VIEWBOX_X']/self.conversion_factor(),2)
+        self.template['$FOOTER_OVERALL_HEIGHT$'] = round(self.template['VIEWBOX_Y']/self.conversion_factor(),2)
 
         self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
@@ -527,11 +524,15 @@ class Design(ABC):
             return False
 
     @staticmethod
-    def try_float(value):
+    def try_float(value: str):
 
         try:
-            float(value)
-            return float(value)
+            if value.__contains__("."):
+                float(value)
+                return float(value)
+            else:
+                int(value)
+                return int(value)
         except ValueError:
             return value
 
