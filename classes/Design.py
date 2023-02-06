@@ -30,6 +30,7 @@ class Design(ABC):
     # XML element definitions
     __DEFAULT_XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
     __DEFAULT_XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
+    __DEFAULT_XML_PATH_NOMOVE = '<path d="A %s %s 0 0 %s %s %s"/>\n'
 
     # Default filename and section for the InsertMaker configuration file
     __DEFAULT_SECTION_NAME = "STANDARD"
@@ -103,7 +104,7 @@ class Design(ABC):
                          'y offset': self.__DEFAULT_Y_OFFSET,
                          'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
                          'thickness': self.__DEFAULT_THICKNESS,
-                         'title':  f"{__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                         'title': f"{__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
                          'filename': "",
                          'project name': "",
                          'template name': "",
@@ -217,17 +218,29 @@ class Design(ABC):
         return result
 
     @staticmethod
-    def draw_line(start: str, end: str) -> str:
+    def draw_line(corners: list, points: list, move_to=True) -> str:
         # TODO:
         """
         Draws a line from the start to the end coordinates
-        :param start: coordinates for the start point
-        :param end: coordinates for the end point
-        :return: XML string with <line/>
+        :return: path string with
         """
-        start_x, start_y = Design.thoudpi_to_dpi(start)
-        end_x, end_y = Design.thoudpi_to_dpi(end)
-        return Design.__DEFAULT_XML_LINE % (start_x, start_y, end_x, end_y)
+        path = ""
+
+        start = 1
+        if move_to:
+            path = f"M {Design.thoudpi_to_dpi(corners[points[0]][0])} {Design.thoudpi_to_dpi(corners[points[0]][1])} "
+        else:
+            start = 0
+
+        if start > len(points):
+            return ""
+
+        for point in points[start:]:
+            x = Design.thoudpi_to_dpi(corners[point][0])
+            y = Design.thoudpi_to_dpi(corners[point][1])
+            path += f"L {x} {y} "
+
+        return path
 
     @staticmethod
     def draw_halfcircle(corners: list, path: list) -> str:
@@ -246,20 +259,27 @@ class Design(ABC):
         return Design.__draw_arc(start_x, start_y, int(diameter / 2), Direction.CW, end_x, end_y)
 
     @staticmethod
-    def draw_quartercircle(corners, path):
+    def draw_quartercircle(corners: list, points: list, move_to=True):
         """
         Draws a quarter circle SVG path
         :param corners: all points of the drawing
-        :param path: start and end points, directon of arc
+        :param move_to:
+        :param points:
         :return: XML string with <path />
         """
-
-        start_x, start_y, end_x, end_y, radius = Design.get_ccords_for_arc(corners, path)
+        path = ""
+        start_x, start_y, end_x, end_y, radius = Design.get_ccords_for_arc(corners, points)
 
         if radius == 0:
             return ""
 
-        return Design.__draw_arc(start_x, start_y, int(radius), 1, end_x, end_y)
+        if move_to:
+            path += f"M {Design.thoudpi_to_dpi(start_x)} {Design.thoudpi_to_dpi(start_y)} "
+
+        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 1 " \
+                f"{Design.thoudpi_to_dpi(end_x)} {Design.thoudpi_to_dpi(end_y)} "
+
+        return path
 
     @staticmethod
     def get_ccords_for_arc(corners: list, path: list):
@@ -271,9 +291,12 @@ class Design(ABC):
         """
         start_x, start_y = corners[path[0]]
         end_x, end_y = corners[path[1]]
-        orientation = path[2]
 
-        diameter = 0
+        orientation = Direction.CW
+
+        if len(path) == 3:
+            orientation = path[2]
+
         if orientation == Direction.VERTICAL:
             diameter = abs(end_y - start_y)
         else:
@@ -315,18 +338,36 @@ class Design(ABC):
         return xmlstring
 
     @staticmethod
-    def __draw_arc(start_x, start_y, radius, direction, end_x, end_y):
+    def __draw_arc(start_x, start_y, radius, direction, end_x, end_y, move_to=True):
         return Design.__DEFAULT_XML_PATH % (
             Design.thoudpi_to_dpi(start_x), Design.thoudpi_to_dpi(start_y), Design.thoudpi_to_dpi(radius),
             Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x), Design.thoudpi_to_dpi(end_y))
 
     @staticmethod
-    def draw_lines(corners, lines):
+    def __draw_arc_nomove(radius, direction, end_x, end_y, plainpath=False):
+        output = ""
+        if plainpath:
+            output = f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {direction} " \
+                     f"{Design.thoudpi_to_dpi(end_x)}{Design.thoudpi_to_dpi(end_y)} "
+        else:
+            output = Design.__DEFAULT_XML_PATH_NOMOVE % (
+                Design.thoudpi_to_dpi(radius), Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x),
+                Design.thoudpi_to_dpi(end_y))
+        return output
+
+    @staticmethod
+    def draw_lines(corners: list, lines: list) -> str:
         xml_lines = ""
         for command, values in lines:
             if command == PathStyle.LINE:
-                for start, end in zip(values[:-1], values[1:]):
-                    xml_lines += Design.draw_line(corners[start], corners[end])
+                xml_lines += Design.draw_line(corners, values)
+            elif command == PathStyle.LINE_NOMOVE:
+                xml_lines += Design.draw_line(corners, values, move_to=False)
+            elif command == PathStyle.QUARTERCIRCLE:
+                xml_lines += Design.draw_quartercircle(corners, values)
+            elif command == PathStyle.QUARTERCIRCLE_NOMOVE:
+                xml_lines += Design.draw_quartercircle(corners, values, move_to=False)
+
             elif command == PathStyle.THUMBHOLE:
                 xml_lines += Design.draw_thumbhole_path(corners, values)
             elif command == PathStyle.PAIR:
@@ -337,7 +378,7 @@ class Design(ABC):
             elif command == PathStyle.QUARTERCIRCLE:
                 xml_lines += Design.draw_quartercircle(corners, values)
 
-        return xml_lines
+        return f'<path d="{xml_lines.strip()}"/>'
 
     def set_bounds(self, corners):
         """
@@ -383,8 +424,8 @@ class Design(ABC):
 
         self.template["$FOOTER_FILENAME$"] = self.settings["filename"]
         self.template["$FOOTER_ARGS_STRING$"] = self.args_string
-        self.template['$FOOTER_OVERALL_WIDTH$'] = round(self.template['VIEWBOX_X']/self.conversion_factor(),2)
-        self.template['$FOOTER_OVERALL_HEIGHT$'] = round(self.template['VIEWBOX_Y']/self.conversion_factor(),2)
+        self.template['$FOOTER_OVERALL_WIDTH$'] = round(self.template['VIEWBOX_X'] / self.conversion_factor(), 2)
+        self.template['$FOOTER_OVERALL_HEIGHT$'] = round(self.template['VIEWBOX_Y'] / self.conversion_factor(), 2)
 
         self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 

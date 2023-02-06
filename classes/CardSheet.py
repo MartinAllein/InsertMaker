@@ -66,11 +66,18 @@ class CardSheet(Design):
 
         card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
 
-        base_cut = [self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL]),
-                    self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOP_OPEN]),
-                    self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN]),
-                    self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN])
-                    ]
+        if self.settings["corner radius"] == 0:
+            base_cut = [self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_FULL]),
+                        self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_TOP_OPEN]),
+                        self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_LEFT_OPEN]),
+                        self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_TOPLEFT_OPEN])
+                        ]
+        else:
+            base_cut = [self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL]),
+                        self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOP_OPEN]),
+                        self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN]),
+                        self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN])
+                        ]
 
         rows = self.settings["rows"]
         columns = self.settings["columns"]
@@ -199,45 +206,71 @@ class CardSheet(Design):
 
         self.cutlines = [
             [
-                # Top upper, middle left and right, Bottom lower
-                [PathStyle.PAIR,
-                 [1, 2, 4, 8, 13, 14, 7, 11]],
-                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+                # Full Card
+                [PathStyle.LINE, [4, 8]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [8, 13]],
+                [PathStyle.LINE_NOMOVE, [14]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.LINE_NOMOVE, [11, 7]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.LINE_NOMOVE, [2, 1]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4]],
             ],
             [
-                # Top upper, middle left and right, Bottom lower
-                [PathStyle.PAIR,
-                 [1, 2, 13, 14, 7, 11]],
-                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+                # Top open
+                [PathStyle.QUARTERCIRCLE, [8, 13]],
+                [PathStyle.LINE_NOMOVE, [14]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.LINE_NOMOVE, [11, 7]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.LINE_NOMOVE, [2, 1]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4]],
             ],
             [
-                # Top upper, middle left and right, Bottom lower
-                [PathStyle.PAIR,
-                 [4, 8, 13, 14, 7, 11]],
-                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
+                # Left open
+                [PathStyle.QUARTERCIRCLE, [1, 4]],
+                [PathStyle.LINE_NOMOVE, [8]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [8, 13]],
+                [PathStyle.LINE_NOMOVE, [14]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.LINE_NOMOVE, [11, 7]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
             ],
             [
-                # Top upper, middle left and right, Bottom lower
-                [PathStyle.PAIR,
-                 [13, 14, 7, 11]],
-                [PathStyle.QUARTERCIRCLE, [1, 4, Direction.NORTH]],
-                [PathStyle.QUARTERCIRCLE, [8, 13, Direction.EAST]],
-                [PathStyle.QUARTERCIRCLE, [14, 11, Direction.SOUTH]],
-                [PathStyle.QUARTERCIRCLE, [7, 2, Direction.WEST]]
-            ]
+                # Top and left open
+                [PathStyle.QUARTERCIRCLE, [8, 13]],
+                [PathStyle.LINE_NOMOVE, [14]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.LINE_NOMOVE, [11, 7]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.LINE_NOMOVE, [2, 1]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4]],
+            ],
+        ]
+
+        self.cutlines_nocorners = [
+            [
+                # Full Card
+                [PathStyle.LINE, [0, 12, 15, 3, 0]],
+            ],
+            [
+                # Top open
+                [PathStyle.LINE, [12, 15, 3, 0]],
+            ],
+            [
+                # Left open
+                [PathStyle.LINE, [0, 12, 15, 3]],
+            ],
+            [
+                # Top and left open
+                [PathStyle.LINE, [12, 15, 3]],
+            ],
+
         ]
 
         # detect boundaries of drawing
         self.set_bounds(self.corners)
 
-    def __print_variables(self):
-        print(self.__dict__)
+
+def __print_variables(self):
+    print(self.__dict__)
