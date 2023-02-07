@@ -53,7 +53,7 @@ class CardSheet(Design):
 
         # : encloses config values to replace
         self.settings[
-            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name']}" \
+            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name'] + '-'}" \
                        f"{self.__DEFAULT_FILENAME}-{self.settings['x measure']}-{self.settings['y measure']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         self.load_settings(config_file, section, verbose)

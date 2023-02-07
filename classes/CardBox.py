@@ -1,258 +1,93 @@
-import os
-import sys
-import argparse
-import configparser
 from classes.Design import Design
 from datetime import datetime
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 
 
-class CardBox:
+class CardBox(Design):
     __DEFAULT_FILENAME = "CardBox"
-    __DEFAULT_TEMPLATE = "templates/CardBox.svg"
-    __DEFAULT_TEMPLATE_SEPARATED = "templates/ItemBoxSeparated.svg"
+    __DEFAULT_TEMPLATE = "CardBox.svg"
+    __DEFAULT_TEMPLATE_SEPARATED = "ItemBoxSeparated.svg"
 
-    __DEFAULT_X_OFFSET = Design.x_offset
-    __DEFAULT_Y_OFFSET = Design.y_offset
+    __DEFAULT_LENGTH = 80.0
+    __DEFAULT_WIDTH = 40.0
+    __DEFAULT_HEIGHT = 15.0
 
-    __DEFAULT_SLOT_WIDTH = 10
-    __DEFAULT_CORNER_GAP = 10
-    __DEFAULT_FUNNEL_TOP_WIDTH = 20
-    __DEFAULT_FUNNEL_BOTTOM_WIDTH = 10
-    __DEFAULT_FUNNEL_NECK_HEIGHT = 10
+    __DEFAULT_SLOT_WIDTH = 10.0
+    __DEFAULT_CORNER_GAP = 10.0
+    __DEFAULT_FUNNEL_TOP_WIDTH = 20.0
+    __DEFAULT_FUNNEL_BOTTOM_WIDTH = 10.0
+    __DEFAULT_FUNNEL_NECK_HEIGHT = 10.0
     __DEFAULT_THICKNESS = 1.5
-    __DEFAULT_VERTICAL_SEPARATION = 3
-    __DEFAULT_CENTER_NOSE_WIDTH = 5
-    __DEFAULT_BOTTOM_HOLE_RADIUS = 10
+    __DEFAULT_VERTICAL_SEPARATION = 3.0
+    __DEFAULT_CENTER_NOSE_WIDTH = 5.0
+    __DEFAULT_BOTTOM_HOLE_RADIUS = 10.0
     __DEFAULT_ENFORCE_SMALL_DESIGN = False
     __DEFAULT_ENFORCE_LARGE_DESIGN = True
+    __DEFAULT_ENFORCEDESIGN = ""
+    __DEFAULT_FUNNEL = "dual with holes"
 
-    __DEFAULT_SMALL_HEIGHT = Design.mm_to_thoudpi(20)
+    __DEFAULT_SMALL_HEIGHT = 20.0
 
-    def __init__(self, arguments=""):
-        self.__init_variables()
+    def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
+        super().__init__(kwargs)
 
-        # Parse the cli
-        self.args = self.parse_arguments(arguments)
-
-        if self.args.v:
-            self.verbose = True
-
-        if self.args.c:
-            # config file was chosen
-            if not self.args.C:
-                print("No section of config file\n-c <config-file> -C <section of config file>")
-                sys.exit(-1)
-            self.__config_from_file(self.args.c, self.args.C)
-        else:
-            # CLI was chosen
-            self.__config_from_cli()
-
-        temp_name = f"{self.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
-                    f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-
-        if not self.title:
-            self.title = temp_name
-
-        if not self.outfile:
-            self.outfile = temp_name
-
-        # Set extension of outfile to .svg
-        if self.outfile[-4:] != '.svg':
-            self.outfile += '.svg'
-
-        if self.verbose:
-            self.__print_variables()
-
-        # Convert all measures to thousands dpi
-        self.__convert_all_to_thoudpi()
-
-    def __config_from_cli(self):
-
-        self.length = self.args.l
-        self.width = self.args.w
-        self.height = self.args.h
-
-        if self.args.s:
-            self.thickness = self.args.s
-
-        self.separated = self.args.x
-
-        # Outfile
-        if self.args.o:
-            self.outfile = self.args.o
-
-        # Project
-        if self.args.p:
-            self.project = self.args.p
-
-        # Title
-        if self.args.t:
-            self.title = self.args.t
-
-        # Top funnel width
-        if self.args.F:
-            self.funnel_top_width = self.args.F
-
-        # Bottom funnel width
-        if self.args.f:
-            self.funnel_bottom_width = self.args.f
-
-        # funnel neck height
-        if self.args.n:
-            self.funnel_neck_height = self.args.n
-
-        # width of nose at bottom of funnel
-        if self.args.u:
-            self.center_nose_width = self.args.u
-
-        # -d Single Thumbhole
-        # -D Dual Thumbhole
-        if self.args.d:
-            self.thumbhole = True
-            self.singlethumbhole = True
-        elif self.args.D:
-            self.thumbhole = True
-            self.singlethumbhole = False
-        else:
-            self.thumbhole = False
-
-        # -b Funnel only on one side
-        if self.args.b:
-            self.singlefunnel = True
-            self.singlethumbhole = True
-
-        if self.args.e:
-            self.enforce_small_design = True
-
-        if self.args.E:
-            self.enforce_large_design = True
-
-    def __config_from_file(self, filename: str, section: str):
-        defaults = {'x offset': self.__DEFAULT_X_OFFSET,
-                    'y offset': self.__DEFAULT_Y_OFFSET,
-                    'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
-                    'slot width': self.__DEFAULT_SLOT_WIDTH, 'corner_gap': self.__DEFAULT_CORNER_GAP,
-                    'funnel top width': self.__DEFAULT_FUNNEL_TOP_WIDTH,
-                    'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
-                    'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT, 'thickness': self.__DEFAULT_THICKNESS,
-                    'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
-                    'length': 0,
-                    'width': 0,
-                    'height': 0,
-                    'project name': "",
-                    'filename': "",
-                    'title': "",
-                    'thumbhole': False,
-                    'funnel': 'dual with holes',
-                    }
-
-        config_file = 'config/' + filename + ".config"
-        # Read default values from the config file
-        if not os.path.isfile(config_file):
-            print("Config file config/" + filename + ".config not found")
-            sys.exit(-1)
-
-        # read entries from the configuration file
-        config = configparser.ConfigParser(defaults=defaults)
-        config.read(config_file)
-
-        if not config.has_section(section):
-            print("Section " + section + " in config file config/" + filename + ".config not found")
-            sys.exit(-1)
-
-        self.project = config[section]['project name'].strip('"')
-        self.outfile = config[section]['filename'].strip('"')
-        self.title = config[section]['title'].strip('"')
-        self.x_offset = int(config[section]['x offset'])
-        self.y_offset = int(config[section]['y offset'])
-        self.vertical_separation = int(config[section]['vertical separation'])
-        self.slot_width = int(config[section]['slot width'])
-        self.corner_gap = int(config[section]['corner gap'])
-        self.funnel_top_width = int(config[section]['funnel top width'])
-        self.funnel_bottom_width = int(config[section]['funnel bottom width'])
-        self.funnel_neck_height = int(config[section]['funnel neck height'])
-        self.thickness = float(config[section]['thickness'])
-        self.center_nose_width = int(config[section]['center nose width'])
-
-        if config.has_option(section, 'funnel'):
-            funnel = config[section]['funnel']
-            if funnel == "single with hole" or funnel == "single with holes":
-                self.thumbhole = True
-                self.singlethumbhole = True
-                self.singlefunnel = True
-            elif funnel == "dual with hole":
-                self.thumbhole = True
-                self.singlethumbhole = True
-                self.singlefunnel = False
-            elif funnel == "dual with holes":
-                self.thumbhole = True
-                self.singlethumbhole = False
-                self.singlefunnel = False
-
-        if config.has_option(section, 'enforce design'):
-            design = config[section]['enforce design']
-
-            if design == 'small':
-                self.enforce_small_design = True
-                self.enforce_large_design = False
-            elif design == 'large':
-                self.enforce_small_design = False
-                self.enforce_large_design = True
-
-        self.length = float(config[section]['length'])
-        self.width = float(config[section]['width'])
-        self.height = float(config[section]['height'])
-
-    def __init_variables(self):
-        # initialization of variables
-
-        # Arguments as String
-        self.args_string = ' '.join(sys.argv[1:])
-
-        # command line parameter variables
-        self.length = 0.0
-        self.width = 0.0
-        self.height = 0.0
-        self.thickness = self.__DEFAULT_THICKNESS
-        self.project = ""
-        self.outfile = ""
-        self.title = ""
-        self.separated = False
-        self.thumbhole = False
-        self.singlethumbhole = False
-        self.singlefunnel = False
-        self.enforce_small_design = False
-        self.enforce_large_design = False
-
-        self.template : dict = {}
-
-        # geometry variables
-        self.corners = []
-        self.cutlines = []
-        self.left_x = 0
-        self.right_x = 0
-        self.top_y = 0
-        self.bottom_y = 0
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-        self.x_offset = self.__DEFAULT_X_OFFSET
-        self.y_offset = self.__DEFAULT_Y_OFFSET
-        self.slot_width = self.__DEFAULT_SLOT_WIDTH
-        self.funnel_top_width = self.__DEFAULT_FUNNEL_TOP_WIDTH
-        self.funnel_bottom_width = self.__DEFAULT_FUNNEL_BOTTOM_WIDTH
-        self.funnel_neck_height = self.__DEFAULT_FUNNEL_NECK_HEIGHT
-        self.center_nose_width = self.__DEFAULT_CENTER_NOSE_WIDTH
-        self.corner_gap = self.__DEFAULT_CORNER_GAP
-        self.small_height = self.__DEFAULT_SMALL_HEIGHT
-        self.vertical_separation = self.__DEFAULT_VERTICAL_SEPARATION
+        self.settings.update({'length': self.__DEFAULT_LENGTH,
+                              'width': self.__DEFAULT_WIDTH,
+                              'height': self.__DEFAULT_HEIGHT,
+                              'separated': False,
+                              'thumbhole': False,
+                              'singlethumbhole': False,
+                              'singlefunnel': False,
+                              # small
+                              #   self.enforce_small_design = True
+                              #   self.enforce_large_design = False
+                              # large
+                              #   self.enforce_small_design = False
+                              #   self.enforce_large_design = True
+                              'enforcedesign': self.__DEFAULT_ENFORCEDESIGN,
+                              'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
+                              'slot width': self.__DEFAULT_SLOT_WIDTH,
+                              'corner gap': self.__DEFAULT_CORNER_GAP,
+                              'funnel top width': self.__DEFAULT_FUNNEL_TOP_WIDTH,
+                              'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
+                              'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT,
+                              'thickness': self.__DEFAULT_THICKNESS,
+                              'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
+                              # single with hole/single with holes
+                              #   self.thumbhole = True
+                              #   self.singlethumbhole = True
+                              #   self.singlefunnel = True
+                              # dual with hole
+                              #   self.thumbhole = True
+                              #   self.singlethumbhole = True
+                              #   self.singlefunnel = False
+                              # dual with holes
+                              #   self.thumbhole = True
+                              #   self.singlethumbhole = False
+                              #   self.singlefunnel = False
+                              'funnel': self.__DEFAULT_FUNNEL,
+                              'small height': self.__DEFAULT_SMALL_HEIGHT
+                              }
+                             )
 
-        # not implemented yet
-        # self.bottomhole_radius = CardBox.__DEFAULT_BOTTOM_HOLE_RADIUS
+        # not yet implemented
+        # self.bottomhole_radius = Design.mm_to_thoudpi(self.bottomhole_radius)
+        self.add_settings_measures(["length", "width", "height", "vertical separation", "slot width",
+                                    "corner gap", "funnel top width", "funnel bottom width", "funnel neck height",
+                                    "center nose width"])
 
-        self.verbose = False
+        self.settings[
+            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name'] + '-'}" \
+                       f"{self.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
+                       f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+        self.load_settings(config_file, section, verbose)
+
+        self.convert_measures_to_tdpi()
 
     @staticmethod
     def __check_length(value):
@@ -282,44 +117,6 @@ class CardBox:
 
     def __str__(self):
         return self.width, self.length, self.height, self.thickness, self.outfile
-
-    def parse_arguments(self, arguments: str):
-        parser = argparse.ArgumentParser(add_help=False)
-
-        parser.add_argument('-l', type=float, help="length of the matchbox")
-        parser.add_argument('-w', type=float, help="width of the matchbox")
-        parser.add_argument('-h', type=float, help="height of the matchbox")
-        parser.add_argument('-s', type=float, help="Thickness")
-
-        group_thumbhole = parser.add_mutually_exclusive_group()
-        group_thumbhole.add_argument('-d', action="store_true", help="Single Thumbhole")
-        group_thumbhole.add_argument('-D', action="store_true", help="Double Thumbhole")
-        parser.add_argument('-b', action="store_true", help="Funnel on both sides")
-
-        parser.add_argument('-f', type=float, help="Funnel Bottom Width")
-        parser.add_argument('-F', type=str, help="Funnel Bottom width")
-        parser.add_argument('-n', type=int, help="Funnel Neck Height")
-        parser.add_argument('-u', type=int, help="Nose width")
-        parser.add_argument('-t', type=int, help="Drawing Title")
-        parser.add_argument('-x', action="store_true", help="separated Design")
-        parser.add_argument('-o', type=str, help="output filename")
-        parser.add_argument('-p', type=str, help="Project Name")
-
-        group_enforce = parser.add_mutually_exclusive_group()
-        group_enforce.add_argument('-e', action="store_true", help="Enforce small design")
-        group_enforce.add_argument('-E', action="store_true", help="Enforce large design")
-
-        parser.add_argument('-v', action="store_true", help="verbose output")
-
-        # The config file is mutually exclusive to all other command line parameters
-        # and has precedence
-        parser.add_argument('-c', type=str, required=True, help="Configuration File")
-        parser.add_argument('-C', type=str, required=True, help="Config file section")
-
-        if not arguments:
-            return parser.parse_args()
-
-        return parser.parse_args(arguments.split())
 
     def create(self, separated=False):
         self.__init_design()

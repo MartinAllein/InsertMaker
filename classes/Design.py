@@ -85,6 +85,12 @@ class Design(ABC):
     # all text keys. Standard and nonstandard
     __config_texts = __config_standard_texts + __config_nonstandards
 
+    # boolean configuration keys
+    __settings_boolean = []
+
+    # enumerations in config
+    __settings_enum = []
+
     # conversion values for mm<->tdpi and mil <-> tdpi
     __conversion_factor = {"mm": (__RESOLUTION * 10000) / 25.4,
                            "mil": (__RESOLUTION * 10000)
@@ -489,13 +495,31 @@ class Design(ABC):
 
         return options
 
-    def add_settings_measures(self, measures: list) -> None:
+    def add_settings_boolean(self, keys: list) -> None:
         """
-        Add list of config measure keys to standard measure keys for converting unit -> tdpi
-        :param measures: list of keys
+        Add list of config keys that represent a boolean value
+
+        :param keys: keys to add to boolean config list
         :return:
         """
-        self.__settings_measures = self.__settings_measures + measures
+        self.__settings_boolean = self.__settings_boolean + keys
+
+    def add_settings_enum(self, keys: list) -> None:
+        """
+        Add list of config keys that represent an enum value
+
+        :param keys: keys to add to enum config list
+        :return:
+        """
+        self.__settings_enum = self.__settings_enum  + keys
+
+    def add_settings_measures(self, keys: list) -> None:
+        """
+        Add list of config measure keys to standard measure keys for converting unit -> tdpi
+        :param keys: list of keys
+        :return:
+        """
+        self.__settings_measures = self.__settings_measures + keys
 
     def add_config_texts(self, texts: list) -> None:
         """
