@@ -1,7 +1,5 @@
-import sys
 from datetime import datetime
 from classes.Design import Design
-from classes.Direction import Direction
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 

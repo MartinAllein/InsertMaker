@@ -64,26 +64,26 @@ class Design(ABC):
     # y text spacing : vertical spacing of the describing text lines at the bottom of the drawing
     # thickness      : thickness of the uses material
     # stroke width   : stroke width of the lines in the SVG drawing
-    __config_standard_measures = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
+    __settings_standard_measures = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
 
     # unit             : used unit in the settings (mm or mil)
     # stroke color     : color of the lines drawn in the SVG image
     # stroke dasharray : pattern of the lines drawn in the SVG image
     # resolution       : resolution of the SVG drawing
-    __config_standard_texts = ["unit", "stroke color", "stroke dasharray", "resolution"]
+    __settings_standard_texts = ["unit", "stroke color", "stroke dasharray", "resolution"]
 
     # The nonstandard keys are design dependend and cannot be in the global settings InsertMaker.config
     # title         : title of the drawing
     # filename      : filename of the utput file
     # project name  : project (i.e. boardgame) to which the design belongs
     # template name : SVG template to use for the design
-    __config_nonstandards = ["title", "filename", "project name", "template name"]
+    __settings_nonstandards = ["title", "filename", "project name", "template name"]
 
     # all measure keys
-    __settings_measures = __config_standard_measures
+    __settings_measures = __settings_standard_measures
 
     # all text keys. Standard and nonstandard
-    __config_texts = __config_standard_texts + __config_nonstandards
+    __settings_texts = __settings_standard_texts + __settings_nonstandards
 
     # boolean configuration keys
     __settings_boolean = []
@@ -511,7 +511,7 @@ class Design(ABC):
         :param keys: keys to add to enum config list
         :return:
         """
-        self.__settings_enum = self.__settings_enum  + keys
+        self.__settings_enum = self.__settings_enum + keys
 
     def add_settings_measures(self, keys: list) -> None:
         """
@@ -527,7 +527,7 @@ class Design(ABC):
         :param texts:
         :return:
         """
-        self.__config_texts += texts
+        self.__settings_texts += texts
 
     def set_title_and_outfile(self, name: str) -> None:
         """
@@ -575,7 +575,27 @@ class Design(ABC):
 
         # copy values of all key in the config to the settings. Convert numbers from string to int/float
         self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
-                              config.has_option(section, k)})
+                              config.has_option(section, k) and section not in self.__settings_enum})
+
+        # iterate trough all enums of the settings
+        for settings_item in self.__settings_enum:
+            # enum_item is a dict with settings name as the key and the enm as value
+            # get the first key in the dictionary
+            # https://www.geeksforgeeks.org/python-get-the-first-key-in-dictionary/
+            key = next(iter(settings_item))
+            # test if the config file has the key
+            if config.has_option(section, key):
+                print(config.get(section, key))
+                # retrieve the data from the config
+                value = config.get(section, key)
+                # convert the config data into an enum by string
+                try:
+                    self.settings[key] = settings_item[key](value)
+                except ValueError as e:
+                    print(f"Unknown value for {key} in {filename} section {section}. "
+                          f"Current value \"{value}\". Allowed values are"
+                          f" {[e.value for e in settings_item[key]]}")
+                    sys.exit(1)
 
         # print(json.dumps(self.settings, indent=4))
         return config

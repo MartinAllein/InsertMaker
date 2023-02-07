@@ -1,7 +1,26 @@
+from enum import Enum
 from classes.Design import Design
 from datetime import datetime
 from classes.Direction import Direction
 from classes.PathStyle import PathStyle
+
+
+class EnfordeDesign(Enum):
+    NONE = "none"
+    SMALL = "small"
+    LARGE = "large"
+    EMPTY = ""
+
+
+class Thumbhole(Enum):
+    SINGLE = "single"
+    DUAL = "dual"
+
+
+class Funnel(Enum):
+    SINGLEHOLE = "single with hole"
+    DUALSINGLEHOLE = "dual with hole"
+    DUALHOLE = "dual with holes"
 
 
 class CardBox(Design):
@@ -18,14 +37,11 @@ class CardBox(Design):
     __DEFAULT_FUNNEL_TOP_WIDTH = 20.0
     __DEFAULT_FUNNEL_BOTTOM_WIDTH = 10.0
     __DEFAULT_FUNNEL_NECK_HEIGHT = 10.0
-    __DEFAULT_THICKNESS = 1.5
     __DEFAULT_VERTICAL_SEPARATION = 3.0
     __DEFAULT_CENTER_NOSE_WIDTH = 5.0
     __DEFAULT_BOTTOM_HOLE_RADIUS = 10.0
-    __DEFAULT_ENFORCE_SMALL_DESIGN = False
-    __DEFAULT_ENFORCE_LARGE_DESIGN = True
-    __DEFAULT_ENFORCEDESIGN = ""
-    __DEFAULT_FUNNEL = "dual with holes"
+    __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
+    __DEFAULT_FUNNEL = Funnel.DUALHOLE
 
     __DEFAULT_SMALL_HEIGHT = 20.0
 
@@ -55,7 +71,6 @@ class CardBox(Design):
                               'funnel top width': self.__DEFAULT_FUNNEL_TOP_WIDTH,
                               'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
                               'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT,
-                              'thickness': self.__DEFAULT_THICKNESS,
                               'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
                               # single with hole/single with holes
                               #   self.thumbhole = True
@@ -82,8 +97,12 @@ class CardBox(Design):
 
         self.settings[
             "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name'] + '-'}" \
-                       f"{self.__DEFAULT_FILENAME}-L{self.length}-W{self.width}-H{self.height}-" \
-                       f"S{self.thickness}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                       f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
+                       f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+        self.add_settings_enum([{"funnel": Funnel}])
+
+        self.add_settings_boolean(["separated", "thumbhole", "singlethumbhole", "singlefunnel"])
 
         self.load_settings(config_file, section, verbose)
 
@@ -302,13 +321,13 @@ class CardBox(Design):
         #                         |                          length                                |
         #  ac                     19--------------------------------------------------------------61
 
-        length = self.length
-        height = self.height
-        width = self.width
-        thickness = self.thickness
+        length = self.settings["length"]
+        height = self.settings["height"]
+        width = self.settings["width"]
+        thickness = self.settings["thickness"]
 
-        slot_width = self.slot_width
-        corner_gap = self.corner_gap
+        slot_width = self.settings["slot width"]
+        corner_gap = self.settings["corner gap"]
         neckheight = self.funnel_neck_height
         funneltopwidth = self.funnel_top_width
         funnelbottomwidth = self.funnel_bottom_width
