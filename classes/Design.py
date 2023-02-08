@@ -249,20 +249,28 @@ class Design(ABC):
         return path
 
     @staticmethod
-    def draw_halfcircle(corners: list, path: list) -> str:
+    def draw_halfcircle(corners: list, points: list, move_to=True) -> str:
         """
         Draws a half circle SVG path
         :param corners: all points of the drawing
         :param path: start and end points, directon of arc
+        :param move_to
         :return: XML string with <path />
         """
-
-        start_x, start_y, end_x, end_y, diameter = Design.get_ccords_for_arc(corners, path)
+        path = ""
+        start_x, start_y, end_x, end_y, diameter = Design.get_ccords_for_arc(corners, points)
+        radius = diameter / 2
 
         if diameter == 0:
             return ""
 
-        return Design.__draw_arc(start_x, start_y, int(diameter / 2), Direction.CW, end_x, end_y)
+        if move_to:
+            path += f"M {Design.thoudpi_to_dpi(start_x)} {Design.thoudpi_to_dpi(start_y)} "
+
+        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 1 " \
+                f"{Design.thoudpi_to_dpi(end_x)} {Design.thoudpi_to_dpi(end_y)} "
+
+        return path
 
     @staticmethod
     def draw_quartercircle(corners: list, points: list, move_to=True):
@@ -313,7 +321,7 @@ class Design(ABC):
     @staticmethod
     def draw_thumbhole_path(corners, path):
         """
-        Creates an --\----/--- for thumb retrieve
+        Creates an --\\----/--- for thumb retrieve
         :param corners: Corners of design
         :param path: path for the thumb hole
         :return:
@@ -373,14 +381,16 @@ class Design(ABC):
                 xml_lines += Design.draw_quartercircle(corners, values)
             elif command == PathStyle.QUARTERCIRCLE_NOMOVE:
                 xml_lines += Design.draw_quartercircle(corners, values, move_to=False)
+            elif command == PathStyle.HALFCIRCLE:
+                xml_lines += Design.draw_halfcircle(corners, values)
+            elif command == PathStyle.HALFCIRCLE_NOMOVE:
+                xml_lines += Design.draw_halfcircle(corners, values, move_to=false)
 
             elif command == PathStyle.THUMBHOLE:
                 xml_lines += Design.draw_thumbhole_path(corners, values)
             elif command == PathStyle.PAIR:
                 for start, end in zip(values[::2], values[1::2]):
                     xml_lines += Design.draw_line(corners[start], corners[end])
-            elif command == PathStyle.HALFCIRCLE:
-                xml_lines += Design.draw_halfcircle(corners, values)
             elif command == PathStyle.QUARTERCIRCLE:
                 xml_lines += Design.draw_quartercircle(corners, values)
 
@@ -578,6 +588,7 @@ class Design(ABC):
         self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
                               config.has_option(section, k) and section not in self.__settings_enum})
 
+        foo = self.__settings_enum
         # iterate through all enums of the settings
         for settings_item in self.__settings_enum:
             # enum_item is a dict with settings name as the key and the enm as value

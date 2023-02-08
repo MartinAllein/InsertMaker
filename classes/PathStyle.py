@@ -10,11 +10,10 @@ class PathStyle(Enum):
     QUARTERCIRCLE = auto()
     # Quarter circle to point from current location
     QUARTERCIRCLE_NOMOVE = auto()
-
-
+    HALFCIRCLE = auto()
+    HALFCIRCLE_NOMOVE = auto()
 
     THUMBHOLE = auto()
-    HALFCIRCLE = auto()
     PAIR = auto()
     LINEPLAIN = auto()
     LINEPLAINMOVE = auto()

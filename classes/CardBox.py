@@ -1,8 +1,9 @@
 from enum import Enum
 from classes.Design import Design
 from datetime import datetime
-from classes.Direction import Direction
 from classes.PathStyle import PathStyle
+from classes.Template import Template
+from classes.Direction import Direction
 
 
 class EnfordeDesign(Enum):
@@ -15,12 +16,12 @@ class EnfordeDesign(Enum):
 class Thumbhole(Enum):
     SINGLE = "single"
     DUAL = "dual"
+    NONE = "none"
 
 
 class Funnel(Enum):
-    SINGLEHOLE = "single with hole"
-    DUALSINGLEHOLE = "dual with hole"
-    DUALHOLE = "dual with holes"
+    SINGLE = "single"
+    DUAL = "dual"
 
 
 class CardBox(Design):
@@ -34,20 +35,24 @@ class CardBox(Design):
 
     __DEFAULT_SLOT_WIDTH = 10.0
     __DEFAULT_CORNER_GAP = 10.0
-    __DEFAULT_FUNNEL_TOP_WIDTH = 20.0
+    __DEFAULT_FUNNEL_TOP_WIDTH = 10.0
     __DEFAULT_FUNNEL_BOTTOM_WIDTH = 10.0
     __DEFAULT_FUNNEL_NECK_HEIGHT = 10.0
     __DEFAULT_VERTICAL_SEPARATION = 3.0
     __DEFAULT_CENTER_NOSE_WIDTH = 5.0
     __DEFAULT_BOTTOM_HOLE_RADIUS = 10.0
     __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
-    __DEFAULT_FUNNEL = Funnel.DUALHOLE
-    __DEFAULT_THUMBHOLE = Thumbhole.DUAL
+    __DEFAULT_FUNNEL = Funnel.DUAL
+    __DEFAULT_THUMBHOLE = Thumbhole.NONE
 
     __DEFAULT_SMALL_HEIGHT = 20.0
 
     def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
         super().__init__(kwargs)
+
+        self.settings.update({'template name': self.__DEFAULT_TEMPLATE,
+                              'template card name': self.__DEFAULT_TEMPLATE,
+                              })
 
         self.inner_dimensions = []
         self.outer_dimensions = []
@@ -57,8 +62,6 @@ class CardBox(Design):
                               'height': self.__DEFAULT_HEIGHT,
                               'separated': False,
                               'thumbhole': self.__DEFAULT_THUMBHOLE,
-                              'singlethumbhole': False,
-                              'singlefunnel': False,
                               # small
                               #   self.enforce_small_design = True
                               #   self.enforce_large_design = False
@@ -73,20 +76,8 @@ class CardBox(Design):
                               'funnel bottom width': self.__DEFAULT_FUNNEL_BOTTOM_WIDTH,
                               'funnel neck height': self.__DEFAULT_FUNNEL_NECK_HEIGHT,
                               'center nose width': self.__DEFAULT_CENTER_NOSE_WIDTH,
-                              # single with hole/single with holes
-                              #   self.thumbhole = True
-                              #   self.singlethumbhole = True
-                              #   self.singlefunnel = True
-                              # dual with hole
-                              #   self.thumbhole = True
-                              #   self.singlethumbhole = True
-                              #   self.singlefunnel = False
-                              # dual with holes
-                              #   self.thumbhole = True
-                              #   self.singlethumbhole = False
-                              #   self.singlefunnel = False
                               'funnel': self.__DEFAULT_FUNNEL,
-                              'small height': self.__DEFAULT_SMALL_HEIGHT
+                              'small height': self.__DEFAULT_SMALL_HEIGHT,
                               }
                              )
 
@@ -101,7 +92,10 @@ class CardBox(Design):
                        f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
                        f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        self.add_settings_enum([{"funnel": Funnel, "enforcedesign": EnfordeDesign, "thumbhole": Thumbhole}])
+        self.add_settings_enum([{"funnel": Funnel,
+                                 "enforcedesign": EnfordeDesign,
+                                 "thumbhole": Thumbhole,
+                                 }])
 
         self.add_settings_boolean(["separated"])
 
@@ -135,31 +129,38 @@ class CardBox(Design):
 
         return string
 
-    def __str__(self):
-        return self.width, self.length, self.height, self.thickness, self.outfile
-
     def create(self, separated=False):
         self.__init_design()
 
-        self.template["FILENAME"] = self.outfile
-        self.template["$PROJECT$"] = self.project
-        self.template["$TITLE$"] = self.title
-        self.template["$FILENAME$"] = self.outfile
-        self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
+        if not self.settings["separated"]:
+            base_cut = ""
+            if self.settings["funnel"] == Funnel.DUAL:
+                # Two funnels
+                if self.settings["thumbhole"] == Thumbhole.DUAL:
+                    # Two funnels and two thumbholes
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_dual_thumbholes)
+                elif self.settings["thumbhole"] == Thumbhole.SINGLE:
+                    # Two funnels and one thumbole
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_single_thumbhole)
+                else:
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_no_thumbholes)
 
-        ycoord = self.bottom_y + self.vertical_separation
-
-        if not self.separated:
-            base_cut = Design.draw_lines(self.corners, self.cutlines)
-
-            # if self.thumbholeradius:
-            #     base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
+            else:
+                # One funnel
+                if self.settings["thumbhole"] == Thumbhole.NONE:
+                    # One funnel, no thumbholes
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_singlefunnel_no_thumbholes)
+                else:
+                    # One funnel, one thumbhole even if two are selected
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_singlefunnel_single_thumbhole)
 
             self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-            self.template["$BASE-CUT$"] = base_cut
+            self.template["$SVGPATH$"] = base_cut
 
         else:
             # TEST FOR SEPARATION
+            template = Template.load_template(self.__DEFAULT_TEMPLATE_SEPARATED)
+
             separation = self.vertical_separation + self.thickness
 
             y1 = 0
@@ -201,32 +202,20 @@ class CardBox(Design):
             right_cut = Design.draw_lines(self.corners, self.cutlines_right)
             self.template["$RIGHT-CUT$"] = right_cut
 
-        ycoord += 2 * self.vertical_separation
-        self.template["$LABEL_PROJECT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        viewbox_x = round(self.settings["x offset_tdpi"] + self.right_x)
+        viewbox_y = round(self.settings["y offset_tdpi"] + self.bottom_y)
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["VIEWBOX_X"] = viewbox_x
+        self.template["VIEWBOX_Y"] = viewbox_y
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$FOOTER__OVERALL_WIDTH$"] = str(
+            round((self.right_x - self.left_x) / self.conversion_factor(), 2))
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
+        self.template["$FOOTER_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) /
+                                                         self.conversion_factor(), 2)
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / Design.FACTOR, 2)
-
-        ycoord += self.vertical_separation
-        self.template["$ARGS_STRING_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$ARGS_STRING$"] = self.args_string
-
-        ycoord += self.vertical_separation
-        self.template["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
-                                      f" {Design.thoudpi_to_dpi(ycoord)}"
-
-        Design.write_to_file(self.template)
+        self.write_to_file(self.template)
+        print(f"CardBox \"{self.settings['filename']}\" created")
 
     def __init_design(self):
         self.__init_base()
@@ -322,21 +311,21 @@ class CardBox(Design):
         #                         |                          length                                |
         #  ac                     19--------------------------------------------------------------61
 
-        length = self.settings["length"]
-        height = self.settings["height"]
-        width = self.settings["width"]
-        thickness = self.settings["thickness"]
+        length = self.settings["length_tdpi"]
+        height = self.settings["height_tdpi"]
+        width = self.settings["width_tdpi"]
+        thickness = self.settings["thickness_tdpi"]
 
-        slot_width = self.settings["slot width"]
-        corner_gap = self.settings["corner gap"]
-        neckheight = self.settings["funnel neck height"]
-        funneltopwidth = self.settings["funnel top width"]
-        funnelbottomwidth = self.settings["funnel bottom width"]
-        nosewidth = self.settings["center nose width"]
+        slot_width = self.settings["slot width_tdpi"]
+        corner_gap = self.settings["corner gap_tdpi"]
+        neckheight = self.settings["funnel neck height_tdpi"]
+        funneltopwidth = self.settings["funnel top width_tdpi"]
+        funnelbottomwidth = self.settings["funnel bottom width_tdpi"]
+        nosewidth = self.settings["center nose width_tdpi"]
 
         # noinspection DuplicatedCode
         # X - Points
-        a = self.settings["x offset"]
+        a = self.settings["x offset_tdpi"]
         b = a + height - neckheight
         c = a + int(height / 2)
         d = a + height
@@ -358,7 +347,7 @@ class CardBox(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        p = self.settings["y offset"]
+        p = self.settings["y offset_tdpi"]
         q = p + int(height / 2)
         r = p + height
         s = r + thickness
@@ -378,45 +367,6 @@ class CardBox(Design):
         cc = aa + int(height / 2 - slot_width / 2)
         cd = aa + int(height / 2 + slot_width / 2)
 
-        if self.verbose:
-            print(f"a: {a} / {Design.thoudpi_to_mm(a)}")
-            print(f"b: {b}/ {Design.thoudpi_to_mm(b)}")
-            print(f"c: {c}/ {Design.thoudpi_to_mm(c)}")
-            print(f"d: {d}/ {Design.thoudpi_to_mm(d)}")
-            print(f"e: {e}/ {Design.thoudpi_to_mm(e)}")
-            print(f"f: {f}/ {Design.thoudpi_to_mm(f)}")
-            print(f"g: {g}/ {Design.thoudpi_to_mm(g)}")
-            print(f"h: {h}/ {Design.thoudpi_to_mm(h)}")
-            print(f"i: {i}/ {Design.thoudpi_to_mm(i)}")
-            print(f"j: {j}/ {Design.thoudpi_to_mm(j)}")
-            print(f"k: {k}/ {Design.thoudpi_to_mm(k)}")
-            print(f"m: {m}/ {Design.thoudpi_to_mm(m)}")
-            print(f"n: {n}/ {Design.thoudpi_to_mm(n)}")
-            print(f"o: {o}/ {Design.thoudpi_to_mm(o)}")
-            print(f"ba: {ba}/ {Design.thoudpi_to_mm(ba)}")
-            print(f"bb: {bb}/ {Design.thoudpi_to_mm(bb)}")
-            print(f"bc: {bc}/ {Design.thoudpi_to_mm(bc)}")
-            print(f"bd: {bd}/ {Design.thoudpi_to_mm(bd)}")
-
-            print(f"p: {p}/ {Design.thoudpi_to_mm(p)}")
-            print(f"q: {q}/ {Design.thoudpi_to_mm(q)}")
-            print(f"r: {r}/ {Design.thoudpi_to_mm(r)}")
-            print(f"s: {s}/ {Design.thoudpi_to_mm(s)}")
-            print(f"t: {t}/ {Design.thoudpi_to_mm(t)}")
-            print(f"u: {u}/ {Design.thoudpi_to_mm(u)}")
-            print(f"v: {v}/ {Design.thoudpi_to_mm(v)}")
-            print(f"w: {w}/ {Design.thoudpi_to_mm(w)}")
-            print(f"x: {x}/ {Design.thoudpi_to_mm(x)}")
-            print(f"y: {y}/ {Design.thoudpi_to_mm(y)}")
-            print(f"z: {z}/ {Design.thoudpi_to_mm(z)}")
-            print(f"aa: {aa}/ {Design.thoudpi_to_mm(aa)}")
-            print(f"ab: {ab}/ {Design.thoudpi_to_mm(ab)}")
-            print(f"ac: {ac}/ {Design.thoudpi_to_mm(ac)}")
-            print(f"ca: {ca}/ {Design.thoudpi_to_mm(ca)}")
-            print(f"cb: {cb}/ {Design.thoudpi_to_mm(cb)}")
-            print(f"cc: {cc}/ {Design.thoudpi_to_mm(cc)}")
-            print(f"cd: {cd}/ {Design.thoudpi_to_mm(cd)}")
-
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
                         [d, ab], [d, ac], [e, q], [e, r], [e, u], [e, v], [e, w], [e, x], [e, aa],
@@ -431,136 +381,134 @@ class CardBox(Design):
                         [k, cd], [bc, r], [bc, s], [bc, z], [bc, aa], [bd, r], [bd, s], [bd, z], [bd, aa]
                         ]
 
-        #        self.inner_dimensions = [Design.to_numeral(self.corners[46][0] - self.corners[22][0]),
-        #                                 Design.to_numeral(self.corners[30][1] - self.corners[29][1]),
-        #                                 Design.to_numeral(self.corners[14][0] - self.corners[0][0])]
+        self.inner_dimensions = [self.tpi_to_unit(j - e), self.tpi_to_unit(z - s), self.tpi_to_unit(d - a)]
+        self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(aa - r), self.tpi_to_unit(e - a)]
 
-        #        self.outer_dimensions = [Design.to_numeral(self.corners[54][0] - self.corners[12][0]),
-        #                                 Design.to_numeral(self.corners[17][1] - self.corners[12][1]),
-        #                                 Design.to_numeral(self.corners[15][0] - self.corners[3][0])]
-        self.inner_dimensions = [Design.thoudpi_to_mm(j - e), Design.thoudpi_to_mm(z - s), Design.thoudpi_to_mm(d - a)]
-        self.outer_dimensions = [Design.thoudpi_to_mm(k - d), Design.thoudpi_to_mm(aa - r), Design.thoudpi_to_mm(e - a)]
+        if self.settings["enforcedesign"] == EnfordeDesign.SMALL or \
+                (height <= self.settings["small height"] and not self.settings["enforcedesign"] == EnfordeDesign.LARGE):
 
-        if (height <= self.small_height or self.enforce_small_design) and not self.enforce_large_design:
-            self.cutlines = [
-                # left upper
-                [PathStyle.LINE, [6, 7, 0, 1, 4, 23, 22, 13, 12]],
-                # left lower
-                [PathStyle.LINE, [9, 8, 3, 2, 5, 24, 25, 16, 17]],
-                # middle upper
-                [PathStyle.LINE, [6, 28, 29, 33, 32, 36, 37, 41, 40, 62]],
-                # middle lower
-                [PathStyle.LINE, [9, 31, 30, 34, 35, 39, 38, 42, 43, 65]],
-                # bottom
-                [PathStyle.LINE, [26, 27, 18, 19, 61, 60, 51, 50]],
-                # top
-                [PathStyle.LINE, [21, 20, 11, 10, 52, 53, 44, 45]],
+            # small design
+            pass
+        else:
+            # Large design
+            # in all designs the same
+            middle_top = [PathStyle.LINE, [12, 28, 29, 33, 32, 36, 37, 41, 40, 54]]
+            middle_bottom = [PathStyle.LINE, [17, 31, 30, 34, 35, 39, 38, 42, 43, 59]]
+            left_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [14, 15, Direction.VERTICAL]]
+            right_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [57, 56, Direction.VERTICAL]]
+            # path around both clockwise
+            path_around_top = [14, 23, 22, 13, 81, 87, 86, 80, 10, 52, 94, 90, 91, 95, 55, 46, 47, 56]
+            path_around_bottom = [48, 49, 58, 98, 92, 93, 99, 61, 19, 85, 89, 88, 84, 16, 25, 24, 15]
 
+            # left top flap path
+            # in all designs the same
+            left_top_path = [82, 77, 76, 72, 73, 0]
+            # check if top and bottom funnel width is not equal, so set point 1
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                left_top_path.append(1)
+            left_top_path += [4, 14]
+
+            # left bottom flap path
+            left_bottom_path = [83, 78, 79, 75, 74, 3]
+            # check if top and bottom funnel width is not equal, so set point 2
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                left_bottom_path.append(2)
+            left_bottom_path += [5, 15]
+
+            # right top flap path
+            # in all designs the same
+            right_top_path = [96, 101, 100, 104, 105, 68]
+            # check if top and bottom funnel width is not equal, so set point 69
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                right_top_path.append(69)
+            right_top_path += [66, 56]
+
+            # left bottom flap path
+            right_bottom_path = [97, 102, 103, 107, 106, 71]
+            # check if top and bottom funnel width is not equal, so set point 70
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                right_bottom_path.append(70)
+            right_bottom_path += [67, 57]
+
+            right_no_funnel_path = [96, 101, 100, 104, 105, 68, 71, 106, 107, 103, 102, 97]
+
+            self.cutlines_dualfunnel_no_thumbholes = [
+                middle_top,
+                middle_bottom,
+                [PathStyle.LINE, left_top_path],
+                [PathStyle.LINE, left_bottom_path],
+                [PathStyle.LINE, right_top_path],
+                [PathStyle.LINE, right_bottom_path],
+                [PathStyle.LINE, path_around_top],
+                [PathStyle.LINE_NOMOVE, [57]],
+                [PathStyle.LINE_NOMOVE, path_around_bottom],
+                [PathStyle.LINE_NOMOVE, [14]],
             ]
 
-            if self.singlefunnel:
-                # right single wall top cutline
-                self.cutlines.append([PathStyle.LINE, [62, 63, 68, 71, 64, 65]])
-                # right single wall upper cutline
-                self.cutlines.append([PathStyle.LINE, [54, 55, 46, 47, 56]])
-                # right single wall lower cutline
-                self.cutlines.append([PathStyle.LINE, [59, 58, 49, 48, 57]])
-            else:
-                # right upper
-                self.cutlines.append([PathStyle.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]])
-                # right lower
-                self.cutlines.append([PathStyle.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]])
-        else:
-            # Height is greater than 20
-            self.cutlines = [
-                # left upper
-                [PathStyle.LINE, [82, 77, 76, 72, 73, 0, 1, 4, 23, 22, 13, 81]],
-                # left lower
-                [PathStyle.LINE, [83, 78, 79, 75, 74, 3, 2, 5, 24, 25, 16, 84]],
-                # middle upper
-                [PathStyle.LINE, [12, 28, 29, 33, 32, 36, 37, 41, 40, 54]],
-                # middle lower
-                [PathStyle.LINE, [17, 31, 30, 34, 35, 39, 38, 42, 43, 59]],
-                # top
-                [PathStyle.LINE, [81, 87, 86, 80, 10, 52, 94, 90, 91, 95]],
-                # bottom
-                [PathStyle.LINE, [84, 88, 89, 85, 19, 61, 99, 93, 92, 98]],
-                # right top
-                [PathStyle.LINE, [96, 101, 100, 104, 105, 68]],
-                # right bottom
-                [PathStyle.LINE, [97, 102, 103, 107, 106, 71]],
-                [PathStyle.LINE, [95, 55, 46, 47]],
-                [PathStyle.LINE, [98, 58, 49, 48]],
+            self.cutlines_dualfunnel_single_thumbhole = [
+                middle_top,
+                middle_bottom,
+                [PathStyle.LINE, left_top_path],
+                [PathStyle.LINE, left_bottom_path],
+                [PathStyle.LINE, right_top_path],
+                [PathStyle.LINE, right_bottom_path],
+                [PathStyle.LINE, path_around_top],
+                [PathStyle.LINE_NOMOVE, [57]],
+                [PathStyle.LINE_NOMOVE, path_around_bottom],
+                left_thumbhole
             ]
 
-            if self.singlefunnel:
-                # right single wall top
-                self.cutlines.append([PathStyle.LINE, [68, 71]])
-                self.cutlines.append([PathStyle.LINE, [47, 56]])
-                self.cutlines.append([PathStyle.LINE, [48, 57]])
-            else:
-                self.cutlines.append([PathStyle.LINE, [68, 69, 66, 47]])
-                self.cutlines.append([PathStyle.LINE, [71, 70, 67, 48]])
+            self.cutlines_dualfunnel_dual_thumbholes = [
+                middle_top,
+                middle_bottom,
+                [PathStyle.LINE, left_top_path],
+                [PathStyle.LINE, left_bottom_path],
+                [PathStyle.LINE, right_top_path],
+                [PathStyle.LINE, right_bottom_path],
+                [PathStyle.LINE, path_around_top],
+                right_thumbhole,
+                [PathStyle.LINE_NOMOVE, path_around_bottom],
+                left_thumbhole
+            ]
 
-        if self.thumbhole:
-            self.cutlines.append([PathStyle.HALFCIRCLE, [14, 15, Direction.VERTICAL]])
-            if self.singlethumbhole:
-                self.cutlines.append([PathStyle.LINE, [56, 57]])
-            else:
-                self.cutlines.append([PathStyle.HALFCIRCLE, [57, 56, Direction.VERTICAL]])
-        else:
-            self.cutlines.append([PathStyle.LINE, [14, 15]])
-            self.cutlines.append([PathStyle.LINE, [56, 57]])
+            self.cutlines_singlefunnel_no_thumbholes = [
+                middle_top,
+                middle_bottom,
+                [PathStyle.LINE, left_top_path],
+                [PathStyle.LINE, left_bottom_path],
+                [PathStyle.LINE, right_no_funnel_path],
+                [PathStyle.LINE, path_around_top],
+                [PathStyle.LINE_NOMOVE, [57]],
+                [PathStyle.LINE_NOMOVE, path_around_bottom],
+                [PathStyle.LINE_NOMOVE, [14]],
+            ]
 
-        self.fullright = [
-            [PathStyle.LINE, [57, 48, 49, 58, 59, 100, 101, 105, 104, 107, 106, 103, 102, 98, 99, 54, 55, 46, 47, 56]]]
-
-        self.cutlines_top = [
-            [PathStyle.LINE, [10, 11, 20, 21, 28, 29, 33, 32, 36, 37, 41, 40, 45, 44, 53, 52, 10]]]
-        self.cutlines_center = [[PathStyle.LINE,
-                                 [12, 13, 22, 23, 14, 15, 24, 25, 16, 17, 31, 30, 34, 35, 39, 38, 42, 43, 59, 58, 49,
-                                  48, 57, 56, 47, 46, 55, 54, 40, 41, 37, 36, 32, 33, 29, 28, 12]]]
-        self.cutlines_bottom = [[PathStyle.LINE, [26, 27, 18, 19, 61, 60, 51, 50, 43, 42, 383, 9, 35, 34, 30, 31, 26]]]
-        self.cutlines_left_top = [[PathStyle.LINE, [12, 6, 7, 0, 1, 4, 23, 22, 13, 12]]]
-        self.cutlines_left_bottom = [[PathStyle.LINE, [17, 16, 25, 24, 5, 2, 3, 8, 9, 17]]]
-        self.cutlines_right_top = [[PathStyle.LINE, [54, 62, 63, 68, 69, 66, 47, 46, 55, 54]]]
-        self.cutlines_right_bottom = [[PathStyle.LINE, [59, 65, 64, 71, 70, 67, 48, 49, 58, 59]]]
+            self.cutlines_singlefunnel_single_thumbhole = [
+                middle_top,
+                middle_bottom,
+                [PathStyle.LINE, left_top_path],
+                [PathStyle.LINE, left_bottom_path],
+                [PathStyle.LINE, right_no_funnel_path],
+                [PathStyle.LINE, path_around_top],
+                [PathStyle.LINE_NOMOVE, [57]],
+                [PathStyle.LINE_NOMOVE, path_around_bottom],
+                left_thumbhole
+            ]
 
         # detect boundaries of drawing
 
-        self.left_x, self.right_x, self.top_y, self.bottom_y = Design.set_bounds(self.corners)
+        self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
 
         if self.verbose:
             self.__print_dimensons()
 
-        if self.verbose:
-            print(
-                f"Left X: {Design.thoudpi_to_mm(self.left_x)}, "
-                f"Right X:{Design.thoudpi_to_mm(self.right_x)}, "
-                f"Top Y: {Design.thoudpi_to_mm(self.top_y)}, "
-                f"Bottom Y: {Design.thoudpi_to_mm(self.bottom_y)}"
-            )
-
     def __make_thumbhole(self, start, end, orientation):
         # startpoint, endpoint, orientation of the circle
         pass
-
-    def __print_variables(self):
-        print("-------------")
-        print(f"Length: {self.length}")
-        print(f"Width: {self.width}")
-        print(f"Height: {self.height}")
-        print(f"X Offset:{self.x_offset}\nY Offset: {self.y_offset}\n")
-        print(f"Vertical Separation: {self.vertical_separation}\nSlot Width: {self.slot_width}")
-        print(f"Corner Gap: {self.corner_gap}\nFunnel Top Width: {self.funnel_top_width}")
-        print(f"Funnel Bottom Width: {self.funnel_bottom_width}")
-        print(f"Funnel Neck Height: {self.funnel_neck_height}\nThickness: {self.thickness}")
-        print(f"Center Nose Width: {self.center_nose_width}")
-        print(f"Enforce Small Design: {self.enforce_small_design}")
-        print(f"Enforce Large Design: {self.enforce_large_design}")
-        print(f"Project: {self.project}")
-        print(f"Filename: {self.outfile}")
-        print(f"Title: {self.title}")
 
     def __print_dimensons(self):
         print(
@@ -572,24 +520,6 @@ class CardBox(Design):
             f"Outer Length: {self.outer_dimensions[0]} , "
             f"Outer Width: {self.outer_dimensions[1]} , "
             f"Outer Height: {self.outer_dimensions[2]}")
-
-    def __convert_all_to_thoudpi(self):
-        # convert all mm to thoudpi
-        self.length = Design.mm_to_thoudpi(self.length)
-        self.width = Design.mm_to_thoudpi(self.width)
-        self.height = Design.mm_to_thoudpi(self.height)
-        self.x_offset = Design.mm_to_thoudpi(self.x_offset)
-        self.y_offset = Design.mm_to_thoudpi(self.y_offset)
-        self.vertical_separation = Design.mm_to_thoudpi(self.vertical_separation)
-        self.slot_width = Design.mm_to_thoudpi(self.slot_width)
-        self.corner_gap = Design.mm_to_thoudpi(self.corner_gap)
-        self.funnel_top_width = Design.mm_to_thoudpi(self.funnel_top_width)
-        self.funnel_bottom_width = Design.mm_to_thoudpi(self.funnel_bottom_width)
-        self.funnel_neck_height = Design.mm_to_thoudpi(self.funnel_neck_height)
-        self.thickness = Design.mm_to_thoudpi(self.thickness)
-        self.center_nose_width = Design.mm_to_thoudpi(self.center_nose_width)
-        # not yet implemented
-        # self.bottomhole_radius = Design.mm_to_thoudpi(self.bottomhole_radius)
 
 # TODO:
 # create empty template --create-template <filename>
