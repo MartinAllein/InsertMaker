@@ -571,13 +571,14 @@ class Design(ABC):
 
         """
 
+        error = ""
         config = Config.read_config(filename, section)
 
         # copy values of all key in the config to the settings. Convert numbers from string to int/float
         self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
                               config.has_option(section, k) and section not in self.__settings_enum})
 
-        # iterate trough all enums of the settings
+        # iterate through all enums of the settings
         for settings_item in self.__settings_enum:
             # enum_item is a dict with settings name as the key and the enm as value
             # get the first key in the dictionary
@@ -585,19 +586,29 @@ class Design(ABC):
             key = next(iter(settings_item))
             # test if the config file has the key
             if config.has_option(section, key):
-                print(config.get(section, key))
                 # retrieve the data from the config
                 value = config.get(section, key)
-                # convert the config data into an enum by string
                 try:
+                    # convert the config data into an enum by string
                     self.settings[key] = settings_item[key](value)
                 except ValueError as e:
-                    print(f"Unknown value for {key} in {filename} section {section}. "
-                          f"Current value \"{value}\". Allowed values are"
-                          f" {[e.value for e in settings_item[key]]}")
-                    sys.exit(1)
+                    error += f"Unknown value for {key} in {filename} section {section}. Current value \"{value}\". " \
+                             f"Allowed values are {[e.value for e in settings_item[key]]}"
+
+        # iterate through all boolean settings
+        for key in self.__settings_boolean:
+            if config.has_option(section, key):
+                self.settings[key] = False
+                value = config.get(section, key)
+                if value.lower() in ["y", "yes", "1", "t", "true"]:
+                    self.settings[key] = True
+
+        if len(error) != 0:
+            print(error)
+            sys.exit(1)
 
         # print(json.dumps(self.settings, indent=4))
+
         return config
 
     @staticmethod

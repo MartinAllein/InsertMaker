@@ -42,6 +42,7 @@ class CardBox(Design):
     __DEFAULT_BOTTOM_HOLE_RADIUS = 10.0
     __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
     __DEFAULT_FUNNEL = Funnel.DUALHOLE
+    __DEFAULT_THUMBHOLE = Thumbhole.DUAL
 
     __DEFAULT_SMALL_HEIGHT = 20.0
 
@@ -55,7 +56,7 @@ class CardBox(Design):
                               'width': self.__DEFAULT_WIDTH,
                               'height': self.__DEFAULT_HEIGHT,
                               'separated': False,
-                              'thumbhole': False,
+                              'thumbhole': self.__DEFAULT_THUMBHOLE,
                               'singlethumbhole': False,
                               'singlefunnel': False,
                               # small
@@ -100,9 +101,9 @@ class CardBox(Design):
                        f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
                        f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        self.add_settings_enum([{"funnel": Funnel}])
+        self.add_settings_enum([{"funnel": Funnel, "enforcedesign": EnfordeDesign, "thumbhole": Thumbhole}])
 
-        self.add_settings_boolean(["separated", "thumbhole", "singlethumbhole", "singlefunnel"])
+        self.add_settings_boolean(["separated"])
 
         self.load_settings(config_file, section, verbose)
 
@@ -328,14 +329,14 @@ class CardBox(Design):
 
         slot_width = self.settings["slot width"]
         corner_gap = self.settings["corner gap"]
-        neckheight = self.funnel_neck_height
-        funneltopwidth = self.funnel_top_width
-        funnelbottomwidth = self.funnel_bottom_width
-        nosewidth = self.center_nose_width
+        neckheight = self.settings["funnel neck height"]
+        funneltopwidth = self.settings["funnel top width"]
+        funnelbottomwidth = self.settings["funnel bottom width"]
+        nosewidth = self.settings["center nose width"]
 
         # noinspection DuplicatedCode
         # X - Points
-        a = self.x_offset
+        a = self.settings["x offset"]
         b = a + height - neckheight
         c = a + int(height / 2)
         d = a + height
@@ -357,7 +358,7 @@ class CardBox(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        p = self.y_offset
+        p = self.settings["y offset"]
         q = p + int(height / 2)
         r = p + height
         s = r + thickness
