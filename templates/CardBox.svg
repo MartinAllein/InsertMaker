@@ -20,6 +20,13 @@
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Overall Width: $FOOTER_OVERALL_WIDTH$</tspan>
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Overall Height: $FOOTER_OVERALL_HEIGHT$</tspan>
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Command Line Arguments: $FOOTER_ARGS_STRING$</tspan>
+            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Inner Length : $FOOTER_INNER_LENGTH$ $UNIT$</tspan>
+            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Inner Width : $FOOTER_INNER_WIDTH$ $UNIT$</tspan>
+            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Inner Height : $FOOTER_INNER_HEIGHT$ $UNIT$</tspan>
+            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Outer Length: $FOOTER_OUTER_LENGTH$ $UNIT$</tspan>
+            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Outer Width: $FOOTER_OUTER_WIDTH$ $UNIT$</tspan>
+            <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Outer Height: $FOOTER_OUTER_HEIGHT$ $UNIT$</tspan>
+
         </text>
     </g>
 

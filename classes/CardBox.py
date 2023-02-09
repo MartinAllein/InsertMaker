@@ -5,6 +5,7 @@ from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.Direction import Direction, Rotation
 
+
 class EnfordeDesign(Enum):
     NONE = "none"
     SMALL = "small"
@@ -86,10 +87,6 @@ class CardBox(Design):
                                     "corner gap", "funnel top width", "funnel bottom width", "funnel neck height",
                                     "center nose width"])
 
-        self.settings[
-            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name'] + '-'}" \
-                       f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
-                       f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         self.add_settings_enum({"funnel": Funnel,
                                 "enforcedesign": EnfordeDesign,
@@ -99,6 +96,11 @@ class CardBox(Design):
         self.add_settings_boolean(["separated"])
 
         self.load_settings(config_file, section, verbose)
+
+        self.settings[
+            "title"] = f"{'' if len(self.settings['project name']) == 0 else self.settings['project name'] + '-'}" \
+                       f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
+                       f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         self.convert_measures_to_tdpi()
 
@@ -212,6 +214,14 @@ class CardBox(Design):
 
         self.template["$FOOTER_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) /
                                                          self.conversion_factor(), 2)
+        self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
+        self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
+        self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
+        self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
+        self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
+        self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
+
+
 
         self.write_to_file(self.template)
         print(f"CardBox \"{self.settings['filename']}\" created")

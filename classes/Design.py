@@ -258,7 +258,7 @@ class Design(ABC):
         :return: XML string with <path />
         """
         path = ""
-        start_x, start_y, end_x, end_y, diameter, rotation = Design.get_ccords_for_arc(corners, points)
+        start_x, start_y, end_x, end_y, diameter, rotation = Design.get_coords_for_arc(corners, points)
         radius = int(diameter / 2)
 
         if diameter == 0:
@@ -282,7 +282,7 @@ class Design(ABC):
         :return: XML string with <path />
         """
         path = ""
-        start_x, start_y, end_x, end_y, radius, rotation = Design.get_ccords_for_arc(corners, points)
+        start_x, start_y, end_x, end_y, radius, rotation = Design.get_coords_for_arc(corners, points)
 
         if radius == 0:
             return ""
@@ -296,7 +296,7 @@ class Design(ABC):
         return path
 
     @staticmethod
-    def get_ccords_for_arc(corners: list, path: list):
+    def get_coords_for_arc(corners: list, path: list):
         """
         Extracts start and end coordinates and radius for drawing an arc or arc segment
         :param corners: all corners of drawings
@@ -308,16 +308,11 @@ class Design(ABC):
 
         rotation = path[2]
 
-        if len(path) == 3:
-            orientation = path[2]
+        radius = abs(end_y - start_y)
+        if start_y == end_y:
+            radius = abs(end_x - start_x)
 
-        diameter = 0
-        if start_x == end_x:
-            diameter = abs(end_y - start_y)
-        elif start_y == end_y:
-            diameter = abs(end_x - start_x)
-
-        return start_x, start_y, end_x, end_y, diameter, rotation.value
+        return start_x, start_y, end_x, end_y, radius, rotation.value
 
     @staticmethod
     def draw_thumbhole_path(corners, path):
@@ -433,6 +428,8 @@ class Design(ABC):
             raise "VIEWBOX Y is missing"
 
         template_string = Template.load_template(template_values[TEMPLATE])
+
+        self.template["$UNIT$"] = self.settings["unit"]
 
         # modify FILENAME with leading and trailing $
         self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
