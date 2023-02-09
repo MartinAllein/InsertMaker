@@ -3,7 +3,7 @@ import xml.dom.minidom
 from datetime import datetime
 from abc import ABC, abstractmethod
 from classes.Config import Config
-from classes.Direction import Direction
+from classes.Direction import Direction, Rotation
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.File import File
@@ -89,7 +89,7 @@ class Design(ABC):
     __settings_boolean = []
 
     # enumerations in config
-    __settings_enum = []
+    __settings_enum = {}
 
     # conversion values for mm<->tdpi and mil <-> tdpi
     __conversion_factor = {"mm": (__RESOLUTION * 10000) / 25.4,
@@ -258,8 +258,8 @@ class Design(ABC):
         :return: XML string with <path />
         """
         path = ""
-        start_x, start_y, end_x, end_y, diameter = Design.get_ccords_for_arc(corners, points)
-        radius = diameter / 2
+        start_x, start_y, end_x, end_y, diameter, rotation = Design.get_ccords_for_arc(corners, points)
+        radius = int(diameter / 2)
 
         if diameter == 0:
             return ""
@@ -267,7 +267,7 @@ class Design(ABC):
         if move_to:
             path += f"M {Design.thoudpi_to_dpi(start_x)} {Design.thoudpi_to_dpi(start_y)} "
 
-        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 1 " \
+        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {rotation} " \
                 f"{Design.thoudpi_to_dpi(end_x)} {Design.thoudpi_to_dpi(end_y)} "
 
         return path
@@ -282,7 +282,7 @@ class Design(ABC):
         :return: XML string with <path />
         """
         path = ""
-        start_x, start_y, end_x, end_y, radius = Design.get_ccords_for_arc(corners, points)
+        start_x, start_y, end_x, end_y, radius, rotation = Design.get_ccords_for_arc(corners, points)
 
         if radius == 0:
             return ""
@@ -290,7 +290,7 @@ class Design(ABC):
         if move_to:
             path += f"M {Design.thoudpi_to_dpi(start_x)} {Design.thoudpi_to_dpi(start_y)} "
 
-        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 1 " \
+        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {rotation} " \
                 f"{Design.thoudpi_to_dpi(end_x)} {Design.thoudpi_to_dpi(end_y)} "
 
         return path
@@ -306,17 +306,18 @@ class Design(ABC):
         start_x, start_y = corners[path[0]]
         end_x, end_y = corners[path[1]]
 
-        orientation = Direction.CW
+        rotation = path[2]
 
         if len(path) == 3:
             orientation = path[2]
 
-        if orientation == Direction.VERTICAL:
+        diameter = 0
+        if start_x == end_x:
             diameter = abs(end_y - start_y)
-        else:
+        elif start_y == end_y:
             diameter = abs(end_x - start_x)
 
-        return start_x, start_y, end_x, end_y, diameter
+        return start_x, start_y, end_x, end_y, diameter, rotation.value
 
     @staticmethod
     def draw_thumbhole_path(corners, path):
@@ -384,7 +385,7 @@ class Design(ABC):
             elif command == PathStyle.HALFCIRCLE:
                 xml_lines += Design.draw_halfcircle(corners, values)
             elif command == PathStyle.HALFCIRCLE_NOMOVE:
-                xml_lines += Design.draw_halfcircle(corners, values, move_to=false)
+                xml_lines += Design.draw_halfcircle(corners, values, move_to=False)
 
             elif command == PathStyle.THUMBHOLE:
                 xml_lines += Design.draw_thumbhole_path(corners, values)
@@ -514,14 +515,14 @@ class Design(ABC):
         """
         self.__settings_boolean = self.__settings_boolean + keys
 
-    def add_settings_enum(self, keys: list) -> None:
+    def add_settings_enum(self, keys: dict) -> None:
         """
         Add list of config keys that represent an enum value
 
         :param keys: keys to add to enum config list
         :return:
         """
-        self.__settings_enum = self.__settings_enum + keys
+        self.__settings_enum.update(keys)
 
     def add_settings_measures(self, keys: list) -> None:
         """
@@ -590,21 +591,18 @@ class Design(ABC):
 
         foo = self.__settings_enum
         # iterate through all enums of the settings
-        for settings_item in self.__settings_enum:
+        for key in self.__settings_enum:
             # enum_item is a dict with settings name as the key and the enm as value
-            # get the first key in the dictionary
-            # https://www.geeksforgeeks.org/python-get-the-first-key-in-dictionary/
-            key = next(iter(settings_item))
             # test if the config file has the key
             if config.has_option(section, key):
                 # retrieve the data from the config
                 value = config.get(section, key)
                 try:
                     # convert the config data into an enum by string
-                    self.settings[key] = settings_item[key](value)
+                    self.settings[key] = self.__settings_enum[key](value)
                 except ValueError as e:
                     error += f"Unknown value for {key} in {filename} section {section}. Current value \"{value}\". " \
-                             f"Allowed values are {[e.value for e in settings_item[key]]}"
+                             f"Allowed values are {[e.value for e in self.__settings_enum[key]]}"
 
         # iterate through all boolean settings
         for key in self.__settings_boolean:

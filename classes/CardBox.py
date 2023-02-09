@@ -3,8 +3,7 @@ from classes.Design import Design
 from datetime import datetime
 from classes.PathStyle import PathStyle
 from classes.Template import Template
-from classes.Direction import Direction
-
+from classes.Direction import Direction, Rotation
 
 class EnfordeDesign(Enum):
     NONE = "none"
@@ -92,10 +91,10 @@ class CardBox(Design):
                        f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
                        f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        self.add_settings_enum([{"funnel": Funnel,
-                                 "enforcedesign": EnfordeDesign,
-                                 "thumbhole": Thumbhole,
-                                 }])
+        self.add_settings_enum({"funnel": Funnel,
+                                "enforcedesign": EnfordeDesign,
+                                "thumbhole": Thumbhole,
+                                })
 
         self.add_settings_boolean(["separated"])
 
@@ -394,8 +393,8 @@ class CardBox(Design):
             # in all designs the same
             middle_top = [PathStyle.LINE, [12, 28, 29, 33, 32, 36, 37, 41, 40, 54]]
             middle_bottom = [PathStyle.LINE, [17, 31, 30, 34, 35, 39, 38, 42, 43, 59]]
-            left_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [14, 15, Direction.VERTICAL]]
-            right_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [57, 56, Direction.VERTICAL]]
+            left_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [15, 14, Rotation.CCW]]
+            right_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [56, 57, Rotation.CCW]]
             # path around both clockwise
             path_around_top = [14, 23, 22, 13, 81, 87, 86, 80, 10, 52, 94, 90, 91, 95, 55, 46, 47, 56]
             path_around_bottom = [48, 49, 58, 98, 92, 93, 99, 61, 19, 85, 89, 88, 84, 16, 25, 24, 15]

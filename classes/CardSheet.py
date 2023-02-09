@@ -2,6 +2,7 @@ from datetime import datetime
 from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Template import Template
+from classes.Direction import Rotation
 
 
 class CardSheet(Design):
@@ -206,43 +207,43 @@ class CardSheet(Design):
             [
                 # Full Card
                 [PathStyle.LINE, [4, 8]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [8, 13]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [8, 13, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [14]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [11, 7]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [2, 1]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4, Rotation.CW]],
             ],
             [
                 # Top open
-                [PathStyle.QUARTERCIRCLE, [8, 13]],
+                [PathStyle.QUARTERCIRCLE, [8, 13, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [14]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [11, 7]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [2, 1]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4, Rotation.CW]],
             ],
             [
                 # Left open
-                [PathStyle.QUARTERCIRCLE, [1, 4]],
+                [PathStyle.QUARTERCIRCLE, [1, 4, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [8]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [8, 13]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [8, 13, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [14]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [11, 7]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2, Rotation.CW]],
             ],
             [
                 # Top and left open
-                [PathStyle.QUARTERCIRCLE, [8, 13]],
+                [PathStyle.QUARTERCIRCLE, [8, 13, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [14]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [14, 11, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [11, 7]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [7, 2, Rotation.CW]],
                 [PathStyle.LINE_NOMOVE, [2, 1]],
-                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [1, 4, Rotation.CW]],
             ],
         ]
 

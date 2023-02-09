@@ -8,5 +8,9 @@ class Direction(Enum):
     WEST = auto()
     HORIZONTAL = auto()
     VERTICAL = auto()
-    CW = auto()
-    CCW = auto()
+
+
+class Rotation(Enum):
+    CCW = 0
+    CW = 1
+
