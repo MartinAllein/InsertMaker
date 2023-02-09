@@ -87,7 +87,6 @@ class CardBox(Design):
                                     "corner gap", "funnel top width", "funnel bottom width", "funnel neck height",
                                     "center nose width"])
 
-
         self.add_settings_enum({"funnel": Funnel,
                                 "enforcedesign": EnfordeDesign,
                                 "thumbhole": Thumbhole,
@@ -220,8 +219,6 @@ class CardBox(Design):
         self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
         self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
         self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
-
-
 
         self.write_to_file(self.template)
         print(f"CardBox \"{self.settings['filename']}\" created")
@@ -394,10 +391,51 @@ class CardBox(Design):
         self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(aa - r), self.tpi_to_unit(e - a)]
 
         if self.settings["enforcedesign"] == EnfordeDesign.SMALL or \
-                (height <= self.settings["small height"] and not self.settings["enforcedesign"] == EnfordeDesign.LARGE):
+                (self.tpi_to_unit(height)  <= self.settings["small height"] and not self.settings["enforcedesign"] == EnfordeDesign.LARGE):
 
             # small design
-            pass
+            middle_top = [PathStyle.LINE, [21, 28, 29, 33, 32, 36, 37, 41, 40, 45]]
+            middle_bottom = [PathStyle.LINE, [26, 31, 30, 34, 35, 39, 38, 42, 43, 50]]
+            right_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [56, 57, Rotation.CCW]]
+            left_thumbhole = [PathStyle.HALFCIRCLE_NOMOVE, [15, 14, Rotation.CCW]]
+            path_around_top = [14, 23, 22, 13, 12, 21, 20, 11, 10, 52, 53, 44, 45, 54, 55, 46, 47, 56]
+            path_around_bottom = [48, 49, 58, 59, 50, 51, 60, 61, 19, 18, 27, 26, 17, 16, 25, 24, 15]
+
+            # left top flap path
+            # in all designs the same
+            left_top_path = [12, 6, 7, 0]
+            # check if top and bottom funnel width is not equal, so set point 1
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                left_top_path.append(1)
+            left_top_path += [4, 14]
+
+            # left bottom flap path
+            left_bottom_path = [17, 9, 8, 3]
+            # check if top and bottom funnel width is not equal, so set point 2
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                left_bottom_path.append(2)
+            left_bottom_path += [5, 15]
+
+            # right top flap path
+            # in all designs the same
+            right_top_path = [54, 62, 63, 68]
+            # check if top and bottom funnel width is not equal, so set point 69
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                right_top_path.append(69)
+            right_top_path += [66, 56]
+
+            # left bottom flap path
+            right_bottom_path = [59, 65, 64, 71]
+            # check if top and bottom funnel width is not equal, so set point 70
+            if not self.settings["funnel top width"] == self.settings["funnel bottom width"]:
+                # there is really a funnel
+                right_bottom_path.append(70)
+            right_bottom_path += [67, 57]
+
+            right_no_funnel_path = [54, 62, 63, 68, 71, 64, 65, 59]
         else:
             # Large design
             # in all designs the same
@@ -445,68 +483,68 @@ class CardBox(Design):
 
             right_no_funnel_path = [96, 101, 100, 104, 105, 68, 71, 106, 107, 103, 102, 97]
 
-            self.cutlines_dualfunnel_no_thumbholes = [
-                middle_top,
-                middle_bottom,
-                [PathStyle.LINE, left_top_path],
-                [PathStyle.LINE, left_bottom_path],
-                [PathStyle.LINE, right_top_path],
-                [PathStyle.LINE, right_bottom_path],
-                [PathStyle.LINE, path_around_top],
-                [PathStyle.LINE_NOMOVE, [57]],
-                [PathStyle.LINE_NOMOVE, path_around_bottom],
-                [PathStyle.LINE_NOMOVE, [14]],
-            ]
+        self.cutlines_dualfunnel_no_thumbholes = [
+            middle_top,
+            middle_bottom,
+            [PathStyle.LINE, left_top_path],
+            [PathStyle.LINE, left_bottom_path],
+            [PathStyle.LINE, right_top_path],
+            [PathStyle.LINE, right_bottom_path],
+            [PathStyle.LINE, path_around_top],
+            [PathStyle.LINE_NOMOVE, [57]],
+            [PathStyle.LINE_NOMOVE, path_around_bottom],
+            [PathStyle.LINE_NOMOVE, [14]],
+        ]
 
-            self.cutlines_dualfunnel_single_thumbhole = [
-                middle_top,
-                middle_bottom,
-                [PathStyle.LINE, left_top_path],
-                [PathStyle.LINE, left_bottom_path],
-                [PathStyle.LINE, right_top_path],
-                [PathStyle.LINE, right_bottom_path],
-                [PathStyle.LINE, path_around_top],
-                [PathStyle.LINE_NOMOVE, [57]],
-                [PathStyle.LINE_NOMOVE, path_around_bottom],
-                left_thumbhole
-            ]
+        self.cutlines_dualfunnel_single_thumbhole = [
+            middle_top,
+            middle_bottom,
+            [PathStyle.LINE, left_top_path],
+            [PathStyle.LINE, left_bottom_path],
+            [PathStyle.LINE, right_top_path],
+            [PathStyle.LINE, right_bottom_path],
+            [PathStyle.LINE, path_around_top],
+            [PathStyle.LINE_NOMOVE, [57]],
+            [PathStyle.LINE_NOMOVE, path_around_bottom],
+            left_thumbhole
+        ]
 
-            self.cutlines_dualfunnel_dual_thumbholes = [
-                middle_top,
-                middle_bottom,
-                [PathStyle.LINE, left_top_path],
-                [PathStyle.LINE, left_bottom_path],
-                [PathStyle.LINE, right_top_path],
-                [PathStyle.LINE, right_bottom_path],
-                [PathStyle.LINE, path_around_top],
-                right_thumbhole,
-                [PathStyle.LINE_NOMOVE, path_around_bottom],
-                left_thumbhole
-            ]
+        self.cutlines_dualfunnel_dual_thumbholes = [
+            middle_top,
+            middle_bottom,
+            [PathStyle.LINE, left_top_path],
+            [PathStyle.LINE, left_bottom_path],
+            [PathStyle.LINE, right_top_path],
+            [PathStyle.LINE, right_bottom_path],
+            [PathStyle.LINE, path_around_top],
+            right_thumbhole,
+            [PathStyle.LINE_NOMOVE, path_around_bottom],
+            left_thumbhole
+        ]
 
-            self.cutlines_singlefunnel_no_thumbholes = [
-                middle_top,
-                middle_bottom,
-                [PathStyle.LINE, left_top_path],
-                [PathStyle.LINE, left_bottom_path],
-                [PathStyle.LINE, right_no_funnel_path],
-                [PathStyle.LINE, path_around_top],
-                [PathStyle.LINE_NOMOVE, [57]],
-                [PathStyle.LINE_NOMOVE, path_around_bottom],
-                [PathStyle.LINE_NOMOVE, [14]],
-            ]
+        self.cutlines_singlefunnel_no_thumbholes = [
+            middle_top,
+            middle_bottom,
+            [PathStyle.LINE, left_top_path],
+            [PathStyle.LINE, left_bottom_path],
+            [PathStyle.LINE, right_no_funnel_path],
+            [PathStyle.LINE, path_around_top],
+            [PathStyle.LINE_NOMOVE, [57]],
+            [PathStyle.LINE_NOMOVE, path_around_bottom],
+            [PathStyle.LINE_NOMOVE, [14]],
+        ]
 
-            self.cutlines_singlefunnel_single_thumbhole = [
-                middle_top,
-                middle_bottom,
-                [PathStyle.LINE, left_top_path],
-                [PathStyle.LINE, left_bottom_path],
-                [PathStyle.LINE, right_no_funnel_path],
-                [PathStyle.LINE, path_around_top],
-                [PathStyle.LINE_NOMOVE, [57]],
-                [PathStyle.LINE_NOMOVE, path_around_bottom],
-                left_thumbhole
-            ]
+        self.cutlines_singlefunnel_single_thumbhole = [
+            middle_top,
+            middle_bottom,
+            [PathStyle.LINE, left_top_path],
+            [PathStyle.LINE, left_bottom_path],
+            [PathStyle.LINE, right_no_funnel_path],
+            [PathStyle.LINE, path_around_top],
+            [PathStyle.LINE_NOMOVE, [57]],
+            [PathStyle.LINE_NOMOVE, path_around_bottom],
+            left_thumbhole
+        ]
 
         # detect boundaries of drawing
 
