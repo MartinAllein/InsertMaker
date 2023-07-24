@@ -38,7 +38,6 @@ class Config:
 
         return config
 
-
     @classmethod
     def get_style(cls, filename: str, section: str):
         """ Returns the style from a configuration within a configuration file

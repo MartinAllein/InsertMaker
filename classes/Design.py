@@ -638,6 +638,9 @@ class Design(ABC):
         except ValueError:
             return value
 
+    def get_project_name_for_title(self, prefix="", postfix="-"):
+        return f"{'' if len(self.settings['project name']) == 0 else prefix + self.settings['project name'] + postfix}"
+
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
 

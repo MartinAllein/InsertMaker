@@ -62,12 +62,6 @@ class CardBox(Design):
                               'height': self.__DEFAULT_HEIGHT,
                               'separated': False,
                               'thumbhole': self.__DEFAULT_THUMBHOLE,
-                              # small
-                              #   self.enforce_small_design = True
-                              #   self.enforce_large_design = False
-                              # large
-                              #   self.enforce_small_design = False
-                              #   self.enforce_large_design = True
                               'enforcedesign': self.__DEFAULT_ENFORCEDESIGN,
                               'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
                               'slot width': self.__DEFAULT_SLOT_WIDTH,
@@ -81,8 +75,6 @@ class CardBox(Design):
                               }
                              )
 
-        # not yet implemented
-        # self.bottomhole_radius = Design.mm_to_thoudpi(self.bottomhole_radius)
         self.add_settings_measures(["length", "width", "height", "vertical separation", "slot width",
                                     "corner gap", "funnel top width", "funnel bottom width", "funnel neck height",
                                     "center nose width"])
@@ -97,37 +89,12 @@ class CardBox(Design):
         self.load_settings(config_file, section, verbose)
 
         self.settings[
-            "title"] = f"{'' if len(self.settings['project name']) == 0 else self.settings['project name'] + '-'}" \
+            "title"] = f"{self.get_project_name_for_title()}" \
                        f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
-                       f"H{self.settings['height']}-S{self.settings['thickness']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                       f"H{self.settings['height']}-S{self.settings['thickness']}-" \
+                       f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         self.convert_measures_to_tdpi()
-
-    @staticmethod
-    def __check_length(value):
-        return CardBox.__check_value('Length', value)
-
-    @staticmethod
-    def __check_width(value):
-        return CardBox.__check_value('Width', value)
-
-    @staticmethod
-    def __check_height(value):
-        return CardBox.__check_value('Height', value)
-
-    @staticmethod
-    def __check_thickness(value):
-        return CardBox.__check_value('Thickness', value)
-
-    @staticmethod
-    def __check_value(description, value):
-        string = ""
-        if not value:
-            string += f" missing {description}\n"
-        elif int(value) <= 0:
-            string += f"{description} must be greater than zero (Is:{value})"
-
-        return string
 
     def create(self, separated=False):
         self.__init_design()
