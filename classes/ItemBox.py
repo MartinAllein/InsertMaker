@@ -1,12 +1,8 @@
-import argparse
-import configparser
 from datetime import datetime
-import os
-import sys
-from enum import Enum, auto
+from enum import Enum
 from classes.Design import Design
-from classes.Direction import Direction
 from classes.PathStyle import PathStyle
+from classes.Direction import Rotation
 
 
 class EnfordeDesign(Enum):
@@ -48,7 +44,6 @@ class ItemBox(Design):
         super().__init__(kwargs)
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE,
-                              'template card name': self.__DEFAULT_TEMPLATE,
                               })
 
         self.inner_dimensions = []
@@ -59,7 +54,8 @@ class ItemBox(Design):
                               'height': self.__DEFAULT_HEIGHT,
                               'separated': False,
                               'thumbhole': self.__DEFAULT_THUMBHOLE,
-                              'enforcedesign': self.__DEFAULT_ENFORCEDESIGN,
+                              'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
+                              'enforce design': self.__DEFAULT_ENFORCEDESIGN,
                               'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
                               'slot width': self.__DEFAULT_SLOT_WIDTH,
                               'corner gap': self.__DEFAULT_CORNER_GAP,
@@ -67,10 +63,10 @@ class ItemBox(Design):
                               }
                              )
 
-        self.add_settings_measures(["length", "width", "height", "vertical separation", "slot width",
-                                    "corner gap", "center nose width"])
+        self.add_settings_measures(["length", "width", "height", "vertical separation", "thumbhole radius",
+                                    "corner gap", "slot width"])
 
-        self.add_settings_enum({"enforcedesign": EnfordeDesign,
+        self.add_settings_enum({"enforce design": EnfordeDesign,
                                 "thumbhole": Thumbhole,
                                 })
 
@@ -88,47 +84,30 @@ class ItemBox(Design):
     def create(self):
         self.__init_design()
 
-        self.template["FILENAME"] = self.outfile
-        self.template["$PROJECT$"] = self.project
-        self.template["$TITLE$"] = self.title
-        self.template["$FILENAME$"] = self.outfile
-        self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
-
-        ycoord = self.bottom_y + self.vertical_separation
-
-        # self.make_slots([0, 0])
-
         base_cut = Design.draw_lines(self.corners, self.cutlines)
 
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template["$BASE-CUT$"] = base_cut
+        self.template["$SVGPATH$"] = base_cut
 
-        ycoord += 2 * self.vertical_separation
-        self.template["$LABEL_PROJECT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["VIEWBOX_X"] = viewbox_x
+        self.template["VIEWBOX_Y"] = viewbox_y
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        # self.template["$FOOTER__OVERALL_WIDTH$"] = str(
+        #     round((self.right_x - self.left_x) / self.conversion_factor(), 2))
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
+        self.template["$FOOTER__OVERALL_WIDTH$"] = self.tpi_to_unit(self.right_x - self.left_x)
+        self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
 
-        ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / Design.FACTOR, 2)
+        self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
+        self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
+        self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
+        self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
+        self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
+        self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
 
-        ycoord += self.vertical_separation
-        self.template["$ARGS_STRING_Y$"] = Design.thoudpi_to_dpi(ycoord)
-        self.template["$ARGS_STRING$"] = self.args_string
-
-        ycoord += self.vertical_separation
-        self.template["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
-                                      f" {Design.thoudpi_to_dpi(ycoord)}"
-
-        Design.write_to_file(self.template)
+        self.write_to_file(self.template)
 
         print(
             f"Inner Length: {self.inner_dimensions[0]} , "
@@ -194,19 +173,19 @@ class ItemBox(Design):
         #                         |                          length                                |
         #  ab                     21--------------------------------------------------------------61
 
-        length = self.length
-        height = int(self.height)
-        width = self.width
-        thickness = self.thickness
+        length = self.settings['length_tdpi']
+        height = self.settings['height_tdpi']
+        width = self.settings['width_tdpi']
+        thickness = self.settings['thickness_tdpi']
 
-        slot_width = self.slot_width
-        corner_gap = self.corner_gap
-        print(f"+++++++{self.thumbholeradius} ---- {Design.thoudpi_to_mm(self.thumbholeradius)}")
-        thumbholeradius = self.thumbholeradius
+        slot_width = self.settings['slot width_tdpi']
+        thumbholeradius = self.settings['thumbhole radius_tdpi']
+        corner_gap = self.settings['corner gap_tdpi']
+        print(f"+++++++{self.settings['thumbhole radius']} ---- {self.settings['thumbhole radius_tdpi']}")
 
         # noinspection DuplicatedCode
         # X - Points
-        a = int(self.x_offset)
+        a = self.settings["x offset_tdpi"]
         b = a + int(height / 2) - int(slot_width / 2)
         c = a + int(height / 2) + int(slot_width / 2)
         d = a + height
@@ -225,7 +204,7 @@ class ItemBox(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        q = int(self.y_offset)
+        q = self.settings['y offset_tdpi']
         r = q + int(height / 2) - int(slot_width / 2)
         s = q + int(height / 2) + int(slot_width / 2)
         t = q + height
@@ -256,11 +235,13 @@ class ItemBox(Design):
                         [o, ac], [o, ad], [a, ae], [a, af], [o, ae], [o, af],
                         ]
 
-        self.inner_dimensions = [Design.thoudpi_to_mm(j - e), Design.thoudpi_to_mm(x - u), Design.thoudpi_to_mm(d - a)]
-        self.outer_dimensions = [Design.thoudpi_to_mm(k - d), Design.thoudpi_to_mm(y - t), Design.thoudpi_to_mm(e - a)]
+        self.inner_dimensions = [self.tpi_to_unit(j - e), self.tpi_to_unit(x - u), self.tpi_to_unit(d - a)]
+        self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(y - t), self.tpi_to_unit(e - a)]
 
         # right with no thumbhole
         right_full = [PathStyle.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]]
+
+        # left with no thumbhole
         left_full = [PathStyle.LINE, [14, 7, 6, 2, 3, 0, 1, 4, 5, 9, 8, 17]]
 
         self.cutlines = [
@@ -275,28 +256,28 @@ class ItemBox(Design):
             [PathStyle.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]],
         ]
 
-        if not self.thumbhole:
+        if not self.settings['thumbhole']:
             self.cutlines.append(left_full)
             self.cutlines.append(right_full)
         else:
             #
-            self.cutlines.append(
-                [PathStyle.THUMBHOLE,
-                 [82, self.__DEFAULT_THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Direction.SOUTH]])
-            self.cutlines.append([PathStyle.LINE, [14, 7, 6, 2, 3, 0, 82]])
-            self.cutlines.append([PathStyle.LINE, [83, 1, 4, 5, 9, 8, 17]])
 
-            if self.singlethumbhole:
+            if self.settings['thumbhole'] is Thumbhole.SINGLE:
+                self.cutlines.append([PathStyle.LINE, [14, 7, 6, 2, 3, 0, 82]])
+                self.cutlines.append([PathStyle.LINE, [83, 1, 4, 5, 9, 8, 17]])
+                self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),
                 self.cutlines.append(right_full)
-            else:
-                self.cutlines.append(
-                    [PathStyle.THUMBHOLE,
-                     [85, self.__DEFAULT_THUMBHOLE_SMALL_RADIUS, self.thumbholeradius, 0, Direction.NORTH]])
+            elif self.settings['thumbhole'] is Thumbhole.DUAL:
+                self.cutlines.append(left_full)
+                self.cutlines.append([PathStyle.HALFCIRCLE, [84, 85, Rotation.CCW]]),
                 self.cutlines.append([PathStyle.LINE, [54, 63, 62, 66, 67, 70, 84]])
                 self.cutlines.append([PathStyle.LINE, [85, 71, 68, 69, 65, 64, 57]])
+            else:
+                self.cutlines.append(right_full)
+                self.cutlines.append(left_full)
 
         # detect boundaries of drawing
-        self.left_x, self.right_x, self.top_y, self.bottom_y = Design.set_bounds(self.corners)
+        self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
 
     def __draw_slot_hole_line(self, xml_string, start, delta):
 

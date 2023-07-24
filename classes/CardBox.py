@@ -3,7 +3,7 @@ from classes.Design import Design
 from datetime import datetime
 from classes.PathStyle import PathStyle
 from classes.Template import Template
-from classes.Direction import Direction, Rotation
+from classes.Direction import Rotation
 
 
 class EnfordeDesign(Enum):
@@ -62,7 +62,7 @@ class CardBox(Design):
                               'height': self.__DEFAULT_HEIGHT,
                               'separated': False,
                               'thumbhole': self.__DEFAULT_THUMBHOLE,
-                              'enforcedesign': self.__DEFAULT_ENFORCEDESIGN,
+                              'enforce design': self.__DEFAULT_ENFORCEDESIGN,
                               'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
                               'slot width': self.__DEFAULT_SLOT_WIDTH,
                               'corner gap': self.__DEFAULT_CORNER_GAP,
@@ -80,7 +80,7 @@ class CardBox(Design):
                                     "center nose width"])
 
         self.add_settings_enum({"funnel": Funnel,
-                                "enforcedesign": EnfordeDesign,
+                                "enforce design": EnfordeDesign,
                                 "thumbhole": Thumbhole,
                                 })
 
@@ -98,15 +98,15 @@ class CardBox(Design):
 
     def create(self, separated=False):
         self.__init_design()
+        base_cut = ""
 
         if not self.settings["separated"]:
-            base_cut = ""
-            if self.settings["funnel"] == Funnel.DUAL:
+            if self.settings["funnel"] is Funnel.DUAL:
                 # Two funnels
-                if self.settings["thumbhole"] == Thumbhole.DUAL:
+                if self.settings["thumbhole"] is Thumbhole.DUAL:
                     # Two funnels and two thumbholes
                     base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_dual_thumbholes)
-                elif self.settings["thumbhole"] == Thumbhole.SINGLE:
+                elif self.settings["thumbhole"] is Thumbhole.SINGLE:
                     # Two funnels and one thumbole
                     base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_single_thumbhole)
                 else:
@@ -114,7 +114,7 @@ class CardBox(Design):
 
             else:
                 # One funnel
-                if self.settings["thumbhole"] == Thumbhole.NONE:
+                if self.settings["thumbhole"] is Thumbhole.NONE:
                     # One funnel, no thumbholes
                     base_cut = Design.draw_lines(self.corners, self.cutlines_singlefunnel_no_thumbholes)
                 else:
@@ -169,8 +169,7 @@ class CardBox(Design):
             right_cut = Design.draw_lines(self.corners, self.cutlines_right)
             self.template["$RIGHT-CUT$"] = right_cut
 
-        viewbox_x = round(self.settings["x offset_tdpi"] + self.right_x)
-        viewbox_y = round(self.settings["y offset_tdpi"] + self.bottom_y)
+        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
 
         self.template["VIEWBOX_X"] = viewbox_x
         self.template["VIEWBOX_Y"] = viewbox_y
@@ -178,8 +177,7 @@ class CardBox(Design):
         self.template["$FOOTER__OVERALL_WIDTH$"] = str(
             round((self.right_x - self.left_x) / self.conversion_factor(), 2))
 
-        self.template["$FOOTER_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) /
-                                                         self.conversion_factor(), 2)
+        self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
         self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
         self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
         self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
@@ -357,8 +355,9 @@ class CardBox(Design):
         self.inner_dimensions = [self.tpi_to_unit(j - e), self.tpi_to_unit(z - s), self.tpi_to_unit(d - a)]
         self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(aa - r), self.tpi_to_unit(e - a)]
 
-        if self.settings["enforcedesign"] == EnfordeDesign.SMALL or \
-                (self.tpi_to_unit(height)  <= self.settings["small height"] and not self.settings["enforcedesign"] == EnfordeDesign.LARGE):
+        if self.settings["enforce design"] is EnfordeDesign.SMALL or \
+                (self.tpi_to_unit(height)  <= self.settings["small height"] and
+                 not self.settings["enforce design"] is EnfordeDesign.LARGE):
 
             # small design
             middle_top = [PathStyle.LINE, [21, 28, 29, 33, 32, 36, 37, 41, 40, 45]]

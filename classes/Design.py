@@ -641,6 +641,8 @@ class Design(ABC):
     def get_project_name_for_title(self, prefix="", postfix="-"):
         return f"{'' if len(self.settings['project name']) == 0 else prefix + self.settings['project name'] + postfix}"
 
+    def set_viewbox(self, x, y):
+        return round(self.settings["x offset_tdpi"] + x), round(self.settings["y offset_tdpi"] + y)
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
 
