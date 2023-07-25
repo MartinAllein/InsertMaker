@@ -1,5 +1,6 @@
 import sys
-import xml.dom.minidom
+from  xml.etree import ElementTree
+from xml.dom import minidom
 from datetime import datetime
 from abc import ABC, abstractmethod
 from classes.Config import Config
@@ -128,6 +129,13 @@ class Design(ABC):
         self.__update_settings_with_options(options)
 
         self.verbose: bool = False
+        self.noprint: bool = False
+
+        if "verbose" in args and args["verbose"] is True:
+            self.verbose = True
+
+        if "noprint" in args and args["noprint"] is True:
+            self.noprint = True
 
         # corner points for the designs
         self.corners: list[float] = []
@@ -454,11 +462,26 @@ class Design(ABC):
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
 
-        dom = xml.dom.minidom.parseString(template_string)
-        template_string = dom.toprettyxml(newl='')
+        template_string = self.remove_xml_labels(template_string)
+        template_string = self.remove_xml_labels(template_string)
 
         with open(f"{self.settings['filename']}", 'w') as f:
             f.write(template_string)
+
+    def remove_xml_labels(self, template_string):
+        if self.noprint is False:
+            return template_string
+
+        root = ElementTree.fromstring(template_string)
+        for elem in root.iter():
+            if 'id' in elem.attrib and elem.attrib["id"] == "document-labels":
+                root.remove(elem)
+
+        ElementTree.register_namespace("", "http://www.w3.org/2000/svg")
+        newdom = minidom.parseString(ElementTree.tostring(root))
+        xmlstr = '\n'.join([line for line in newdom.toprettyxml(indent=' ' * 2).split('\n') if line.strip()])
+
+        return  xmlstr
 
     def tpi_to_unit(self, value: float) -> float:
         """
@@ -557,7 +580,7 @@ class Design(ABC):
         if self.settings["filename"]:
             self.settings['filename'] = File.set_svg_extension(self.settings["filename"])
 
-    def load_settings(self, config_file: str, section: str, verbose: bool) -> None:
+    def load_settings(self, config_file: str, section: str) -> None:
         """
         Reads in a section from a configuration file.
         :param config_file: filename with path of the config file
@@ -567,8 +590,6 @@ class Design(ABC):
         :return: config object
         """
         self.validate_config_and_section(__class__.__name__, config_file, section)
-
-        self.verbose = verbose
 
         self.__read_config(config_file, section)
 

@@ -6,7 +6,7 @@ from classes.Config import Config
 class Single:
 
     @classmethod
-    def create(cls, config, section, verbose, **kwargs):
+    def create(cls, config, section, **kwargs):
         """ Single config file design
 
         :return:
@@ -35,7 +35,7 @@ class Single:
             sys.exit(-1)
 
             # invoke creation of the item
-        design = class_(config, section, verbose, **kwargs)
+        design = class_(config, section, **kwargs)
 
         # execute the content
         design.create()

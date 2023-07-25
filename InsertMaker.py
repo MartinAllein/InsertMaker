@@ -16,6 +16,7 @@ def parse_arguments():
     parser.add_argument('-p', type=str, help="Project File")
     # parser.add_argument('-P', type=str, required='-p' in sys.argv, help="Project Section")
     parser.add_argument('-v', action="store_true", help="verbose")
+    parser.add_argument('-n', action="store_true", help="noprint")
 
     return parser.parse_args()
 
@@ -26,22 +27,26 @@ if __name__ == "__main__":
     # parse vom cli
     args = parse_arguments()
 
+    kwargs = {}
     # Verbose output
     verbose = False
-
     if args.v:
-        verbose = True
+        kwargs["verbose"] = True
+
+    noprint = False
+    if args.n:
+        kwargs["noprint"] = True
 
     # test if insertmaker.config exists
 
     # configuration file
     if args.c:
         # single_file()
-        single = Single.create(args.c, args.C, verbose)
+        single = Single.create(args.c, args.C, **kwargs)
         sys.exit(0)
 
     if args.p:
-        project = Project(args.p, verbose)
+        project = Project(args.p, **kwargs)
         project.create()
         sys.exit(0)
 

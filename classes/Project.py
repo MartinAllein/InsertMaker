@@ -11,10 +11,10 @@ class Project:
     __SECTION = 1
     __SECTION_ONLY = 0
 
-    def __init__(self, project: str, verbose=False):
+    def __init__(self, project: str, **kwargs):
 
-        self.verbose = verbose
         self.project = project
+        self.kwargs = kwargs
 
         if project is None or project == "":
             print("No project file.\n-p <project-file>")
@@ -84,12 +84,13 @@ class Project:
 
     def create(self):
         items = json.loads(self.items)
+        self.kwargs["options"] = self.options
 
         # iterate over all items in the project file
         for item in items:
             if len(item) == 1:
                 # Section is in the Project file
-                Single.create(self.project, item[self.__SECTION_ONLY], self.verbose, options=self.options)
+                Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
             elif len(item) == 2:
                 # section is in a separate file
-                Single.create(item[self.__CONFIG], item[self.__SECTION], self.verbose, options=self.options)
+                Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)

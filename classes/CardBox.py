@@ -15,13 +15,13 @@ class EnfordeDesign(Enum):
 
 class Thumbhole(Enum):
     SINGLE = "single"
-    DUAL = "dual"
+    DUAL = "double"
     NONE = "none"
 
 
 class Funnel(Enum):
     SINGLE = "single"
-    DUAL = "dual"
+    DUAL = "double"
 
 
 class CardBox(Design):
@@ -47,7 +47,7 @@ class CardBox(Design):
 
     __DEFAULT_SMALL_HEIGHT = 20.0
 
-    def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
+    def __init__(self, config_file: str, section: str, **kwargs):
         super().__init__(kwargs)
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE,
@@ -86,7 +86,7 @@ class CardBox(Design):
 
         self.add_settings_boolean(["separated"])
 
-        self.load_settings(config_file, section, verbose)
+        self.load_settings(config_file, section)
 
         self.settings[
             "title"] = f"{self.get_project_name_for_title()}" \
@@ -105,21 +105,21 @@ class CardBox(Design):
                 # Two funnels
                 if self.settings["thumbhole"] is Thumbhole.DUAL:
                     # Two funnels and two thumbholes
-                    base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_dual_thumbholes)
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_double_funnel_double_thumbholes)
                 elif self.settings["thumbhole"] is Thumbhole.SINGLE:
                     # Two funnels and one thumbole
-                    base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_single_thumbhole)
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_double_funnel_single_thumbhole)
                 else:
-                    base_cut = Design.draw_lines(self.corners, self.cutlines_dualfunnel_no_thumbholes)
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_double_funnel_no_thumbholes)
 
             else:
                 # One funnel
                 if self.settings["thumbhole"] is Thumbhole.NONE:
                     # One funnel, no thumbholes
-                    base_cut = Design.draw_lines(self.corners, self.cutlines_singlefunnel_no_thumbholes)
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_single_funnel_no_thumbholes)
                 else:
                     # One funnel, one thumbhole even if two are selected
-                    base_cut = Design.draw_lines(self.corners, self.cutlines_singlefunnel_single_thumbhole)
+                    base_cut = Design.draw_lines(self.corners, self.cutlines_single_funnel_single_thumbhole)
 
             self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
             self.template["$SVGPATH$"] = base_cut
@@ -338,6 +338,7 @@ class CardBox(Design):
         cc = aa + int(height / 2 - slot_width / 2)
         cd = aa + int(height / 2 + slot_width / 2)
 
+        # noinspection DuplicatedCode
         self.corners = [[a, s], [a, t], [a, y], [a, z], [b, v], [b, w], [c, r], [c, s], [c, z],
                         [c, aa], [d, p], [d, q], [d, r], [d, u], [d, v], [d, w], [d, x], [d, aa],
                         [d, ab], [d, ac], [e, q], [e, r], [e, u], [e, v], [e, w], [e, x], [e, aa],
@@ -352,6 +353,7 @@ class CardBox(Design):
                         [k, cd], [bc, r], [bc, s], [bc, z], [bc, aa], [bd, r], [bd, s], [bd, z], [bd, aa]
                         ]
 
+        # noinspection DuplicatedCode
         self.inner_dimensions = [self.tpi_to_unit(j - e), self.tpi_to_unit(z - s), self.tpi_to_unit(d - a)]
         self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(aa - r), self.tpi_to_unit(e - a)]
 
@@ -449,7 +451,7 @@ class CardBox(Design):
 
             right_no_funnel_path = [96, 101, 100, 104, 105, 68, 71, 106, 107, 103, 102, 97]
 
-        self.cutlines_dualfunnel_no_thumbholes = [
+        self.cutlines_double_funnel_no_thumbholes = [
             middle_top,
             middle_bottom,
             [PathStyle.LINE, left_top_path],
@@ -462,7 +464,7 @@ class CardBox(Design):
             [PathStyle.LINE_NOMOVE, [14]],
         ]
 
-        self.cutlines_dualfunnel_single_thumbhole = [
+        self.cutlines_double_funnel_single_thumbhole = [
             middle_top,
             middle_bottom,
             [PathStyle.LINE, left_top_path],
@@ -475,7 +477,7 @@ class CardBox(Design):
             left_thumbhole
         ]
 
-        self.cutlines_dualfunnel_dual_thumbholes = [
+        self.cutlines_double_funnel_double_thumbholes = [
             middle_top,
             middle_bottom,
             [PathStyle.LINE, left_top_path],
@@ -488,7 +490,7 @@ class CardBox(Design):
             left_thumbhole
         ]
 
-        self.cutlines_singlefunnel_no_thumbholes = [
+        self.cutlines_single_funnel_no_thumbholes = [
             middle_top,
             middle_bottom,
             [PathStyle.LINE, left_top_path],
@@ -500,7 +502,7 @@ class CardBox(Design):
             [PathStyle.LINE_NOMOVE, [14]],
         ]
 
-        self.cutlines_singlefunnel_single_thumbhole = [
+        self.cutlines_single_funnel_single_thumbhole = [
             middle_top,
             middle_bottom,
             [PathStyle.LINE, left_top_path],
