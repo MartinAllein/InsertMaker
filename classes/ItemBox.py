@@ -72,7 +72,7 @@ class ItemBox(Design):
 
         self.add_settings_boolean(["separated"])
 
-        self.load_settings(config_file, section, verbose)
+        self.load_settings(config_file, section)
 
         self.settings[
             "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
