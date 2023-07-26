@@ -8,10 +8,24 @@ from datetime import datetime
 class Matchbox(Design):
     __DEFAULT_FILENAME = "Matchbox"
 
-    __X_OFFSET = Design.__DEFAULT_X_OFFSET
-    __Y_OFFSET = Design.__DEFAULT_Y_OFFSET
+    __DEFAULT_TEMPLATE = "Matchbox.svg"
+
+    __DEFAULT_VERTICAL_SEPARATION = 3
+
+    __DEFAULT_SLOT_WIDTH = 10
+    __DEFAULT_CORNER_GAP = 10
+
+    __DEFAULT_LENGTH = 60
+    __DEFAULT_WIDTH = 40
+    __DEFAULT_HEIGHT = 25
+
+    __DEFAULT_FLAP_SPACE = 5
 
     def __init__(self):
+        super().__init__(kwargs)
+
+        self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
+
 
         self.length = 0
         self.width = 0

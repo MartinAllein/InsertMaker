@@ -5,13 +5,6 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 
 
-class EnfordeDesign(Enum):
-    NONE = "none"
-    SMALL = "small"
-    LARGE = "large"
-    EMPTY = ""
-
-
 class Thumbhole(Enum):
     SINGLE = "single"
     DOUBLE = "double"
@@ -19,28 +12,37 @@ class Thumbhole(Enum):
 
 
 class ItemBox(Design):
-    __DEFAULT_FILENAME = "ItemBox"
-    __DEFAULT_TEMPLATE = "ItemBox.svg"
-    __DEFAULT_TEMPLATE_SEPARATED = "ItemBoxSeparated.svg"
+    __DEFAULT_FILENAME = "ItemBoxPartition"
+    __DEFAULT_TEMPLATE = "ItemBoxPartition.svg"
 
     __DEFAULT_VERTICAL_SEPARATION = 3
 
     __DEFAULT_THUMBHOLE_SMALL_RADIUS = 2
     __DEFAULT_THUMBHOLE_RADIUS = 10
+    __DEFAULT_LONGHOLE_RADIUS = 12
+    __DEFAULT_LONGHOLE_DEPTH = 15
 
-    __DEFAULT_SLOT_WIDTH = 10
-    __DEFAULT_CORNER_GAP = 10
+    # default tolerance for slots for better mounting
+    __DEFAULT_TOLERANCE = 0.5
 
-    __DEFAULT_SMALL_HEIGHT = 20
+    # reducing of the height of the separator
+    __DEFAULT_HEIGHT_REDUCTION = 4
 
-    __DEFAULT_LENGTH = 60
-    __DEFAULT_WIDTH = 40
-    __DEFAULT_HEIGHT = 25
+    # default length for the slot for mounting the separator in the box
+    __DEFAULT_MOUNTING_HOLE_LENGTH = 15
 
-    __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
+    # default separation width
+    __DEFAULT_SEPARATION_WIDTH = 10
+
+    # default style of thumbhole
     __DEFAULT_THUMBHOLE = Thumbhole.NONE
 
-    def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
+    # Default sizes
+    __DEFAULT_WIDTH = 40
+    __DEFAULT_HEIGHT = 40
+    __DEFAULT_THICKNESS = 1.5
+
+    def __init__(self, config_file: str, section: str,  **kwargs):
         super().__init__(kwargs)
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
@@ -48,25 +50,25 @@ class ItemBox(Design):
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-        self.settings.update({'length': self.__DEFAULT_LENGTH,
+        self.settings.update({'thickness': self.__DEFAULT_THICKNESS,
                               'width': self.__DEFAULT_WIDTH,
                               'height': self.__DEFAULT_HEIGHT,
-                              'separated': False,
                               'thumbhole': self.__DEFAULT_THUMBHOLE,
                               'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
-                              'enforce design': self.__DEFAULT_ENFORCEDESIGN,
+                              'longhole radius': self.__DEFAULT_LONGHOLE_RADIUS,
+                              'longhole depth': self.__DEFAULT_LONGHOLE_DEPTH,
                               'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
-                              'slot width': self.__DEFAULT_SLOT_WIDTH,
-                              'corner gap': self.__DEFAULT_CORNER_GAP,
-                              'small height': self.__DEFAULT_SMALL_HEIGHT,
+                              'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
+                              'tolerance': self.__DEFAULT_TOLERANCE,
+                              'height reduction': self.__DEFAULT_HEIGHT_REDUCTION,
                               }
                              )
 
-        self.add_settings_measures(["length", "width", "height", "vertical separation", "thumbhole radius",
-                                    "corner gap", "slot width"])
+        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "longhole radius",
+                                    "longhole depth", "vertical separation", "mounting hole length",
+                                    "tolerance", "height reduction"])
 
-        self.add_settings_enum({"enforce design": EnfordeDesign,
-                                "thumbhole": Thumbhole,
+        self.add_settings_enum({"thumbhole": Thumbhole,
                                 })
 
         self.add_settings_boolean(["separated"])
