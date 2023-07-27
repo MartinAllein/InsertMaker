@@ -5,13 +5,13 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 
 
-class Thumbhole(Enum):
-    SINGLE = "single"
-    DOUBLE = "double"
+class ThumbholeStyle(Enum):
+    THUMBHOLE = "thumbhole"
+    LONGHOLE = "longhole"
     NONE = "none"
 
 
-class ItemBox(Design):
+class ItemBoxPartition(Design):
     __DEFAULT_FILENAME = "ItemBoxPartition"
     __DEFAULT_TEMPLATE = "ItemBoxPartition.svg"
 
@@ -20,7 +20,7 @@ class ItemBox(Design):
     __DEFAULT_THUMBHOLE_SMALL_RADIUS = 2
     __DEFAULT_THUMBHOLE_RADIUS = 10
     __DEFAULT_LONGHOLE_RADIUS = 12
-    __DEFAULT_LONGHOLE_DEPTH = 15
+    __DEFAULT_LONGHOLE_REST_HEIGHT = 2
 
     # default tolerance for slots for better mounting
     __DEFAULT_TOLERANCE = 0.5
@@ -35,14 +35,14 @@ class ItemBox(Design):
     __DEFAULT_SEPARATION_WIDTH = 10
 
     # default style of thumbhole
-    __DEFAULT_THUMBHOLE = Thumbhole.NONE
+    __DEFAULT_THUMBHOLE_STYLE = ThumbholeStyle.LONGHOLE
 
     # Default sizes
-    __DEFAULT_WIDTH = 40
+    __DEFAULT_WIDTH = 60
     __DEFAULT_HEIGHT = 40
     __DEFAULT_THICKNESS = 1.5
 
-    def __init__(self, config_file: str, section: str,  **kwargs):
+    def __init__(self, config_file: str, section: str, **kwargs):
         super().__init__(kwargs)
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
@@ -53,10 +53,11 @@ class ItemBox(Design):
         self.settings.update({'thickness': self.__DEFAULT_THICKNESS,
                               'width': self.__DEFAULT_WIDTH,
                               'height': self.__DEFAULT_HEIGHT,
-                              'thumbhole': self.__DEFAULT_THUMBHOLE,
+                              'thumbhole style': self.__DEFAULT_THUMBHOLE_STYLE,
                               'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
+                              'thumbhole small radius': self.__DEFAULT_THUMBHOLE_SMALL_RADIUS,
                               'longhole radius': self.__DEFAULT_LONGHOLE_RADIUS,
-                              'longhole depth': self.__DEFAULT_LONGHOLE_DEPTH,
+                              'longhole rest height': self.__DEFAULT_LONGHOLE_REST_HEIGHT,
                               'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
                               'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
                               'tolerance': self.__DEFAULT_TOLERANCE,
@@ -64,11 +65,11 @@ class ItemBox(Design):
                               }
                              )
 
-        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "longhole radius",
-                                    "longhole depth", "vertical separation", "mounting hole length",
-                                    "tolerance", "height reduction"])
+        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "thumbhole small radius",
+                                    "longhole radius","longhole rest height", "vertical separation",
+                                    "mounting hole length", "tolerance", "height reduction"])
 
-        self.add_settings_enum({"thumbhole": Thumbhole,
+        self.add_settings_enum({"thumbhole style": ThumbholeStyle,
                                 })
 
         self.add_settings_boolean(["separated"])
@@ -94,9 +95,6 @@ class ItemBox(Design):
 
         self.template["VIEWBOX_X"] = viewbox_x
         self.template["VIEWBOX_Y"] = viewbox_y
-
-        # self.template["$FOOTER__OVERALL_WIDTH$"] = str(
-        #     round((self.right_x - self.left_x) / self.conversion_factor(), 2))
 
         self.template["$FOOTER__OVERALL_WIDTH$"] = self.tpi_to_unit(self.right_x - self.left_x)
         self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
@@ -124,253 +122,102 @@ class ItemBox(Design):
         self.__init_base()
 
     def __init_base(self):
-        #          a    b    c    d    e     f          g                    h          i     j    k    m    n    o
-        #                ag                                                                                 ah
-        #  q                      10--------------------------------------------------------------50
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #  r                      |                        length                                  |
-        #                         |                                                                |
-        #  ai                     90---92                                                    96---A0
-        #                              |                                                      |
-        #  s                           |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #  t             86-------13---93---28          32------------------36          40---97---53-------A2
-        #                |        |          |          |thickness           |          |          |        |
-        #                |        |          |          |                    |          |          |        |
-        #  u       0-----87       |          29--------33                    37--------41          |       A3----70
-        #          |              |           slot_width                                           |              |
-        #          |              | side-gap                                                       |              |
-        #  ae      82-\           |                                                                |           /-84
-        #  v       |   \          15--24                                                      46--55          /   | w
-        #        w |    \              |                                                      |              /    | i
-        #        i |     |             |                                                      |              |    | d
-        #        d |     |             |                                                      |              |    | d
-        #        t |     |             |                                                      |              |    | t
-        #        h |    /              |                                                      |              \    | h
-        #  w       |   /          16--25                                                      47--56          \   |
-        #  af      83-/           |                                                                |           \-85
-        #          |              |                                                                |              |
-        #          |              |                                                                |              |
-        #  x       1-----88       |          30--------34                    38--------42          |       A4----71
-        #                |        |          |          |                    |          |          |        |
-        #                |        |          |          |                    |          |          |        |
-        #  y             89-------18---94---31          35------------------39          43----98--58-------A5
-        #                              |                                                      |
-        #                              |                                                      |
-        #  z                           |                                                      |
-        #  aj                     91---95                                                    99---A1
-        #  aa                     |                                                                |
-        #                         |                          length                                |
-        #  ab                     21--------------------------------------------------------------61
 
-        #          a    b    c    d    e     f          g                    h          i     j    k    m    n    o
-        #  q                      10--------------------------------------------------------------50
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #  r                      11--22                   length                             44--51
-        #                              |                                                      |
-        #                              |                                                      |
-        #                              |                                                      |
-        #  s                      12--23                                                      45--52
-        #                         | side-gap                                              side-gap |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #                         |                                                                |
-        #  t            2--- 6    13--------28          32------------------36          40--------53    62--66
-        #               |    |    |          |          |thickness           |          |          |    |    |
-        #               |    |    |          |          |                    |          |          |    |    |
-        #  u       0----3    7---14          29--------33                    37--------41          54--63    67--70
-        #          |              |           slot_width                                           |              |
-        #          |              | side-gap                                                       |              |
-        #  ae      82-\           |                                                                |           /-84
-        #  v       |   \          15--24                                                      46--55          /   | w
-        #        w |    \              |                                                      |              /    | i
-        #        i |     |             |                                                      |              |    | d
-        #        d |     |             |                                                      |              |    | d
-        #        t |     |             |                                                      |              |    | t
-        #        h |    /              |                                                      |              \    | h
-        #  w       |   /          16--25                                                      47--56          \   |
-        #  af      83-/           |                                                                |           \-85
-        #          |              |                                                                |              |
-        #          |              |                                                                |              |
-        #  x       1----4    8---17          30--------34                    38--------42          57--64    68--71
-        #               |    |    |          |          |                    |          |          |    |    |
-        #               |    |    |          |          |                    |          |          |    |    |
-        #  y            5----9    18--------31          35------------------39          43--------58    65--69
-        #                         |                                                                |
-        #                         |                                                                |
-        #  z                      19--26                                                      48--59
-        #                              |                                                      |
-        #  aa                     20--27                                                      49--60
-        #                         |                          length                                |
-        #  ab                     21--------------------------------------------------------------61
+        #         a     b    o  c d          e f   p   g     h
+        #  i      01--------17-05--------------11-20--------15
+        #         |         \   |              |  /          |
+        #  q      |           \18              19/           |
+        #         |             |              |             |
+        #         |             |              |             |
+        #         |             |              |             |
+        #  j      02---03       |              |       13---16
+        #  k            |      06              12      |
+        #               |        \            /        |
+        #               |         \----------/         |
+        #               |                              |
+        #               |                              |
+        #   m           04--------07        09--------14
+        #                          |        |
+        #                          |        |
+        #   n                      08-------10
 
-        length = self.settings['length_tdpi']
+        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "longhole radius",
+                                    "longhole rest height", "vertical separation", "mounting hole length",
+                                    "tolerance", "height reduction"])
+
         height = self.settings['height_tdpi']
         width = self.settings['width_tdpi']
         thickness = self.settings['thickness_tdpi']
 
-        slot_width = self.settings['slot width_tdpi']
-        thumbholeradius = self.settings['thumbhole radius_tdpi']
-        corner_gap = self.settings['corner gap_tdpi']
-        print(f"+++++++{self.settings['thumbhole radius']} ---- {self.settings['thumbhole radius_tdpi']}")
+        thumbhole_radius = self.settings['thumbhole radius_tdpi']
+        longhole_radius = self.settings['longhole radius_tdpi']
+        longhole_rest_height = self.settings['longhole rest height_tdpi']
+        vertical_separation = self.settings['vertical separation_tdpi']
+        mounting_hole_length = self.settings['mounting hole length_tdpi']
+        tolerance = self.settings['tolerance_tdpi']
+        height_reduction = self.settings['height reduction_tdpi']
+        thumbhole_small_radius = self.settings['thumbhole small radius_tdpi']
 
         # noinspection DuplicatedCode
         # X - Points
         a = self.settings["x offset_tdpi"]
-        b = a + int(height / 2) - int(slot_width / 2)
-        c = a + int(height / 2) + int(slot_width / 2)
-        d = a + height
-        # d = self.__X_OFFSET
-        e = d + thickness
-        f = d + corner_gap
-        g = f + slot_width
-        j = e + length
-        k = j + thickness
-        i = k - corner_gap
-        h = i - slot_width
+        b = int(a + thickness + tolerance)
+        if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
+            c = int(a + thickness + width / 2 - thumbhole_radius)
+        else:
+            c = int(a + thickness + width / 2 - longhole_radius)
+        d = int(a + thickness + width / 2 - mounting_hole_length / 2)
+        h = int(a + width + 2 * thickness)
+        e = int(h - thickness - width / 2 + (mounting_hole_length / 2))
+        if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
+            f = int(h - thickness - width / 2 + thumbhole_radius )
+        else:
+            f = int(h - thickness - width / 2 + longhole_radius )
 
-        m = k + int(height / 2) - int(slot_width / 2)
-        n = k + int(height / 2) + int(slot_width / 2)
-        o = k + height
+        g = h - thickness - tolerance
+        o = c - thumbhole_small_radius
+        p = f + thumbhole_small_radius
 
         # noinspection DuplicatedCode
         # Y - Points
-        q = self.settings['y offset_tdpi']
-        r = q + int(height / 2) - int(slot_width / 2)
-        s = q + int(height / 2) + int(slot_width / 2)
-        t = q + height
-        u = t + thickness
-        v = u + int(width / 2) - int(slot_width / 2)
-        w = u + int(width / 2) + int(slot_width / 2)
-        x = u + width
-        y = x + thickness
-        z = y + int(height / 2 - slot_width / 2)
-        aa = y + int(height / 2 + slot_width / 2)
-        ab = y + height
-        ac = q + thickness
-        ad = t - thickness
-        ae = u + int(width / 2 - thumbholeradius - self.__DEFAULT_THUMBHOLE_SMALL_RADIUS)
-        af = u + int(width / 2 + thumbholeradius + self.__DEFAULT_THUMBHOLE_SMALL_RADIUS)
+        i = self.settings['y offset_tdpi']
 
-        ag = a + int(height / 2)
-        ah = k + int(height / 2)
-        ai = q + int(height / 2)
-        aj = y + int(height / 2)
+        j = int(i + (height - height_reduction) / 2)
+        m = i + height - height_reduction
+        k = m - longhole_radius - longhole_rest_height
+        n = m + thickness - tolerance
+        q = i + thumbhole_small_radius
 
-        self.corners = [[a, u], [a, x], [b, t], [b, u], [b, x], [b, y], [c, t], [c, u], [c, x],
-                        [c, y], [d, q], [d, r], [d, s], [d, t], [d, u], [d, v], [d, w], [d, x],
-                        [d, y], [d, z], [d, aa], [d, ab], [e, r], [e, s], [e, v], [e, w], [e, z],
-                        [e, aa], [f, t], [f, u], [f, x], [f, y], [g, t], [g, u], [g, x], [g, y],
-                        [h, t], [h, u], [h, x], [h, y], [i, t], [i, u], [i, x], [i, y], [j, r],
-                        [j, s], [j, v], [j, w], [j, z], [j, aa], [k, q], [k, r], [k, s], [k, t],
-                        [k, u], [k, v], [k, w], [k, x], [k, y], [k, z], [k, aa], [k, ab], [m, t],
-                        [m, u], [m, x], [m, y], [n, t], [n, u], [n, x], [n, y], [o, u], [o, x],
-                        [k, ac], [k, ad], [m, q], [m, ac], [m, ad], [n, q], [n, ac], [n, ad],
-                        [o, ac], [o, ad], [a, ae], [a, af], [o, ae], [o, af],
-                        [ag, t], [ag, u], [ag, x], [ag, y], [d, ai], [d, aj], [e, ai], [e, t], [e, y], [e, aj],
-                        [j, ai], [j, t], [j, y], [j, aj], [k, ai], [k, aj], [ah, t], [ah, u], [ah, x], [ah, y]
+        # noinspection DuplicatedCode
+        self.corners = [[a,i], [a, i], [a, j], [b, j], [b, m], [c, i], [c, k], [d, m], [d, n],
+                        [e, m], [e, n], [f, i], [f, k], [g, j], [g, m], [h, i], [h, j],
+                        [o, i], [c, q], [f, q], [p, i]
                         ]
 
         # noinspection DuplicatedCode
-        self.inner_dimensions = [self.tpi_to_unit(j - e), self.tpi_to_unit(x - u), self.tpi_to_unit(d - a)]
-        self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(y - t), self.tpi_to_unit(e - a)]
-        self.cutlines = []
+        self.inner_dimensions = [self.tpi_to_unit(thickness), self.tpi_to_unit(g - b), self.tpi_to_unit(m - i)]
+        self.outer_dimensions = [self.tpi_to_unit(thickness), self.tpi_to_unit(h - a), self.tpi_to_unit(n - i)]
 
-        if self.settings["enforce design"] is EnfordeDesign.SMALL or \
-                (self.tpi_to_unit(height) <= self.settings["small height"] and
-                 not self.settings["enforce design"] is EnfordeDesign.LARGE):
-
-            # right with no thumbhole
-            right_full = [PathStyle.LINE, [53, 102, 103, 70, 71, 104, 105, 58]]
-
-            # left with no thumbhole
-            left_full = [PathStyle.LINE, [13, 86, 87, 0, 1, 88, 89, 18]]
-
-            # left with thumbhole
-            left_thumbhole_top = [PathStyle.LINE, [13, 86, 87, 0, 82]]
-            left_thumbhole_bottom = [PathStyle.LINE, [83, 1, 88, 89, 18]]
-
-            # right with thumbhole
-            right_thumbhole_top = [PathStyle.LINE, [53, 102, 103, 70, 84]]
-            right_thumbhole_bottom = [PathStyle.LINE, [85, 71, 104, 105, 58]]
-
-            # upper
-            self.cutlines.append([PathStyle.LINE, [93, 92, 90, 10, 50, 100, 96, 97]])
-            # middle top
-            self.cutlines.append([PathStyle.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]])
-            # middle bottom
-            self.cutlines.append([PathStyle.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]])
-            # lower
-            self.cutlines.append([PathStyle.LINE, [94, 95, 91, 21, 61, 101, 99, 98]])
-            # middle left
-            self.cutlines.append([PathStyle.LINE, [13, 15, 24, 25, 16, 18]])
-            # middle right
-            self.cutlines.append([PathStyle.LINE, [53, 55, 46, 47, 56, 58]])
+        if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
+            self.cutlines = [
+                [PathStyle.LINE, [17, 1, 2, 3, 4, 7, 8, 10, 9, 14, 13, 16, 15, 20]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [20, 19, Rotation.CCW]],
+                [PathStyle.HALFCIRCLE_NOMOVE, [19, 18, Rotation.CW]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [18, 17, Rotation.CCW]]
+            ]
+        elif self.settings['thumbhole style'] is ThumbholeStyle.LONGHOLE:
+            self.cutlines = [
+                [PathStyle.LINE, [17, 1, 2, 3, 4, 7, 8, 10, 9, 14, 13, 16, 15, 20]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [20, 19, Rotation.CCW]],
+                [PathStyle.LINE_NOMOVE, [19, 12]],
+                [PathStyle.HALFCIRCLE_NOMOVE, [12, 6, Rotation.CW]],
+                [PathStyle.LINE_NOMOVE, [6, 18]],
+                [PathStyle.QUARTERCIRCLE_NOMOVE, [18, 17, Rotation.CCW]]
+            ]
         else:
-            # right with no thumbhole
-            right_full = [PathStyle.LINE, [54, 63, 62, 66, 67, 70, 71, 68, 69, 65, 64, 57]]
-
-            # left with no thumbhole
-            left_full = [PathStyle.LINE, [14, 7, 6, 2, 3, 0, 1, 4, 5, 9, 8, 17]]
-
-            # left with thumbhole
-            left_thumbhole_top = [PathStyle.LINE, [14, 7, 6, 2, 3, 0, 82]]
-            left_thumbhole_bottom = [PathStyle.LINE, [83, 1, 4, 5, 9, 8, 17]]
-
-            # right with thumbhole
-            right_thumbhole_top = [PathStyle.LINE, [53, 54, 63, 62, 66, 67, 70, 84]]
-            right_thumbhole_bottom = [PathStyle.LINE, [85, 71, 68, 69, 65, 64, 57]]
-
-            # Top upper, middle left and right, Bottom lower
-            self.cutlines.append([PathStyle.LINE,
-                                  [10, 11, 22, 23, 12, 15, 24, 25, 16, 19, 26, 27, 20, 21, 61, 60, 49, 48, 59, 56, 47,
-                                   46, 55, 52, 45, 44, 51, 50, 10]])
-
-            # middle upper
-            self.cutlines.append([PathStyle.LINE, [13, 28, 29, 33, 32, 36, 37, 41, 40, 53]])
-
-            # middle lower
-            self.cutlines.append([PathStyle.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]])
-
-        if not self.settings['thumbhole']:
-            self.cutlines.append(left_full)
-            self.cutlines.append(right_full)
-        else:
-            if self.settings['thumbhole'] is Thumbhole.SINGLE:
-                self.cutlines.append(left_thumbhole_top)
-                self.cutlines.append(left_thumbhole_bottom)
-                self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),
-                self.cutlines.append(right_full)
-            elif self.settings['thumbhole'] is Thumbhole.DOUBLE:
-                self.cutlines.append(left_thumbhole_top)
-                self.cutlines.append(left_thumbhole_bottom)
-                self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),
-                self.cutlines.append(right_thumbhole_top)
-                self.cutlines.append(right_thumbhole_bottom)
-                self.cutlines.append([PathStyle.HALFCIRCLE, [84, 85, Rotation.CCW]]),
-            else:
-                self.cutlines.append(right_full)
-                self.cutlines.append(left_full)
+            self.cutlines = [
+                [PathStyle.LINE, [1, 2, 3, 4, 7, 8, 10, 9, 14, 13, 16, 15, 1]]
+            ]
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
-

@@ -291,6 +291,7 @@ class Design(ABC):
         """
         path = ""
         start_x, start_y, end_x, end_y, radius, rotation = Design.get_coords_for_arc(corners, points)
+        print(start_x , start_y, end_x, end_y)
 
         if radius == 0:
             return ""
