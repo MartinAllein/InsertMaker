@@ -3,6 +3,7 @@ from enum import Enum
 from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
+from classes.ThumbholeStyle import ThumbholeStyle
 
 
 class ThumbholeStyle(Enum):

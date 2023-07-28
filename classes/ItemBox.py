@@ -1,8 +1,11 @@
 from datetime import datetime
 from enum import Enum
+import json
 from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
+from classes.ThumbholeStyle import ThumbholeStyle
+from classes.ItemBoxPartition import ItemBoxPartition
 
 
 class EnfordeDesign(Enum):
@@ -40,8 +43,33 @@ class ItemBox(Design):
     __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
     __DEFAULT_THUMBHOLE = Thumbhole.NONE
 
+    __DEFAULT_PARTITIONS = []
+
+    __DEFAULT_PARTITION_THUMBHOLE_SMALL_RADIUS = 2
+    __DEFAULT_PARTITION_THUMBHOLE_RADIUS = 10
+    __DEFAULT_PARTITION_LONGHOLE_RADIUS = 12
+    __DEFAULT_PARTITION_LONGHOLE_REST_HEIGHT = 2
+
+    # default tolerance for slots for better mounting
+    __DEFAULT_PARTITION_TOLERANCE = 0.5
+
+    # reducing of the height of the separator
+    __DEFAULT_PARTITION_HEIGHT_REDUCTION = 2
+
+    # default length for the slot for mounting the separator in the box
+    __DEFAULT_PARTITION_MOUNTING_HOLE_LENGTH = 10
+
+    # default separation width
+    __DEFAULT_PARTITION_SEPARATION_WIDTH = 10
+
+    # default style of thumbhole
+    __DEFAULT_PARTITION_THUMBHOLE_STYLE = ThumbholeStyle.LONGHOLE
+
     def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
         super().__init__(kwargs)
+
+        self.config_file = config_file
+        self.section = section
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
 
@@ -59,19 +87,29 @@ class ItemBox(Design):
                               'slot width': self.__DEFAULT_SLOT_WIDTH,
                               'corner gap': self.__DEFAULT_CORNER_GAP,
                               'small height': self.__DEFAULT_SMALL_HEIGHT,
+                              'partitions': self.__DEFAULT_PARTITIONS,
                               }
                              )
 
         self.add_settings_measures(["length", "width", "height", "vertical separation", "thumbhole radius",
-                                    "corner gap", "slot width"])
+                                    "corner gap", "slot width",
+                                    'partition thumbhole radius', 'partition thumbhole small radius',
+                                    'partition longhole radius', 'partition longhole rest height',
+                                    'partition mounting hole length', 'partition tolerance',
+                                    'partition height reduction'
+                                    ])
 
         self.add_settings_enum({"enforce design": EnfordeDesign,
                                 "thumbhole": Thumbhole,
+                                'partition thumbhole style': ThumbholeStyle
                                 })
 
         self.add_settings_boolean(["separated"])
 
         self.load_settings(config_file, section)
+
+        if "partitions" in self.settings:
+            self.partitions = json.loads(self.settings["partitions"])
 
         self.settings[
             "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
@@ -117,6 +155,18 @@ class ItemBox(Design):
             f"Outer Length: {self.outer_dimensions[0]} , "
             f"Outer Width: {self.outer_dimensions[1]} , "
             f"Outer Height: {self.outer_dimensions[2]}")
+
+        # create Partitions
+        for partition in self.partitions:
+            print(partition)
+            if len(partition) == 1:
+                # Section is in the Project file
+                # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
+                ItemBoxPartition(self.config_file, partition, **self.settings)
+            elif len(partition) == 2:
+                # section is in a separate file
+                # Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)
+                pass
 
     def __init_design(self):
         self.__init_base()
@@ -229,7 +279,6 @@ class ItemBox(Design):
         slot_width = self.settings['slot width_tdpi']
         thumbholeradius = self.settings['thumbhole radius_tdpi']
         corner_gap = self.settings['corner gap_tdpi']
-        print(f"+++++++{self.settings['thumbhole radius']} ---- {self.settings['thumbhole radius_tdpi']}")
 
         # noinspection DuplicatedCode
         # X - Points
