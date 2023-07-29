@@ -45,6 +45,7 @@ class ItemBoxPartition(Design):
 
         self.inner_dimensions = []
         self.outer_dimensions = []
+        self.partition_settings = []
 
         thickness = self.__DEFAULT_THICKNESS
         if C.thickness in kwargs:
@@ -101,12 +102,14 @@ class ItemBoxPartition(Design):
 
         self.convert_measures_to_tdpi()
 
-    def create(self):
+    def create(self, output=True):
         # noinspection DuplicatedCode
 
-
+        partition_settings = []
         if "partitions" not in self.settings:
-            self.__create_single_separation()
+            self.partition_settings = [self.settings]
+            if output:
+                self.__create_single_separation()
         else:
             for partition in self.settings["partitions"]:
                 self.load_settings(self.config_file, self.config_section)
@@ -117,7 +120,10 @@ class ItemBoxPartition(Design):
                     self.load_settings(self.config_file, partition)
 
                 self.convert_measures_to_tdpi()
-                self.__create_single_separation()
+                self.partition_settings.append(self.settings)
+
+                if output:
+                    self.__create_single_separation()
 
     def __create_single_separation(self):
 

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from enum import Enum
 from classes.Design import Design
@@ -85,6 +86,7 @@ class ItemBox(Design):
                               'corner gap': self.__DEFAULT_CORNER_GAP,
                               'small height': self.__DEFAULT_SMALL_HEIGHT,
                               'partitions config': self.__DEFAULT_PARTITIONS,
+                              'partitions single config': []
                               }
                              )
 
@@ -99,7 +101,6 @@ class ItemBox(Design):
         self.add_settings_boolean(["separated"])
 
         self.load_settings(self.config_file, self.config_section)
-
 
         self.settings[
             "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings[C.length]}-W{self.settings[C.width]}-" \
@@ -150,6 +151,9 @@ class ItemBox(Design):
         # stop creation when Itembox has no separators
         if "partitions config" not in self.settings:
             return
+
+        foo = self.settings['partitions config']
+        bar = json.loads(foo)
 
         partitions_config = self.get_string_or_list(self.settings["partitions config"])
 
