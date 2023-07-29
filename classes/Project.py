@@ -3,7 +3,7 @@ import json
 import sys
 from classes.Single import Single
 from classes.Config import Config
-
+from classes.ConfigConstants import ConfigConstants as C
 
 class Project:
     __PROJECT_SECTION = "Project"
@@ -11,21 +11,24 @@ class Project:
     __SECTION = 1
     __SECTION_ONLY = 0
 
-    def __init__(self, project: str, **kwargs):
+    def __init__(self, **kwargs):
 
-        self.project = project
+        self.project_config = ""
+        if C.config_file in kwargs:
+            self.project_config = kwargs[C.config_file]
+
         self.kwargs = kwargs
 
-        if project is None or project == "":
-            print("No project file.\n-p <project-file>")
+        if self.project_config == "":
+            print("No project file.\n-p <config_file-file>")
             sys.exit(-1)
 
         # Test if "Project" section exists in project file
-        sections = Config.get_sections(project)
+        sections = Config.get_sections(self.project_config)
         if not Config.section_exists(sections, self.__PROJECT_SECTION):
             print(f"Missing section Project in file {project}")
 
-        self.__read_config(project, self.__PROJECT_SECTION)
+        self.__read_config(self.project_config, self.__PROJECT_SECTION)
 
     @staticmethod
     def parse_arguments():
@@ -90,7 +93,7 @@ class Project:
         for item in items:
             if len(item) == 1:
                 # Section is in the Project file
-                Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
+                Single.create(**self.kwargs)
             elif len(item) == 2:
-                # section is in a separate file
-                Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)
+                # config_section is in a separate file
+                Single.create(**self.kwargs)

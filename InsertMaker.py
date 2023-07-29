@@ -2,6 +2,7 @@ import argparse
 import sys
 from classes.Project import Project
 from classes.Single import Single
+from classes.ConfigConstants import ConfigConstants as C
 
 
 def parse_arguments():
@@ -41,12 +42,14 @@ if __name__ == "__main__":
 
     # configuration file
     if args.c:
-        # single_file()
-        single = Single.create(args.c, args.C, **kwargs)
+        kwargs[C.config_file] = args.c
+        kwargs[C.config_section] = args.C
+        single = Single.create(**kwargs)
         sys.exit(0)
 
     if args.p:
-        project = Project(args.p, **kwargs)
+        kwargs[C.config_file] = args.p
+        project = Project(**kwargs)
         project.create()
         sys.exit(0)
 

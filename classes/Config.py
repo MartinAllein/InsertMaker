@@ -2,10 +2,10 @@ import configparser
 import os
 import sys
 from classes.File import File
+from classes.ConfigConstants import ConfigConstants as c
 
 
 class Config:
-    __CONFIG_EXTENSION = "config"
 
     @classmethod
     def read_config(cls, filename: str, section: str, defaults=None):
@@ -20,7 +20,7 @@ class Config:
         if defaults is None:
             defaults = []
 
-        config_file = File.path_and_extension("", filename, cls.__CONFIG_EXTENSION)
+        config_file = File.path_and_extension("", filename, c.config_file_extension)
 
         # Test if configuration file exists
         if not os.path.isfile(config_file):
@@ -33,7 +33,12 @@ class Config:
 
         # Test if requested section exists
         if not config.has_section(section):
-            print("Section " + section + " in config file " + config_file + " not found")
+            print(f"Sections in file {config_file}")
+            for part in config.sections():
+                print(part)
+            print("Section " + section + " in config file " + config_file )
+            if section[0] == '"' or section[-1] == '"' or section[0] == '"' or section[-1] == '"':
+                print("Please remove the quotation marks around the section!")
             sys.exit(-1)
 
         return config
@@ -151,6 +156,5 @@ class Config:
     @staticmethod
     def write_config(filename: str, section: str, values: dict):
         config = configparser.ConfigParser()
-        with open(filename+"CR", "r+") as configfile:
+        with open(filename + "CR", "r+") as configfile:
             config.write_config(dict)
-

@@ -1,4 +1,6 @@
 import sys
+import json
+from json import JSONDecodeError
 from  xml.etree import ElementTree
 from xml.dom import minidom
 from datetime import datetime
@@ -8,6 +10,7 @@ from classes.Direction import Direction, Rotation
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.File import File
+from classes.ConfigConstants import ConfigConstants as C
 
 FILENAME = '$FILENAME$'
 TEMPLATE = 'TEMPLATE NAME'
@@ -102,6 +105,12 @@ class Design(ABC):
     measures = {}
 
     def __init__(self, args):
+        if C.config_file in args:
+            self.config_file = args[C.config_file]
+
+        if C.config_section in args:
+            self.config_section = args[C.config_section]
+
         options = {}
         if 'options' in args:
             options = args["options"]
@@ -665,6 +674,21 @@ class Design(ABC):
 
     def set_viewbox(self, x, y):
         return round(self.settings["x offset_tdpi"] + x), round(self.settings["y offset_tdpi"] + y)
+
+    @staticmethod
+    def get_string_or_list(value):
+        retval = ""
+        #if isinstance(value, list):
+        #    retval = json.loads(value)
+        #else:
+        #    retval = value
+        try:
+            retval = json.loads(value)
+        except JSONDecodeError as e:
+            retval = value
+
+        return retval
+
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
 

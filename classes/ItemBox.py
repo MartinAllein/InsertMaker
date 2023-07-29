@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum
-import json
 from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ItemBoxPartition import ItemBoxPartition
+from classes.ConfigConstants import ConfigConstants as C
 
 
 class EnfordeDesign(Enum):
@@ -65,11 +65,8 @@ class ItemBox(Design):
     # default style of thumbhole
     __DEFAULT_PARTITION_THUMBHOLE_STYLE = ThumbholeStyle.LONGHOLE
 
-    def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(kwargs)
-
-        self.config_file = config_file
-        self.section = section
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
 
@@ -87,38 +84,32 @@ class ItemBox(Design):
                               'slot width': self.__DEFAULT_SLOT_WIDTH,
                               'corner gap': self.__DEFAULT_CORNER_GAP,
                               'small height': self.__DEFAULT_SMALL_HEIGHT,
-                              'partitions': self.__DEFAULT_PARTITIONS,
+                              'partitions config': self.__DEFAULT_PARTITIONS,
                               }
                              )
 
         self.add_settings_measures(["length", "width", "height", "vertical separation", "thumbhole radius",
                                     "corner gap", "slot width",
-                                    'partition thumbhole radius', 'partition thumbhole small radius',
-                                    'partition longhole radius', 'partition longhole rest height',
-                                    'partition mounting hole length', 'partition tolerance',
-                                    'partition height reduction'
                                     ])
 
         self.add_settings_enum({"enforce design": EnfordeDesign,
                                 "thumbhole": Thumbhole,
-                                'partition thumbhole style': ThumbholeStyle
                                 })
 
         self.add_settings_boolean(["separated"])
 
-        self.load_settings(config_file, section)
+        self.load_settings(self.config_file, self.config_section)
 
-        if "partitions" in self.settings:
-            self.partitions = json.loads(self.settings["partitions"])
 
         self.settings[
-            "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
-                       f"H{self.settings['height']}-S{self.settings['thickness']}-" \
+            "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings[C.length]}-W{self.settings[C.width]}-" \
+                       f"H{self.settings[C.height]}-S{self.settings[C.thickness]}-" \
                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         self.convert_measures_to_tdpi()
 
     def create(self):
+        # noinspection DuplicatedCode
         self.__init_design()
 
         base_cut = Design.draw_lines(self.corners, self.cutlines)
@@ -156,17 +147,34 @@ class ItemBox(Design):
             f"Outer Width: {self.outer_dimensions[1]} , "
             f"Outer Height: {self.outer_dimensions[2]}")
 
-        # create Partitions
-        for partition in self.partitions:
-            print(partition)
-            if len(partition) == 1:
-                # Section is in the Project file
-                # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
-                ItemBoxPartition(self.config_file, partition, **self.settings)
-            elif len(partition) == 2:
-                # section is in a separate file
-                # Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)
-                pass
+        # stop creation when Itembox has no separators
+        if "partitions config" not in self.settings:
+            return
+
+        partitions_config = self.get_string_or_list(self.settings["partitions config"])
+
+        if isinstance(partitions_config, list) and len(partitions_config) == 0 or \
+                partitions_config == "":
+            return
+
+        itembox_separation_arguments = {}
+        if isinstance(partitions_config, list):
+            itembox_separation_arguments.update({C.config_file: partitions_config[0]})
+            itembox_separation_arguments.update({C.config_section: partitions_config[1]})
+        else:
+            itembox_separation_arguments.update({C.config_file: self.config_file,
+                                                 C.config_section: partitions_config[1]})
+
+        itembox_separation_arguments.update(
+            {
+                C.width: self.settings[C.width],
+                C.height: self.settings[C.height],
+                C.thickness: self.settings[C.thickness]
+            }
+        )
+
+        itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
+        itemboxpartition.create()
 
     def __init_design(self):
         self.__init_base()
@@ -420,4 +428,3 @@ class ItemBox(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
-

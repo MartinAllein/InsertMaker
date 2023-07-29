@@ -4,6 +4,7 @@ from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
+from classes.ConfigConstants import ConfigConstants as C
 
 
 class ThumbholeStyle(Enum):
@@ -43,7 +44,8 @@ class ItemBoxPartition(Design):
     __DEFAULT_HEIGHT = 40
     __DEFAULT_THICKNESS = 1.5
 
-    def __init__(self, config_file: str, section: str, **kwargs):
+    # def __init__(self, config_file: str, config_section: str, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(kwargs)
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
@@ -63,6 +65,7 @@ class ItemBoxPartition(Design):
                               'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
                               'tolerance': self.__DEFAULT_TOLERANCE,
                               'height reduction': self.__DEFAULT_HEIGHT_REDUCTION,
+                              'partitions': [],
                               }
                              )
 
@@ -75,10 +78,13 @@ class ItemBoxPartition(Design):
 
         self.add_settings_boolean(["separated"])
 
-        self.load_settings(config_file, section)
+        if "partitions" in kwargs:
+            self.load_settings(kwargs[C.config_file], kwargs["partitions config"])
+        else:
+            self.load_settings(self.config_file, self.config_section)
 
         self.settings[
-            "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings['length']}-W{self.settings['width']}-" \
+            "title"] = f"{self.__DEFAULT_FILENAME}-W{self.settings['width']}-" \
                        f"H{self.settings['height']}-S{self.settings['thickness']}-" \
                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
@@ -222,3 +228,16 @@ class ItemBoxPartition(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
+
+    def __do_partitions(self):
+        for partition in self.partitions:
+            print(partition)
+            if len(partition) == 1:
+                # Section is in the Project file
+                # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
+                self.settings.update({C.config_file: self.config_file, C.config_section: partition})
+                ItemBoxPartition(**self.settings)
+            elif len(partition) == 2:
+                # section is in a separate file
+                # Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)
+                pass

@@ -12,3 +12,4 @@ class ConfigConstants:
     width = "width"
     length = "length"
     height = "height"
+    thickness = "thickness"

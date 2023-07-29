@@ -21,7 +21,7 @@ class Matchbox(Design):
 
     __DEFAULT_FLAP_SPACE = 5
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__(kwargs)
 
         self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
