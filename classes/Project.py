@@ -54,8 +54,8 @@ class Project:
 
         self.options = {}
 
-        if config.has_option(self.__PROJECT_SECTION, 'name'):
-            self.name = config.get(self.__PROJECT_SECTION, 'name')
+        if config.has_option(self.__PROJECT_SECTION, 'project name'):
+            self.name = config.get(self.__PROJECT_SECTION, 'project name')
             self.options["project name"] = self.name
 
         if config.has_option(self.__PROJECT_SECTION, 'x offset'):

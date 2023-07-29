@@ -15,7 +15,6 @@ def parse_arguments():
     parser.add_argument('-c', type=str, help="Config File")
     parser.add_argument('-C', type=str, required='-c' in sys.argv, help="Config Section")
     parser.add_argument('-p', type=str, help="Project File")
-    # parser.add_argument('-P', type=str, required='-p' in sys.argv, help="Project Section")
     parser.add_argument('-v', action="store_true", help="verbose")
     parser.add_argument('-n', action="store_true", help="noprint")
 

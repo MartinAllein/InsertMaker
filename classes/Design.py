@@ -300,7 +300,7 @@ class Design(ABC):
         """
         path = ""
         start_x, start_y, end_x, end_y, radius, rotation = Design.get_coords_for_arc(corners, points)
-        print(start_x , start_y, end_x, end_y)
+        # print(start_x , start_y, end_x, end_y)
 
         if radius == 0:
             return ""
@@ -688,6 +688,8 @@ class Design(ABC):
             retval = value
 
         return retval
+
+
 
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})

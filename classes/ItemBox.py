@@ -163,13 +163,14 @@ class ItemBox(Design):
             itembox_separation_arguments.update({C.config_section: partitions_config[1]})
         else:
             itembox_separation_arguments.update({C.config_file: self.config_file,
-                                                 C.config_section: partitions_config[1]})
+                                                 C.config_section: partitions_config})
 
         itembox_separation_arguments.update(
             {
                 C.width: self.settings[C.width],
                 C.height: self.settings[C.height],
-                C.thickness: self.settings[C.thickness]
+                C.thickness: self.settings[C.thickness],
+                'options': {'project name': self.settings['project name']}
             }
         )
 

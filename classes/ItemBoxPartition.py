@@ -7,12 +7,6 @@ from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ConfigConstants import ConfigConstants as C
 
 
-class ThumbholeStyle(Enum):
-    THUMBHOLE = "thumbhole"
-    LONGHOLE = "longhole"
-    NONE = "none"
-
-
 class ItemBoxPartition(Design):
     __DEFAULT_FILENAME = "ItemBoxPartition"
     __DEFAULT_TEMPLATE = "ItemBoxPartition.svg"
@@ -21,30 +15,29 @@ class ItemBoxPartition(Design):
 
     __DEFAULT_THUMBHOLE_SMALL_RADIUS = 2
     __DEFAULT_THUMBHOLE_RADIUS = 10
-    __DEFAULT_LONGHOLE_RADIUS = 12
+    __DEFAULT_LONGHOLE_RADIUS = 10
     __DEFAULT_LONGHOLE_REST_HEIGHT = 2
 
     # default tolerance for slots for better mounting
-    __DEFAULT_TOLERANCE = 0.5
+    __DEFAULT_TOLERANCE = 0.2
 
     # reducing of the height of the separator
-    __DEFAULT_HEIGHT_REDUCTION = 4
+    __DEFAULT_HEIGHT_REDUCTION = 0
 
     # default length for the slot for mounting the separator in the box
-    __DEFAULT_MOUNTING_HOLE_LENGTH = 15
+    __DEFAULT_MOUNTING_HOLE_LENGTH = 10
 
     # default separation width
     __DEFAULT_SEPARATION_WIDTH = 10
 
     # default style of thumbhole
-    __DEFAULT_THUMBHOLE_STYLE = ThumbholeStyle.LONGHOLE
+    __DEFAULT_THUMBHOLE_STYLE = ThumbholeStyle.NONE
 
     # Default sizes
     __DEFAULT_WIDTH = 60
     __DEFAULT_HEIGHT = 40
     __DEFAULT_THICKNESS = 1.5
 
-    # def __init__(self, config_file: str, config_section: str, **kwargs):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
@@ -53,9 +46,26 @@ class ItemBoxPartition(Design):
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-        self.settings.update({'thickness': self.__DEFAULT_THICKNESS,
-                              'width': self.__DEFAULT_WIDTH,
-                              'height': self.__DEFAULT_HEIGHT,
+        thickness = self.__DEFAULT_THICKNESS
+        if C.thickness in kwargs:
+            thickness = kwargs[C.thickness]
+
+        width = self.__DEFAULT_WIDTH
+        if C.width in kwargs:
+            width = kwargs[C.width]
+
+        height = self.__DEFAULT_HEIGHT
+        if C.height in kwargs:
+            height = kwargs[C.height]
+
+        project_name = ""
+        if "project name" in kwargs:
+            project_name = kwargs["project name"]
+
+        self.settings.update({C.thickness: thickness,
+                              C.width: width,
+                              C.height: height,
+                              'project name': self.settings["project name"],
                               'thumbhole style': self.__DEFAULT_THUMBHOLE_STYLE,
                               'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
                               'thumbhole small radius': self.__DEFAULT_THUMBHOLE_SMALL_RADIUS,
@@ -65,12 +75,12 @@ class ItemBoxPartition(Design):
                               'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
                               'tolerance': self.__DEFAULT_TOLERANCE,
                               'height reduction': self.__DEFAULT_HEIGHT_REDUCTION,
-                              'partitions': [],
+                              'partitions': []
                               }
                              )
 
         self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "thumbhole small radius",
-                                    "longhole radius","longhole rest height", "vertical separation",
+                                    "longhole radius", "longhole rest height", "vertical separation",
                                     "mounting hole length", "tolerance", "height reduction"])
 
         self.add_settings_enum({"thumbhole style": ThumbholeStyle,
@@ -78,21 +88,41 @@ class ItemBoxPartition(Design):
 
         self.add_settings_boolean(["separated"])
 
-        if "partitions" in kwargs:
-            self.load_settings(kwargs[C.config_file], kwargs["partitions config"])
-        else:
-            self.load_settings(self.config_file, self.config_section)
+        # General settings are loaded. Overwritten later by settings for each separation
+        self.load_settings(self.config_file, self.config_section)
 
         self.settings[
             "title"] = f"{self.__DEFAULT_FILENAME}-W{self.settings['width']}-" \
                        f"H{self.settings['height']}-S{self.settings['thickness']}-" \
                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
+        if "partitions" in self.settings:
+            self.settings['partitions'] = self.get_string_or_list(self.settings['partitions'])
+
         self.convert_measures_to_tdpi()
 
     def create(self):
-        self.__init_design()
+        # noinspection DuplicatedCode
 
+
+        if "partitions" not in self.settings:
+            self.__create_single_separation()
+        else:
+            for partition in self.settings["partitions"]:
+                self.load_settings(self.config_file, self.config_section)
+                print(partition)
+                if isinstance(partition, list):
+                    self.load_settings(partition[0], partition[1])
+                else:
+                    self.load_settings(self.config_file, partition)
+
+                self.convert_measures_to_tdpi()
+                self.__create_single_separation()
+
+    def __create_single_separation(self):
+
+        # noinspection DuplicatedCode
+        self.__init_design()
         base_cut = Design.draw_lines(self.corners, self.cutlines)
 
         self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
@@ -177,9 +207,9 @@ class ItemBoxPartition(Design):
         h = int(a + width + 2 * thickness)
         e = int(h - thickness - width / 2 + (mounting_hole_length / 2))
         if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
-            f = int(h - thickness - width / 2 + thumbhole_radius )
+            f = int(h - thickness - width / 2 + thumbhole_radius)
         else:
-            f = int(h - thickness - width / 2 + longhole_radius )
+            f = int(h - thickness - width / 2 + longhole_radius)
 
         g = h - thickness - tolerance
         o = c - thumbhole_small_radius
@@ -196,7 +226,7 @@ class ItemBoxPartition(Design):
         q = i + thumbhole_small_radius
 
         # noinspection DuplicatedCode
-        self.corners = [[a,i], [a, i], [a, j], [b, j], [b, m], [c, i], [c, k], [d, m], [d, n],
+        self.corners = [[a, i], [a, i], [a, j], [b, j], [b, m], [c, i], [c, k], [d, m], [d, n],
                         [e, m], [e, n], [f, i], [f, k], [g, j], [g, m], [h, i], [h, j],
                         [o, i], [c, q], [f, q], [p, i]
                         ]
