@@ -554,6 +554,10 @@ class Design(ABC):
         """
         self.__settings_enum.update(keys)
 
+    def convert_to_json(self, keys):
+        for key in keys:
+            self.settings[key] = self.get_string_or_list(self.settings[key])
+
     def add_settings_measures(self, keys: list) -> None:
         """
         Add list of config measure keys to standard measure keys for converting unit -> tdpi

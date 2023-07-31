@@ -6,7 +6,12 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ItemBoxPartition import ItemBoxPartition
-from classes.ConfigConstants import ConfigConstants as C
+from classes.ConfigConstants import ConfigConstants as Cc
+
+
+class C:
+    partitions_main_config = 'partitions main config'
+    partitions_config = "partitions config"
 
 
 class EnfordeDesign(Enum):
@@ -44,7 +49,8 @@ class ItemBox(Design):
     __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
     __DEFAULT_THUMBHOLE = Thumbhole.NONE
 
-    __DEFAULT_PARTITIONS = []
+    __DEFAULT_PARTITIONS_MAIN_CONFIG = "ITEMBOXPARTITION"
+    __DEFAULT_PARTITIONS_CONFIG = []
 
     __DEFAULT_PARTITION_THUMBHOLE_SMALL_RADIUS = 2
     __DEFAULT_PARTITION_THUMBHOLE_RADIUS = 10
@@ -85,8 +91,8 @@ class ItemBox(Design):
                               'slot width': self.__DEFAULT_SLOT_WIDTH,
                               'corner gap': self.__DEFAULT_CORNER_GAP,
                               'small height': self.__DEFAULT_SMALL_HEIGHT,
-                              'partitions config': self.__DEFAULT_PARTITIONS,
-                              'partitions single config': []
+                              C.partitions_main_config: self.__DEFAULT_PARTITIONS_MAIN_CONFIG,
+                              C.partitions_config: self.__DEFAULT_PARTITIONS_CONFIG,
                               }
                              )
 
@@ -102,9 +108,11 @@ class ItemBox(Design):
 
         self.load_settings(self.config_file, self.config_section)
 
+        self.convert_to_json([C.partitions_config])
+
         self.settings[
-            "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings[C.length]}-W{self.settings[C.width]}-" \
-                       f"H{self.settings[C.height]}-S{self.settings[C.thickness]}-" \
+            "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings[Cc.length]}-W{self.settings[Cc.width]}-" \
+                       f"H{self.settings[Cc.height]}-S{self.settings[Cc.thickness]}-" \
                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         self.convert_measures_to_tdpi()
@@ -152,10 +160,7 @@ class ItemBox(Design):
         if "partitions config" not in self.settings:
             return
 
-        foo = self.settings['partitions config']
-        bar = json.loads(foo)
-
-        partitions_config = self.get_string_or_list(self.settings["partitions config"])
+        partitions_config = self.settings[C.partitions_config]
 
         if isinstance(partitions_config, list) and len(partitions_config) == 0 or \
                 partitions_config == "":
@@ -163,17 +168,17 @@ class ItemBox(Design):
 
         itembox_separation_arguments = {}
         if isinstance(partitions_config, list):
-            itembox_separation_arguments.update({C.config_file: partitions_config[0]})
-            itembox_separation_arguments.update({C.config_section: partitions_config[1]})
+            itembox_separation_arguments.update({Cc.config_file: partitions_config[0]})
+            itembox_separation_arguments.update({Cc.config_section: partitions_config[1]})
         else:
-            itembox_separation_arguments.update({C.config_file: self.config_file,
-                                                 C.config_section: partitions_config})
+            itembox_separation_arguments.update({Cc.config_file: self.config_file,
+                                                 Cc.config_section: partitions_config})
 
         itembox_separation_arguments.update(
             {
-                C.width: self.settings[C.width],
-                C.height: self.settings[C.height],
-                C.thickness: self.settings[C.thickness],
+                Cc.width: self.settings[Cc.width],
+                Cc.height: self.settings[Cc.height],
+                Cc.thickness: self.settings[Cc.thickness],
                 'options': {'project name': self.settings['project name']}
             }
         )
