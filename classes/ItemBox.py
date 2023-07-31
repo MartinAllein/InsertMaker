@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime
 from enum import Enum
 from classes.Design import Design
@@ -12,6 +13,8 @@ from classes.ConfigConstants import ConfigConstants as Cc
 class C:
     partitions_main_config = 'partitions main config'
     partitions_config = "partitions config"
+
+    distance = "distance"
 
 
 class EnfordeDesign(Enum):
@@ -162,18 +165,22 @@ class ItemBox(Design):
 
         partitions_config = self.settings[C.partitions_config]
 
-        if isinstance(partitions_config, list) and len(partitions_config) == 0 or \
+        if isinstance(partitions_config, list) and len(partitions_config) != 2 or \
                 partitions_config == "":
-            return
+            print(f"{C.partitions_config} must be Filename and section as list or section as string.")
+            sys.exit(-1)
 
         itembox_separation_arguments = {}
         if isinstance(partitions_config, list):
-            itembox_separation_arguments.update({Cc.config_file: partitions_config[0]})
-            itembox_separation_arguments.update({Cc.config_section: partitions_config[1]})
+            itembox_separation_arguments.update({Cc.config_file: partitions_config[0],
+                                                 Cc.config_section: partitions_config[1]
+                                                 })
         else:
             itembox_separation_arguments.update({Cc.config_file: self.config_file,
-                                                 Cc.config_section: partitions_config})
+                                                 Cc.config_section: partitions_config
+                                                 })
 
+        # noinspection DuplicatedCode
         itembox_separation_arguments.update(
             {
                 Cc.width: self.settings[Cc.width],
@@ -185,6 +192,7 @@ class ItemBox(Design):
 
         itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
         itemboxpartition.create()
+
 
     def __init_design(self):
         self.__init_base()
@@ -438,3 +446,4 @@ class ItemBox(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
+
