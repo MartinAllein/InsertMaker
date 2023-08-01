@@ -99,6 +99,8 @@ class ItemBoxPartition(Design):
             "title"] = f"{self.__DEFAULT_FILENAME}-W{self.settings['width']}-" \
                        f"H{self.settings['height']}-S{self.settings['thickness']}-" \
                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        self.settings[
+            "general filename"] = self.settings["title"][:]
 
         # copy the settings for later use when making the partitions. Before creating a partition
         # the general settings have to be restored
@@ -112,13 +114,14 @@ class ItemBoxPartition(Design):
     def create(self, output=True):
         # noinspection DuplicatedCode
 
-        for partition in self.settings[C.partitions]:
+        for idx, partition in enumerate(self.settings[C.partitions]):
             config_file, config_section = self.get_config_file_and_section(self.config_file,
                                                                            partition[0])
 
             # restore the general settings that the settings from the last separator are
             # reverted.
             self.settings = self.general_settings.copy()
+            self.settings["filename"] = self.settings["general filename"] + "-" + str(idx + 1)
 
             # load the settings for the new partition
             self.load_settings(self.config_file, config_section)
