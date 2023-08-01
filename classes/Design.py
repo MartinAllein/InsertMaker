@@ -1,5 +1,6 @@
 import sys
 import json
+import csv
 from json import JSONDecodeError
 from  xml.etree import ElementTree
 from xml.dom import minidom
@@ -692,6 +693,35 @@ class Design(ABC):
             retval = value
 
         return retval
+
+    @staticmethod
+    def split_config_lines_to_list(config_array: str, item_count: int) -> list:
+        retval = []
+
+        if len(config_array) == 0:
+            return retval
+
+        items = list(filter(None, (x.strip() for x in config_array.splitlines())))
+
+        for item in items:
+            item = item.replace('"', '')
+            if len(item.split(",")) == item_count:
+                retval.append(item.split(","))
+
+        return retval
+
+    def get_config_file_and_section(self, default_filename: str, file_and_section: str):
+        filename = default_filename
+        section = ""
+        split = file_and_section.rsplit("/", 1)
+        if len(split) == 2:
+            filename = split[0]
+            section = split[1]
+        else:
+            section = split[0]
+        return filename, section
+
+
 
 
 

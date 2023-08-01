@@ -1,5 +1,3 @@
-import json
-import sys
 from datetime import datetime
 from enum import Enum
 from classes.Design import Design
@@ -163,22 +161,13 @@ class ItemBox(Design):
         if "partitions config" not in self.settings:
             return
 
-        partitions_config = self.settings[C.partitions_config]
-
-        if isinstance(partitions_config, list) and len(partitions_config) != 2 or \
-                partitions_config == "":
-            print(f"{C.partitions_config} must be Filename and section as list or section as string.")
-            sys.exit(-1)
+        config_file, config_section = self.get_config_file_and_section(self.config_file,
+                                                                       self.settings[C.partitions_config])
 
         itembox_separation_arguments = {}
-        if isinstance(partitions_config, list):
-            itembox_separation_arguments.update({Cc.config_file: partitions_config[0],
-                                                 Cc.config_section: partitions_config[1]
-                                                 })
-        else:
-            itembox_separation_arguments.update({Cc.config_file: self.config_file,
-                                                 Cc.config_section: partitions_config
-                                                 })
+        itembox_separation_arguments.update({Cc.config_file: config_file,
+                                             Cc.config_section: config_section
+                                             })
 
         # noinspection DuplicatedCode
         itembox_separation_arguments.update(
@@ -192,7 +181,6 @@ class ItemBox(Design):
 
         itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
         itemboxpartition.create()
-
 
     def __init_design(self):
         self.__init_base()
@@ -446,4 +434,3 @@ class ItemBox(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
-

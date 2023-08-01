@@ -1,10 +1,13 @@
 from datetime import datetime
-from enum import Enum
 from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
-from classes.ConfigConstants import ConfigConstants as C
+from classes.ConfigConstants import ConfigConstants as Cc
+
+
+class C:
+    partitions = "partitions"
 
 
 class ItemBoxPartition(Design):
@@ -48,24 +51,24 @@ class ItemBoxPartition(Design):
         self.partition_settings = []
 
         thickness = self.__DEFAULT_THICKNESS
-        if C.thickness in kwargs:
-            thickness = kwargs[C.thickness]
+        if Cc.thickness in kwargs:
+            thickness = kwargs[Cc.thickness]
 
         width = self.__DEFAULT_WIDTH
-        if C.width in kwargs:
-            width = kwargs[C.width]
+        if Cc.width in kwargs:
+            width = kwargs[Cc.width]
 
         height = self.__DEFAULT_HEIGHT
-        if C.height in kwargs:
-            height = kwargs[C.height]
+        if Cc.height in kwargs:
+            height = kwargs[Cc.height]
 
         project_name = ""
         if "project name" in kwargs:
             project_name = kwargs["project name"]
 
-        self.settings.update({C.thickness: thickness,
-                              C.width: width,
-                              C.height: height,
+        self.settings.update({Cc.thickness: thickness,
+                              Cc.width: width,
+                              Cc.height: height,
                               'project name': self.settings["project name"],
                               'thumbhole style': self.__DEFAULT_THUMBHOLE_STYLE,
                               'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
@@ -76,7 +79,7 @@ class ItemBoxPartition(Design):
                               'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
                               'tolerance': self.__DEFAULT_TOLERANCE,
                               'height reduction': self.__DEFAULT_HEIGHT_REDUCTION,
-                              'partitions': []
+                              C.partitions: ""
                               }
                              )
 
@@ -97,33 +100,33 @@ class ItemBoxPartition(Design):
                        f"H{self.settings['height']}-S{self.settings['thickness']}-" \
                        f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
-        if "partitions" in self.settings:
-            self.settings['partitions'] = self.get_string_or_list(self.settings['partitions'])
+        # copy the settings for later use when making the partitions. Before creating a partition
+        # the general settings have to be restored
+        self.general_settings = self.settings.copy()
+
+        if C.partitions in self.settings:
+            self.settings[C.partitions] = self.split_config_lines_to_list(self.settings[C.partitions], 3)
 
         self.convert_measures_to_tdpi()
 
     def create(self, output=True):
         # noinspection DuplicatedCode
 
-        partition_settings = []
-        if "partitions" not in self.settings:
-            self.partition_settings = [self.settings]
+        for partition in self.settings[C.partitions]:
+            config_file, config_section = self.get_config_file_and_section(self.config_file,
+                                                                           partition[0])
+
+            # restore the general settings that the settings from the last separator are
+            # reverted.
+            self.settings = self.general_settings.copy()
+
+            # load the settings for the new partition
+            self.load_settings(self.config_file, config_section)
+            self.convert_measures_to_tdpi()
+            self.partition_settings.append(self.settings)
+
             if output:
                 self.__create_single_separation()
-        else:
-            for partition in self.settings["partitions"]:
-                self.load_settings(self.config_file, self.config_section)
-                print(partition)
-                if isinstance(partition, list):
-                    self.load_settings(partition[0], partition[1])
-                else:
-                    self.load_settings(self.config_file, partition)
-
-                self.convert_measures_to_tdpi()
-                self.partition_settings.append(self.settings)
-
-                if output:
-                    self.__create_single_separation()
 
     def __create_single_separation(self):
 
@@ -271,7 +274,7 @@ class ItemBoxPartition(Design):
             if len(partition) == 1:
                 # Section is in the Project file
                 # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
-                self.settings.update({C.config_file: self.config_file, C.config_section: partition})
+                self.settings.update({Cc.config_file: self.config_file, Cc.config_section: partition})
                 ItemBoxPartition(**self.settings)
             elif len(partition) == 2:
                 # section is in a separate file
