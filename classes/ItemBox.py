@@ -122,30 +122,34 @@ class ItemBox(Design):
         # noinspection DuplicatedCode
         self.__init_design()
 
-        base_cut = Design.draw_lines(self.corners, self.cutlines)
+        cut_path = Design.draw_lines(self.corners, self.cutlines)
 
-        self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template["$SVGPATH$"] = base_cut
+        # create partitions
+        if "partitions config" in self.settings:
+            self.create_partitions()
 
-        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
+        # noinspection DuplicatedCode
+        template_values = {
+            Cc.template: self.__DEFAULT_TEMPLATE,
+            Cc.svgpath: cut_path,
+        }
 
-        self.template["VIEWBOX_X"] = viewbox_x
-        self.template["VIEWBOX_Y"] = viewbox_y
+        viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
-        # self.template["$FOOTER__OVERALL_WIDTH$"] = str(
-        #     round((self.right_x - self.left_x) / self.conversion_factor(), 2))
+        template_values.update({
+            "VIEWBOX_X": viewbox_x,
+            "VIEWBOX_Y": viewbox_y,
+            "$FOOTER__OVERALL_WIDTH$": self.tpi_to_unit(self.right_x - self.left_x),
+            "$FOOTER_OVERALL_HEIGHT$": self.tpi_to_unit(self.bottom_y - self.top_y),
+            "$FOOTER_INNER_LENGTH$": self.inner_dimensions[0],
+            "$FOOTER_INNER_WIDTH$": self.inner_dimensions[1],
+            "$FOOTER_INNER_HEIGHT$": self.inner_dimensions[2],
+            "$FOOTER_OUTER_LENGTH$": self.outer_dimensions[0],
+            "$FOOTER_OUTER_WIDTH$": self.outer_dimensions[1],
+            "$FOOTER_OUTER_HEIGHT$": self.outer_dimensions[2],
+        })
 
-        self.template["$FOOTER__OVERALL_WIDTH$"] = self.tpi_to_unit(self.right_x - self.left_x)
-        self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
-
-        self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
-        self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
-        self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
-        self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
-        self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
-        self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
-
-        self.write_to_file(self.template)
+        self.write_to_file(template_values)
 
         print(
             f"Inner Length: {self.inner_dimensions[0]} , "
@@ -157,12 +161,9 @@ class ItemBox(Design):
             f"Outer Width: {self.outer_dimensions[1]} , "
             f"Outer Height: {self.outer_dimensions[2]}")
 
-        # stop creation when Itembox has no separators
-        if "partitions config" not in self.settings:
-            return
-
-        config_file, config_section = self.get_config_file_and_section(self.config_file,
-                                                                       self.settings[C.partitions_config])
+    def create_partitions(self):
+        config_file, config_section = \
+            self.get_config_file_and_section(self.config_file, self.settings[C.partitions_config])
 
         itembox_separation_arguments = {}
         itembox_separation_arguments.update({Cc.config_file: config_file,
@@ -175,7 +176,7 @@ class ItemBox(Design):
                 Cc.width: self.settings[Cc.width],
                 Cc.height: self.settings[Cc.height],
                 Cc.thickness: self.settings[Cc.thickness],
-                'options': {'project name': self.settings['project name']}
+                Cc.options: {Cc.project_name: self.settings[Cc.project_name]}
             }
         )
 

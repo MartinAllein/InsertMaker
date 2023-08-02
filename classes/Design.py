@@ -1,8 +1,7 @@
 import sys
 import json
-import csv
 from json import JSONDecodeError
-from  xml.etree import ElementTree
+from xml.etree import ElementTree
 from xml.dom import minidom
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -158,9 +157,6 @@ class Design(ABC):
         self.right_x: float = 0
         self.top_y: float = 0
         self.bottom_y: float = 0
-
-        # content for the template
-        self.template = {}
 
         # command line as string
         self.args_string: str = ' '.join(sys.argv[1:])
@@ -385,7 +381,7 @@ class Design(ABC):
         return output
 
     @staticmethod
-    def draw_lines(corners: list, lines: list) -> str:
+    def draw_lines(corners: list, lines: list, raw=False) -> str:
         xml_lines = ""
         for command, values in lines:
             if command == PathStyle.LINE:
@@ -409,7 +405,12 @@ class Design(ABC):
             elif command == PathStyle.QUARTERCIRCLE:
                 xml_lines += Design.draw_quartercircle(corners, values)
 
-        return f'<path d="{xml_lines.strip()}"/>'
+        retval = xml_lines.strip()
+
+        if not raw:
+            retval = f'<path d="{xml_lines.strip()}"/>'
+
+        return retval
 
     def set_bounds(self, corners):
         """
@@ -431,7 +432,7 @@ class Design(ABC):
         :return:
         """
 
-        if self.settings["filename"] == "":
+        if self.settings[C.filename] == "":
             raise "No filename given"
 
         if self.settings["template name"]:
@@ -448,27 +449,27 @@ class Design(ABC):
 
         template_string = Template.load_template(template_values[TEMPLATE])
 
-        self.template["$UNIT$"] = self.settings["unit"]
+        template_values["$UNIT$"] = self.settings["unit"]
 
         # modify FILENAME with leading and trailing $
-        self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
-        self.template["$FOOTER_TITLE$"] = self.settings["title"]
-        self.template["$HEADER_TITLE$"] = self.settings["title"]
+        template_values["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
+        template_values["$FOOTER_TITLE$"] = self.settings["title"]
+        template_values["$HEADER_TITLE$"] = self.settings["title"]
 
-        self.template["$FOOTER_FILENAME$"] = self.settings["filename"]
-        self.template["$FOOTER_ARGS_STRING$"] = self.args_string
-        self.template['$FOOTER_OVERALL_WIDTH$'] = round(self.template['VIEWBOX_X'] / self.conversion_factor(), 2)
-        self.template['$FOOTER_OVERALL_HEIGHT$'] = round(self.template['VIEWBOX_Y'] / self.conversion_factor(), 2)
+        template_values["$FOOTER_FILENAME$"] = self.settings["filename"]
+        template_values["$FOOTER_ARGS_STRING$"] = self.args_string
+        template_values['$FOOTER_OVERALL_WIDTH$'] = round(template_values['VIEWBOX_X'] / self.conversion_factor(), 2)
+        template_values['$FOOTER_OVERALL_HEIGHT$'] = round(template_values['VIEWBOX_Y'] / self.conversion_factor(), 2)
 
-        self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
+        template_values["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
-        ycoord = self.template['VIEWBOX_Y']
-        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing_tdpi"])
-        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing_tdpi"])
+        ycoord = template_values['VIEWBOX_Y']
+        template_values["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing_tdpi"])
+        template_values["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing_tdpi"])
 
-        all_footers = [i for i in self.template if i.startswith('$FOOTER_')]
-        self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])} " \
-                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing_tdpi'])} "
+        all_footers = [i for i in template_values if i.startswith('$FOOTER_')]
+        template_values['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(template_values['VIEWBOX_X'])} " \
+                                       f" {self.thoudpi_to_dpi(template_values['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing_tdpi'])} "
 
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
@@ -492,7 +493,7 @@ class Design(ABC):
         newdom = minidom.parseString(ElementTree.tostring(root))
         xmlstr = '\n'.join([line for line in newdom.toprettyxml(indent=' ' * 2).split('\n') if line.strip()])
 
-        return  xmlstr
+        return xmlstr
 
     def tpi_to_unit(self, value: float) -> float:
         """
@@ -654,7 +655,7 @@ class Design(ABC):
         return config
 
     @staticmethod
-    def is_float(value):
+    def is_float(value) -> bool:
         try:
             float(value)
             return True
@@ -674,19 +675,14 @@ class Design(ABC):
         except ValueError:
             return value
 
-    def get_project_name_for_title(self, prefix="", postfix="-"):
+    def get_project_name_for_title(self, prefix="", postfix="-") -> str:
         return f"{'' if len(self.settings['project name']) == 0 else prefix + self.settings['project name'] + postfix}"
 
-    def set_viewbox(self, x, y):
+    def get_viewbox(self, x: int, y: int) -> (int, int):
         return round(self.settings["x offset_tdpi"] + x), round(self.settings["y offset_tdpi"] + y)
 
     @staticmethod
-    def get_string_or_list(value):
-        retval = ""
-        #if isinstance(value, list):
-        #    retval = json.loads(value)
-        #else:
-        #    retval = value
+    def get_string_or_list(value) -> str:
         try:
             retval = json.loads(value)
         except JSONDecodeError as e:
@@ -710,7 +706,7 @@ class Design(ABC):
 
         return retval
 
-    def get_config_file_and_section(self, default_filename: str, file_and_section: str):
+    def get_config_file_and_section(self, default_filename: str, file_and_section: str) -> (str, str):
         filename = default_filename
         section = ""
         split = file_and_section.rsplit("/", 1)
@@ -720,10 +716,6 @@ class Design(ABC):
         else:
             section = split[0]
         return filename, section
-
-
-
-
 
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})

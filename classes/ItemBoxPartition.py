@@ -9,6 +9,12 @@ from classes.ConfigConstants import ConfigConstants as Cc
 class C:
     partitions = "partitions"
 
+    tolerance = "tolerance"
+    height_reduction = "height reduction"
+
+    tolerance_tdpi = "tolerance_tdpi"
+    height_reduction_tdpi = "height reduction_tdpi"
+
 
 class ItemBoxPartition(Design):
     __DEFAULT_FILENAME = "ItemBoxPartition"
@@ -50,6 +56,9 @@ class ItemBoxPartition(Design):
         self.outer_dimensions = []
         self.partition_settings = []
 
+        self.corners_bottom_hole = []
+        self.corners_side_slot = []
+
         thickness = self.__DEFAULT_THICKNESS
         if Cc.thickness in kwargs:
             thickness = kwargs[Cc.thickness]
@@ -63,13 +72,13 @@ class ItemBoxPartition(Design):
             height = kwargs[Cc.height]
 
         project_name = ""
-        if "project name" in kwargs:
-            project_name = kwargs["project name"]
+        if Cc.project_name in kwargs:
+            project_name = kwargs[Cc.project_name]
 
         self.settings.update({Cc.thickness: thickness,
                               Cc.width: width,
                               Cc.height: height,
-                              'project name': self.settings["project name"],
+                              'project name': project_name,
                               'thumbhole style': self.__DEFAULT_THUMBHOLE_STYLE,
                               'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
                               'thumbhole small radius': self.__DEFAULT_THUMBHOLE_SMALL_RADIUS,
@@ -79,13 +88,14 @@ class ItemBoxPartition(Design):
                               'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
                               'tolerance': self.__DEFAULT_TOLERANCE,
                               'height reduction': self.__DEFAULT_HEIGHT_REDUCTION,
+                              "separation width": self.__DEFAULT_SEPARATION_WIDTH,
                               C.partitions: ""
                               }
                              )
 
         self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "thumbhole small radius",
                                     "longhole radius", "longhole rest height", "vertical separation",
-                                    "mounting hole length", "tolerance", "height reduction"])
+                                    "mounting hole length", "tolerance", "height reduction", "separation width"])
 
         self.add_settings_enum({"thumbhole style": ThumbholeStyle,
                                 })
@@ -112,7 +122,16 @@ class ItemBoxPartition(Design):
         self.convert_measures_to_tdpi()
 
     def create(self, output=True):
+        self.__init_design()
         # noinspection DuplicatedCode
+
+        slot_start_x = 0
+        slot_start_y = 0
+        bottom_hole_start_x = 0
+        bottom_hole_start_y = 0
+
+        slot_cut = ""
+        bottom_cut = ""
 
         for idx, partition in enumerate(self.settings[C.partitions]):
             config_file, config_section = self.get_config_file_and_section(self.config_file,
@@ -121,41 +140,59 @@ class ItemBoxPartition(Design):
             # restore the general settings that the settings from the last separator are
             # reverted.
             self.settings = self.general_settings.copy()
-            self.settings["filename"] = self.settings["general filename"] + "-" + str(idx + 1)
+            # to generate different default filenames the index of the partition is added to
+            # the default filename
+            self.settings[Cc.filename] = self.settings["general filename"] + "-" + str(idx + 1)
 
             # load the settings for the new partition
             self.load_settings(self.config_file, config_section)
             self.convert_measures_to_tdpi()
-            self.partition_settings.append(self.settings)
+
+            # store the settings for the partitions in an array for later use. This is when
+            # the ItemBox requests the settings to create the bottom hole and the side slots
+
+            settings = self.settings.copy()
+            settings.update({"corners bottom hole": self.corners_bottom_hole,
+                             "corners side slot": self.corners_side_slot})
+
+            # self.partition_settings.append( self.settings.copy())
+            self.partition_settings.append(settings)
+            bottom_cut += " " + self.__init_bottom_slot(self.settings["separation_width_tdpi"], 0)
+            slot_cut += " " + self.__init_side_slot(self.settings["separation_width_tdpi"], 0)
 
             if output:
-                self.__create_single_separation()
+                self.__create_single_partition()
 
-    def __create_single_separation(self):
+        print("ready")
+
+    def get_partition_settings(self):
+        self.create(False)
+        return self.partition_settings
+
+    def __create_single_partition(self):
 
         # noinspection DuplicatedCode
-        self.__init_design()
         base_cut = Design.draw_lines(self.corners, self.cutlines)
 
-        self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template["$SVGPATH$"] = base_cut
+        template = {
+            Cc.template: self.__DEFAULT_TEMPLATE,
+            Cc.svgpath: base_cut}
 
-        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
+        viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
-        self.template["VIEWBOX_X"] = viewbox_x
-        self.template["VIEWBOX_Y"] = viewbox_y
+        template.update({"VIEWBOX_X": viewbox_x,
+                         "VIEWBOX_Y": viewbox_y,
+                         "$FOOTER__OVERALL_WIDTH$": self.tpi_to_unit(self.right_x - self.left_x),
+                         "$FOOTER_OVERALL_HEIGHT$": self.tpi_to_unit(self.bottom_y - self.top_y),
+                         "$FOOTER_INNER_LENGTH$": self.inner_dimensions[0],
+                         "$FOOTER_INNER_WIDTH$": self.inner_dimensions[1],
+                         "$FOOTER_INNER_HEIGHT$": self.inner_dimensions[2],
+                         "$FOOTER_OUTER_LENGTH$": self.outer_dimensions[0],
+                         "$FOOTER_OUTER_WIDTH$": self.outer_dimensions[1],
+                         "$FOOTER_OUTER_HEIGHT$": self.outer_dimensions[2],
+                         })
 
-        self.template["$FOOTER__OVERALL_WIDTH$"] = self.tpi_to_unit(self.right_x - self.left_x)
-        self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
-
-        self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
-        self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
-        self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
-        self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
-        self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
-        self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
-
-        self.write_to_file(self.template)
+        self.write_to_file(template)
 
         print(
             f"Inner Length: {self.inner_dimensions[0]} , "
@@ -169,6 +206,8 @@ class ItemBoxPartition(Design):
 
     def __init_design(self):
         self.__init_base()
+        # self.__init_bottom_slot()
+        # self.__init_side_slot()
 
     def __init_base(self):
 
@@ -190,9 +229,9 @@ class ItemBoxPartition(Design):
         #                          |        |
         #   n                      08-------10
 
-        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "longhole radius",
-                                    "longhole rest height", "vertical separation", "mounting hole length",
-                                    "tolerance", "height reduction"])
+        # self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "longhole radius",
+        #                             "longhole rest height", "vertical separation", "mounting hole length",
+        #                             "tolerance", "height reduction"])
 
         height = self.settings['height_tdpi']
         width = self.settings['width_tdpi']
@@ -271,15 +310,62 @@ class ItemBoxPartition(Design):
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
 
-    def __do_partitions(self):
-        for partition in self.partitions:
-            print(partition)
-            if len(partition) == 1:
-                # Section is in the Project file
-                # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
-                self.settings.update({Cc.config_file: self.config_file, Cc.config_section: partition})
-                ItemBoxPartition(**self.settings)
-            elif len(partition) == 2:
-                # section is in a separate file
-                # Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)
-                pass
+    def __init_side_slot(self, start_x=0, start_y=0) -> str:
+        #          A------b
+        #          |      |
+        #          |      |
+        #          |      |
+        #          |      |
+        #          c------d
+        # Start point in caps (A)
+
+        width = self.settings[Cc.thickness_tdpi] + self.settings[C.tolerance_tdpi]
+        height = self.settings[Cc.height_tdpi] - self.settings["mounting hole length_tdpi"]
+        ax = start_x
+        ay = start_y
+        bx = ax + width
+        by = ay
+        cx = ax
+        cy = ay + height
+        dx = ax
+        dy = cy
+
+        corners_bottom_hole = [[ax, ay], [bx, by], [cx, cy], [dx, dy]]
+        cutlines_bottom_hole = [[PathStyle.LINE, [0, 1, 2, 3]]]
+
+        cut = Design.draw_lines(self.corners, self.cutlines, raw=True)
+
+        return cut
+
+    def __init_bottom_slot(self, start_x=0, start_y=0) -> str:
+        #           TOP
+        #          A      b
+        #          |      |
+        #          |      |
+        #          |      |
+        #          |      |
+        #          c------d
+        # Start point in caps (A)
+
+        width = self.settings[Cc.thickness_tdpi] + self.settings[C.tolerance_tdpi]
+
+        # @formatter:off
+        height = self.settings[C.height_reduction_tdpi] + \
+            (self.settings[Cc.height_tdpi] - self.settings[C.height_reduction_tdpi]) / 2 + \
+            self.settings[C.tolerance_tdpi]
+        # @formatter:on
+
+        ax = start_x
+        ay = start_y
+        bx = ax + width
+        by = ay
+        cx = ax
+        cy = ay + height
+        dx = ax
+        dy = cy
+
+        corners_side_slot = [[ax, ay], [bx, by], [cx, cy], [dx, dy]]
+        cutlines_side_slot = [[PathStyle.LINE, [0, 2, 3, 1]]]
+        cut = Design.draw_lines(self.corners, self.cutlines, raw=True)
+
+        return cut

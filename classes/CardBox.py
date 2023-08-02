@@ -169,7 +169,7 @@ class CardBox(Design):
             right_cut = Design.draw_lines(self.corners, self.cutlines_right)
             self.template["$RIGHT-CUT$"] = right_cut
 
-        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
+        viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
         self.template["VIEWBOX_X"] = viewbox_x
         self.template["VIEWBOX_Y"] = viewbox_y
