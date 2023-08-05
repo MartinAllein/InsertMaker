@@ -175,23 +175,25 @@ class Design(ABC):
         self.settings = self.settings | options
         return
 
-    def convert_measures_to_tdpi(self) -> None:
+    def convert_measures_to_tdpi(self, settings=None) -> dict:
         """
             Convert the measures from their nativ unint (mm/mil) to dpi * 10000 (tdpi)
         :return: nothing
         """
+        if settings is None:
+            settings = self.settings
 
         # remove all keys ending with '_tdpi'.
         # https://stackoverflow.com/questions/11358411/silently-removing-key-from-a-python-dict
         for k in self.__settings_measures:
             # with pop missing keys will not raise an exception
-            self.settings.pop(k + '_tdpi', None)
+            settings.pop(k + '_tdpi', None)
 
         # convert all keys to tdpi and add '_tdpi' to the key from the list of measures to be converted
-        self.settings.update(
+        settings.update(
             {k + "_tdpi": self.to_tdpi(self.settings[k]) for k in self.__settings_measures})
 
-        return
+        return settings
 
     def conversion_factor(self) -> float:
         """
@@ -425,51 +427,56 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    def write_to_file(self, template_values: dict):
+    def write_to_file(self, template_values: dict, settings={}):
         """
         Fills the template with the values from the dict and writes it to a file
         :param template_values:
         :return:
         """
 
-        if self.settings[C.filename] == "":
+        if not settings:
+            settings = self.settings.copy()
+
+        if settings[C.filename] == "":
             raise "No filename given"
 
-        if self.settings["template name"]:
-            template_values['TEMPLATE NAME'] = self.settings["template name"]
+        if settings["template name"]:
+            template_values['TEMPLATE NAME'] = settings["template name"]
 
         if TEMPLATE not in template_values:
             raise " No template given"
 
-        if 'VIEWBOX_X' not in template_values:
-            raise "VIEWBOX X is missing"
+        # if 'VIEWBOX_X' not in template_values:
+        #     raise "VIEWBOX X is missing"
 
-        if 'VIEWBOX_Y' not in template_values:
-            raise "VIEWBOX Y is missing"
+        # if 'VIEWBOX_Y' not in template_values:
+        #     raise "VIEWBOX Y is missing"
 
         template_string = Template.load_template(template_values[TEMPLATE])
 
-        template_values["$UNIT$"] = self.settings["unit"]
+        template_values["$UNIT$"] = settings.get("unit", "unknown")
 
         # modify FILENAME with leading and trailing $
-        template_values["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
-        template_values["$FOOTER_TITLE$"] = self.settings["title"]
-        template_values["$HEADER_TITLE$"] = self.settings["title"]
+        template_values["$FOOTER_PROJECT_NAME$"] = settings.get("project name", "")
+        template_values["$FOOTER_TITLE$"] = settings.get("title", "")
+        template_values["$HEADER_TITLE$"] = settings.get("title", "")
 
-        template_values["$FOOTER_FILENAME$"] = self.settings["filename"]
+        template_values["$FOOTER_FILENAME$"] = settings.get("filename", "NO FILENAME")
         template_values["$FOOTER_ARGS_STRING$"] = self.args_string
-        template_values['$FOOTER_OVERALL_WIDTH$'] = round(template_values['VIEWBOX_X'] / self.conversion_factor(), 2)
-        template_values['$FOOTER_OVERALL_HEIGHT$'] = round(template_values['VIEWBOX_Y'] / self.conversion_factor(), 2)
+        template_values['$FOOTER_OVERALL_WIDTH$'] = round(
+            template_values.get('VIEWBOX_X', 0) / self.conversion_factor(), 2)
+        template_values['$FOOTER_OVERALL_HEIGHT$'] = round(
+            template_values.get('VIEWBOX_Y', 0) / self.conversion_factor(), 2)
 
         template_values["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
 
         ycoord = template_values['VIEWBOX_Y']
-        template_values["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing_tdpi"])
-        template_values["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing_tdpi"])
+        template_values["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + settings["y text spacing_tdpi"])
+        template_values["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(settings["y text spacing_tdpi"])
 
         all_footers = [i for i in template_values if i.startswith('$FOOTER_')]
-        template_values['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(template_values['VIEWBOX_X'])} " \
-                                       f" {self.thoudpi_to_dpi(template_values['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing_tdpi'])} "
+        template_values['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(template_values.get('VIEWBOX_X', 0))} " \
+                                       f" {self.thoudpi_to_dpi(template_values.get('VIEWBOX_Y', 0) + (len(all_footers) + 2) * self.settings['y text spacing_tdpi'])} "
 
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
@@ -477,7 +484,7 @@ class Design(ABC):
         template_string = self.remove_xml_labels(template_string)
         template_string = self.remove_xml_labels(template_string)
 
-        with open(f"{self.settings['filename']}", 'w') as f:
+        with open(f"{settings['filename']}", 'w') as f:
             f.write(template_string)
 
     def remove_xml_labels(self, template_string):
@@ -596,7 +603,7 @@ class Design(ABC):
         if self.settings["filename"]:
             self.settings['filename'] = File.set_svg_extension(self.settings["filename"])
 
-    def load_settings(self, config_file: str, section: str) -> None:
+    def load_settings(self, config_file: str, section: str, settings=None) -> None:
         """
         Reads in a section from a configuration file.
         :param config_file: filename with path of the config file
@@ -605,23 +612,29 @@ class Design(ABC):
         :param payload: default and optional values
         :return: config object
         """
+        if settings is None:
+            settings = self.settings
         self.validate_config_and_section(__class__.__name__, config_file, section)
 
-        self.__read_config(config_file, section)
+        settings =self.__read_config(config_file, section, settings)
 
         self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
 
-    def __read_config(self, filename: str, section: str):
+        return settings
+
+    def __read_config(self, filename: str, section: str, settings=None):
         """ Read configuration from file and convert numbers from string to int/float
 
         """
+        if settings is None:
+            settings = self.settings
 
         error = ""
         config = Config.read_config(filename, section)
 
         # copy values of all key in the config to the settings. Convert numbers from string to int/float
-        self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
-                              config.has_option(section, k) and section not in self.__settings_enum})
+        settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
+                         config.has_option(section, k) and section not in self.__settings_enum})
 
         foo = self.__settings_enum
         # iterate through all enums of the settings
@@ -633,7 +646,7 @@ class Design(ABC):
                 value = config.get(section, key)
                 try:
                     # convert the config data into an enum by string
-                    self.settings[key] = self.__settings_enum[key](value)
+                    settings[key] = self.__settings_enum[key](value)
                 except ValueError as e:
                     error += f"Unknown value for {key} in {filename} section {section}. Current value \"{value}\". " \
                              f"Allowed values are {[e.value for e in self.__settings_enum[key]]}"
@@ -641,10 +654,10 @@ class Design(ABC):
         # iterate through all boolean settings
         for key in self.__settings_boolean:
             if config.has_option(section, key):
-                self.settings[key] = False
+                settings[key] = False
                 value = config.get(section, key)
                 if value.lower() in ["y", "yes", "1", "t", "true"]:
-                    self.settings[key] = True
+                    settings[key] = True
 
         if len(error) != 0:
             print(error)
@@ -652,7 +665,7 @@ class Design(ABC):
 
         # print(json.dumps(self.settings, indent=4))
 
-        return config
+        return settings
 
     @staticmethod
     def is_float(value) -> bool:
