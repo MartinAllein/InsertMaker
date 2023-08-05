@@ -1,6 +1,6 @@
 import sys
 import json
-import csv
+import os
 from json import JSONDecodeError
 from  xml.etree import ElementTree
 from xml.dom import minidom
@@ -106,11 +106,8 @@ class Design(ABC):
     measures = {}
 
     def __init__(self, args):
-        if C.config_file in args:
-            self.config_file = args[C.config_file]
 
-        if C.config_section in args:
-            self.config_section = args[C.config_section]
+        self.config_file, self.config_section = Config.get_config_file_and_section(args.get(C.config_file_and_section))
 
         options = {}
         if 'options' in args:
@@ -132,7 +129,7 @@ class Design(ABC):
                          'stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
                          }
 
-        # Overwrite the default config with the settings from the Insertmaker.config
+        # Overwrite the internal default config with the settings from the Insertmaker.config
         self.__read_config(self.__DEFAULT_CONFIG_FILE, self.__DEFAULT_SECTION_NAME)
 
         # Overwrite the combined default/InsertMaker settings with the ones from the command line
@@ -713,7 +710,7 @@ class Design(ABC):
     def get_config_file_and_section(self, default_filename: str, file_and_section: str):
         filename = default_filename
         section = ""
-        split = file_and_section.rsplit("/", 1)
+        split = file_and_section.rsplit(os.sep, 1)
         if len(split) == 2:
             filename = split[0]
             section = split[1]

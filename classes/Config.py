@@ -5,14 +5,18 @@ from classes.File import File
 from classes.ConfigConstants import ConfigConstants as c
 
 
+class C:
+    style = "style"
+
+
 class Config:
 
     @classmethod
-    def read_config(cls, filename: str, section: str, defaults=None):
+    # def read_config(cls, filename: str, section: str, defaults=None):
+    def read_config(cls, filename_and_section: str, defaults=None):
         """ Read the given section from a configuration file
 
-        :param filename: config filename
-        :param section: section of config file to read
+        :param filename_and_section: config filename with section
         :param defaults:
         :return:
         """
@@ -20,48 +24,43 @@ class Config:
         if defaults is None:
             defaults = []
 
-        config_file = File.path_and_extension("", filename, c.config_file_extension)
-
-        # Test if configuration file exists
-        if not os.path.isfile(config_file):
-            print("Config file " + config_file + " does not exist")
-            sys.exit(-1)
+        config_file, config_section = Config.get_config_file_and_section(filename_and_section)
 
         # read entries from the configuration file
         config = configparser.ConfigParser(defaults=defaults)
         config.read(config_file)
 
         # Test if requested section exists
-        if not config.has_section(section):
+        if not config.has_section(config_section):
             print(f"Sections in file {config_file}")
             for part in config.sections():
                 print(part)
-            print("Section " + section + " in config file " + config_file )
-            if section[0] == '"' or section[-1] == '"' or section[0] == '"' or section[-1] == '"':
+            print("Section " + config_section + " in config file " + config_file )
+            if config_section[0] == '"' or config_section[-1] == '"' or config_section[0] == '"' \
+                    or config_section[-1] == '"':
                 print("Please remove the quotation marks around the section!")
             sys.exit(-1)
 
         return config
 
     @classmethod
-    def get_style(cls, filename: str, section: str):
+    # def get_style(cls, filename: str, section: str):
+    def get_style(cls, filename_and_section: str) -> str:
         """ Returns the style from a configuration within a configuration file
 
-        :param filename: configuration file
-        :param section: section of the configuration file where to look for the style
+        :param filename_and_section: configuration file with section
         :return: style of the item (CardSheet, CardBox, ....)
         """
-        defaults = {'style': ""}
+        filename, section = Config.get_config_file_and_section(filename_and_section)
+        config = cls.read_config(filename, section, defaults={C.style: ""})
 
-        config = cls.read_config(filename, section, defaults=defaults)
-
-        style = config.get(section, 'style')
+        style = config.get(section, C.style)
 
         if style is None:
             print(f"Config file {filename} with Section {section} has no style entry.")
             sys.exit(-1)
 
-        return config.get(section, 'style')
+        return config.get(section, C.style)
 
     @classmethod
     def get_sections(cls, file_and_path: str):
@@ -158,3 +157,40 @@ class Config:
         config = configparser.ConfigParser()
         with open(filename + "CR", "r+") as configfile:
             config.write_config(dict)
+
+    @staticmethod
+    def get_config_file_and_section(file_and_section: str, default_filename=None) -> (str, str):
+        if default_filename is not None:
+            file_and_section = f"{default_filename}{c.config_separator}{file_and_section}"
+
+        if c.config_separator not in file_and_section:
+            print(f"Missing section for config file {file_and_section}. I.e. /foo/bar#the_section")
+            sys.exit(-1)
+
+        split = file_and_section.rsplit(c.config_separator, 1)
+
+        if len(split) != 2:
+            print(f"There must be only a single separator '{c.config_separator}' in the {file_and_section}.")
+            sys.exit(-1)
+
+        filename = split[0]
+        section = split[1]
+
+        if not filename.endswith(f".{c.config_separator}"):
+            filename = File.path_and_extension("", filename, c.config_file_extension)
+
+        # Test if configuration file exists
+        if not os.path.isfile(filename):
+            print(f"Config file  {filename} does not exist. ")
+            sys.exit(-1)
+
+        return filename, section
+
+    @staticmethod
+    def beautify_config_array(configs: list, filename: str) -> list:
+        retval = []
+        for config in configs:
+            fn, cf = Config.get_config_file_and_section(config, filename)
+            retval.append(f"{fn}{c.config_separator}{cf}")
+
+        return retval

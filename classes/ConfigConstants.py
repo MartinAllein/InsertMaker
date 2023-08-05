@@ -5,6 +5,8 @@ class ConfigConstants:
     config_file = "config file"
     config_section = "config section"
     config_file_extension = "config"
+    config_file_and_section = "config file and section"
+    config_separator = "#"
 
     filename = "filename"
 
@@ -15,3 +17,6 @@ class ConfigConstants:
     length = "length"
     height = "height"
     thickness = "thickness"
+    y_text_spacing = 'y text spacing'
+
+    project_name = "project name"

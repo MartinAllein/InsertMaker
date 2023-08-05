@@ -12,9 +12,8 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(add_help=False)
 
-    parser.add_argument('-c', type=str, help="Config File")
-    parser.add_argument('-C', type=str, required='-c' in sys.argv, help="Config Section")
-    parser.add_argument('-p', type=str, help="Project File")
+    parser.add_argument('-c', type=str, help="Config File and section")
+    parser.add_argument('-p', type=str, help="Project File and section")
     parser.add_argument('-v', action="store_true", help="verbose")
     parser.add_argument('-n', action="store_true", help="noprint")
 
@@ -41,8 +40,8 @@ if __name__ == "__main__":
 
     # configuration file
     if args.c:
-        kwargs[C.config_file] = args.c
-        kwargs[C.config_section] = args.C
+        kwargs[C.config_file_and_section] = args.c
+
         single = Single.create(**kwargs)
         sys.exit(0)
 

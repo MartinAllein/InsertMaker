@@ -179,8 +179,8 @@ class ItemBox(Design):
             }
         )
 
-        itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
-        itemboxpartition.create()
+        # itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
+        # itemboxpartition.create()
 
     def __init_design(self):
         self.__init_base()
