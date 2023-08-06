@@ -107,9 +107,9 @@ class ItemBox(Design):
 
         self.add_settings_boolean(["separated"])
 
-        self.load_settings(self.config_file, self.config_section)
+        self.load_settings(self.config_file_and_section)
 
-        self.convert_to_json([C.partitions_config])
+        # self.convert_to_json([C.partitions_config])
 
         self.settings[
             "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings[Cc.length]}-W{self.settings[Cc.width]}-" \

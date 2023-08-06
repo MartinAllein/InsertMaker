@@ -3,6 +3,7 @@ from classes.Design import Design
 from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
+from classes.Config import Config
 from classes.ConfigConstants import ConfigConstants as Cc
 
 
@@ -107,7 +108,7 @@ class ItemBoxPartition(Design):
         self.general_settings = self.settings.copy()
 
         if C.partitions in self.settings:
-            self.settings[C.partitions] = self.split_config_lines_to_list(self.settings[C.partitions], 3)
+            self.settings[C.partitions] = Config.split_config_lines_to_list(self.settings[C.partitions], 3)
 
         self.convert_measures_to_tdpi()
 

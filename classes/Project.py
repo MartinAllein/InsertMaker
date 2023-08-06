@@ -55,12 +55,14 @@ class Project:
             sys.exit(-1)
 
         self.items = config.get(self.__PROJECT_SECTION, 'items')
+        self.items = Config.split_config_lines_to_list(self.items)
+        self.items = Config.beautify_config_array(self.items, self.project_config_file)
 
         self.options = {}
 
         if config.has_option(self.__PROJECT_SECTION, Cc.project_name):
             self.name = config.get(self.__PROJECT_SECTION, Cc.project_name)
-            self.options[Cc.project_name]  = self.options.get(Cc.project_name, "")
+            self.options[Cc.project_name] = self.options.get(Cc.project_name, "")
 
         if config.has_option(self.__PROJECT_SECTION, Cc.x_offset):
             self.x_offset = float(config.get(self.__PROJECT_SECTION, Cc.x_offset))
@@ -90,16 +92,17 @@ class Project:
         self.config_path = None
 
     def create(self):
-        items = json.loads(self.items)
+        # items = json.loads(self.items)
         self.kwargs["options"] = self.options
 
-        items = Config.beautify_config_array(items, self.project_config_file)
+        # Split string with \n separated items into an array
+        # self.items = Config.split_config_lines_to_list(self.items)
+
+        # add the configuration file to the configuration section
+        # self.items = Config.beautify_config_array(self.items, self.project_config_file)
 
         # iterate over all items in the project file
-        for item in items:
-            if len(item) == 1:
-                # Section is in the Project file
-                Single.create(**self.kwargs)
-            elif len(item) == 2:
-                # config_section is in a separate file
-                Single.create(**self.kwargs)
+        for item in self.items:
+            config = self.kwargs.copy()
+            config[Cc.config_file_and_section] = item
+            Single.create(**config)

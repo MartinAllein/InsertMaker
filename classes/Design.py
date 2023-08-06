@@ -107,7 +107,8 @@ class Design(ABC):
 
     def __init__(self, args):
 
-        self.config_file, self.config_section = Config.get_config_file_and_section(args.get(C.config_file_and_section))
+        # self.config_file, self.config_section = Config.get_config_file_and_section(args.get(C.config_file_and_section))
+        self.config_file_and_section = args.get(C.config_file_and_section)
 
         options = {}
         if 'options' in args:
@@ -130,7 +131,7 @@ class Design(ABC):
                          }
 
         # Overwrite the internal default config with the settings from the Insertmaker.config
-        self.__read_config(self.__DEFAULT_CONFIG_FILE, self.__DEFAULT_SECTION_NAME)
+        self.__read_config(f"{self.__DEFAULT_CONFIG_FILE}{C.config_separator}{self.__DEFAULT_SECTION_NAME}")
 
         # Overwrite the combined default/InsertMaker settings with the ones from the command line
         self.__update_settings_with_options(options)
@@ -509,22 +510,6 @@ class Design(ABC):
         """
         return int(value * self.__conversion_factor[self.settings["unit"]]) / 10000
 
-    @staticmethod
-    def validate_config_and_section(classname, config: str, section: str) -> None:
-        """
-        Verifies if a configuration file and section is set.
-        :param classname: class to verify. Only needed for output
-        :param config: config file name
-        :param section: section name
-        :return:
-        """
-        if config is None or config == "":
-            print(f"No configuration file for Design {classname}")
-            sys.exit(-1)
-
-        if section is None or section == "":
-            print(f"No section for configuration file {config}")
-            sys.exit(-1)
 
     @staticmethod
     def get_options(value: dict) -> dict:
@@ -592,28 +577,26 @@ class Design(ABC):
         if self.settings["filename"]:
             self.settings['filename'] = File.set_svg_extension(self.settings["filename"])
 
-    def load_settings(self, config_file: str, section: str) -> None:
+    def load_settings(self, config_file_and_section: str) -> None:
         """
         Reads in a section from a configuration file.
-        :param config_file: filename with path of the config file
-        :param section: section from the config file to read
+        :param config_file_and_section: filename with path of the config file
         :param verbose: be verbose of the import
         :param payload: default and optional values
         :return: config object
         """
-        self.validate_config_and_section(__class__.__name__, config_file, section)
-
-        self.__read_config(config_file, section)
+        self.__read_config(config_file_and_section)
 
         self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
 
-    def __read_config(self, filename: str, section: str):
+    def __read_config(self, filename_and_section: str):
         """ Read configuration from file and convert numbers from string to int/float
 
         """
 
         error = ""
-        config = Config.read_config(filename, section)
+        config = Config.read_config(filename_and_section)
+        filename, section = Config.get_config_file_and_section(filename_and_section)
 
         # copy values of all key in the config to the settings. Convert numbers from string to int/float
         self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
@@ -692,7 +675,7 @@ class Design(ABC):
         return retval
 
     @staticmethod
-    def split_config_lines_to_list(config_array: str, item_count: int) -> list:
+    def split_config_lines_to_list_____(config_array: str, item_count: int) -> list:
         retval = []
 
         if len(config_array) == 0:
