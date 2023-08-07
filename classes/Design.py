@@ -690,21 +690,6 @@ class Design(ABC):
 
         return retval
 
-    def get_config_file_and_section(self, default_filename: str, file_and_section: str):
-        filename = default_filename
-        section = ""
-        split = file_and_section.rsplit(os.sep, 1)
-        if len(split) == 2:
-            filename = split[0]
-            section = split[1]
-        else:
-            section = split[0]
-        return filename, section
-
-
-
-
-
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
 

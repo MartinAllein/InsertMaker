@@ -6,6 +6,7 @@ from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ItemBoxPartition import ItemBoxPartition
 from classes.ConfigConstants import ConfigConstants as Cc
+from classes.Config import Config
 
 
 class C:
@@ -161,13 +162,10 @@ class ItemBox(Design):
         if "partitions config" not in self.settings:
             return
 
-        config_file, config_section = self.get_config_file_and_section(self.config_file,
-                                                                       self.settings[C.partitions_config])
+        # config_file, config_section = Config.get_config_file_and_section(self.config_file_and_section)
 
         itembox_separation_arguments = {}
-        itembox_separation_arguments.update({Cc.config_file: config_file,
-                                             Cc.config_section: config_section
-                                             })
+        itembox_separation_arguments.update({Cc.config_file_and_section: self.config_file_and_section})
 
         # noinspection DuplicatedCode
         itembox_separation_arguments.update(

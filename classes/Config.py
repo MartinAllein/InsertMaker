@@ -162,15 +162,29 @@ class Config:
 
     @staticmethod
     def get_config_file_and_section(file_and_section: str, default_filename=None) -> (str, str):
+        """ Split configuration with filename and section into separate parts. Also test if the
+        file is existing.
+
+        :param file_and_section: configuration file and section in the format filename#section
+        :param default_filename: Filename to precede when only section is given.
+        :return:
+        """
+
+        # If there is a default filename and the first parameter is missing the # separator
+        # then this is only the section of the configuration
+        # Combine default filename with section and seperator to full config information
         if default_filename is not None and "#" not in file_and_section:
             file_and_section = f"{default_filename}{c.config_separator}{file_and_section}"
 
+        # If the separation character is missing here then there is no valid config information.
         if c.config_separator not in file_and_section:
             print(f"Missing section for config file {file_and_section}. I.e. /foo/bar#the_section")
             sys.exit(-1)
 
-        split = file_and_section.rsplit(c.config_separator, 1)
+        # split config informsation at config separator
+        split = file_and_section.rsplit(c.config_separator)
 
+        # Only one separation character is allowed.
         if len(split) != 2:
             print(f"There must be only a single separator '{c.config_separator}' in the {file_and_section}.")
             sys.exit(-1)
@@ -178,8 +192,8 @@ class Config:
         filename = split[0]
         section = split[1]
 
-        if not filename.endswith(f".{c.config_file_extension}"):
-            filename = File.path_and_extension("", filename, c.config_file_extension)
+        # if the config file is missing the extension so append it.
+        filename = File.path_and_extension("", filename, c.config_file_extension)
 
         # Test if configuration file exists
         if not os.path.isfile(filename):
@@ -189,7 +203,14 @@ class Config:
         return filename, section
 
     @staticmethod
-    def beautify_config_array(configs: list, filename: str) -> list:
+    def normalize_config_file_and_section(configs: list, filename: str) -> list:
+        """ Complete the items in the list of configurations that they are all in the
+        format of filename#section.
+
+        :param configs: List of configurations
+        :param filename: filename to prefix to the section.
+        :return: list of configurations in the format filename#section
+        """
         retval = []
         for config in configs:
             fn, cf = Config.get_config_file_and_section(config, filename)
@@ -198,13 +219,20 @@ class Config:
         return retval
 
     @staticmethod
-    def split_config_lines_to_list(config_array: str, items_per_line=0) -> list:
+    def split_config_lines_to_list(config_string: str, items_per_line=0) -> list:
+        """ Split a string with CR separated elements into a list of elemets. If an element
+        has comma separated items in an element so split these and check if there are the correct number of items.
+
+        :param config_string: String with the \n separated Elemets
+        :param items_per_line: Number of items per configuration line. 0 means no checking
+        :return: list of configuration elements
+        """
         retval = []
 
-        if len(config_array) == 0:
+        if len(config_string) == 0:
             return retval
 
-        items = list(filter(None, (x.strip() for x in config_array.splitlines())))
+        items = list(filter(None, (x.strip() for x in config_string.splitlines())))
 
         for item in items:
             item = item.replace('"', '').replace("'", '')
@@ -213,6 +241,8 @@ class Config:
             if "," in item:
                 if len(item.split(",")) == items_per_line or items_per_line == 0:
                     retval.append(item.split(","))
+                else:
+                    print(f"Wrong number of items in line '{item}' (Expect {items_per_line} items).")
             else:
                 retval.append(item)
         return retval

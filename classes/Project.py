@@ -56,7 +56,7 @@ class Project:
 
         self.items = config.get(self.__PROJECT_SECTION, 'items')
         self.items = Config.split_config_lines_to_list(self.items)
-        self.items = Config.beautify_config_array(self.items, self.project_config_file)
+        self.items = Config.normalize_config_file_and_section(self.items, self.project_config_file)
 
         self.options = {}
 
