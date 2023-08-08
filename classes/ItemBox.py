@@ -5,7 +5,7 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ItemBoxPartition import ItemBoxPartition
-from classes.ConfigConstants import ConfigConstants as Cc
+from classes.ConfigConstants import ConfigConstantsText as Cc
 from classes.Config import Config
 
 
@@ -98,7 +98,7 @@ class ItemBox(Design):
                               }
                              )
 
-        self.add_settings_measures(["length", "width", "height", "vertical separation", "thumbhole radius",
+        self.add_settings_measures([Cc.length, Cc.width, Cc.height, "vertical separation", "thumbhole radius",
                                     "corner gap", "slot width",
                                     ])
 

@@ -2,7 +2,7 @@ import argparse
 import sys
 from classes.Project import Project
 from classes.Single import Single
-from classes.ConfigConstants import ConfigConstants as C
+from classes.ConfigConstants import ConfigConstantsText as Cc
 
 
 def parse_arguments():
@@ -27,26 +27,25 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     kwargs = {}
+
     # Verbose output
     verbose = False
     if args.v:
-        kwargs["verbose"] = True
+        kwargs[Cc.verbose] = True
 
     noprint = False
     if args.n:
-        kwargs["noprint"] = True
-
-    # test if insertmaker.config exists
+        kwargs[Cc.noprint] = True
 
     # configuration file
     if args.c:
-        kwargs[C.config_file_and_section] = args.c
+        kwargs[Cc.config_file_and_section] = args.c
 
         single = Single.create(**kwargs)
         sys.exit(0)
 
     if args.p:
-        kwargs[C.config_file] = args.p
+        kwargs[Cc.config_file] = args.p
         project = Project(**kwargs)
         project.create()
         sys.exit(0)

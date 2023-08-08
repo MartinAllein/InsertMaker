@@ -1,8 +1,7 @@
 import sys
 import json
-import os
 from json import JSONDecodeError
-from  xml.etree import ElementTree
+from xml.etree import ElementTree
 from xml.dom import minidom
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -11,10 +10,8 @@ from classes.Direction import Direction, Rotation
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.File import File
-from classes.ConfigConstants import ConfigConstants as C
-
-FILENAME = '$FILENAME$'
-TEMPLATE = 'TEMPLATE NAME'
+from classes.ConfigConstants import ConfigConstantsText as Ct
+from classes.ConfigConstants import ConfigConstantsTemplate as Cm
 
 """ Order of Configuration is
     Default configuration in insertmaker.config
@@ -30,10 +27,10 @@ class Design(ABC):
     __PRECISION = 4
 
     # resolution of the SVG drawing. Standard for the Cricut is 72dpi
+    # TODO: Resolution as parameter for the config
     __RESOLUTION = 72
 
     # XML element definitions
-    __DEFAULT_XML_LINE = '<line x1="%s" y1="%s"  x2="%s" y2="%s" />\n'
     __DEFAULT_XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
     __DEFAULT_XML_PATH_NOMOVE = '<path d="A %s %s 0 0 %s %s %s"/>\n'
 
@@ -51,17 +48,12 @@ class Design(ABC):
     __DEFAULT_STROKE_WIDTH = 2
 
     # Default path  and extension definitions
-    __CONFIG_EXTENSION = "config"
     __TEMPLATE_PATH = "templates"
 
     # unit definitions
-    __UNIT_MM_TEXT = 'mm'
-    __UNIT_MIL_TEXT = 'mil'
+    __UNIT_MM_TEXT = Ct.unit_mm
+    __UNIT_MIL_TEXT = Ct.unit_mil
     __DEFAULT_UNIT = __UNIT_MM_TEXT
-
-    xml_line = __DEFAULT_XML_LINE
-    xml_path = __DEFAULT_XML_PATH
-    # unit_mm = True
 
     # Default measure keys, text keys
     # x offset       : left offset of the whole SVG drawing
@@ -69,20 +61,20 @@ class Design(ABC):
     # y text spacing : vertical spacing of the describing text lines at the bottom of the drawing
     # thickness      : thickness of the uses material
     # stroke width   : stroke width of the lines in the SVG drawing
-    __settings_standard_measures = ["x offset", "y offset", "y text spacing", "thickness", "stroke width"]
+    __settings_standard_measures = [Ct.x_offset, Ct.y_offset, Ct.y_text_spacing, Ct.thickness, Ct.stroke_width]
 
     # unit             : used unit in the settings (mm or mil)
     # stroke color     : color of the lines drawn in the SVG image
     # stroke dasharray : pattern of the lines drawn in the SVG image
     # resolution       : resolution of the SVG drawing
-    __settings_standard_texts = ["unit", "stroke color", "stroke dasharray", "resolution"]
+    __settings_standard_texts = [Ct.unit, Ct.stroke_color, Ct.stroke_dasharray, Ct.resolution]
 
     # The nonstandard keys are design dependend and cannot be in the global settings InsertMaker.config
     # title         : title of the drawing
     # filename      : filename of the utput file
     # project name  : project (i.e. boardgame) to which the design belongs
     # template name : SVG template to use for the design
-    __settings_nonstandards = ["title", "filename", "project name", "template name"]
+    __settings_nonstandards = [Ct.title, Ct.filename, Ct.project_name, Ct.template_name]
 
     # all measure keys
     __settings_measures = __settings_standard_measures
@@ -96,9 +88,9 @@ class Design(ABC):
     # enumerations in config
     __settings_enum = {}
 
-    # conversion values for mm<->tdpi and mil <-> tdpi
-    __conversion_factor = {"mm": (__RESOLUTION * 10000) / 25.4,
-                           "mil": (__RESOLUTION * 10000)
+    # conversion values for unit<->tdpi
+    __conversion_factor = {Ct.unit_mm: (__RESOLUTION * 10000) / 25.4,
+                           Ct.unit_mil: (__RESOLUTION * 10000)
                            }
 
     __default_configuration = {}
@@ -107,43 +99,36 @@ class Design(ABC):
 
     def __init__(self, args):
 
-        # self.config_file, self.config_section = Config.get_config_file_and_section(args.get(C.config_file_and_section))
-        self.config_file_and_section = args.get(C.config_file_and_section)
+        self.config_file_and_section = args.get(Ct.config_file_and_section)
 
         options = {}
-        if 'options' in args:
-            options = args["options"]
+        if Ct.options in args:
+            options = args.get(Ct.options)
 
         # default settings
-        self.settings = {'x offset': self.__DEFAULT_X_OFFSET,
-                         'y offset': self.__DEFAULT_Y_OFFSET,
-                         'y text spacing': self.__DEFAULT_Y_TEXT_SPACING,
-                         'thickness': self.__DEFAULT_THICKNESS,
-                         'title': f"{__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-                         'filename': "",
-                         'project name': "",
-                         'template name': "",
-                         'unit': self.__DEFAULT_UNIT,
-                         'resolution': self.__RESOLUTION,
-                         'stroke color': self.__DEFAULT_STROKE_COLOR,
-                         'stroke width': self.__DEFAULT_STROKE_WIDTH,
-                         'stroke dasharray': self.__DEFAULT_STROKE_DASHARRAY,
+        self.settings = {Ct.x_offset: self.__DEFAULT_X_OFFSET,
+                         Ct.y_offset: self.__DEFAULT_Y_OFFSET,
+                         Ct.y_text_spacing: self.__DEFAULT_Y_TEXT_SPACING,
+                         Ct.thickness: self.__DEFAULT_THICKNESS,
+                         Ct.title: f"{__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                         Ct.filename: "",
+                         Ct.project_name: "",
+                         Ct.template_name: "",
+                         Ct.unit: self.__DEFAULT_UNIT,
+                         Ct.resolution: self.__RESOLUTION,
+                         Ct.stroke_color: self.__DEFAULT_STROKE_COLOR,
+                         Ct.stroke_width: self.__DEFAULT_STROKE_WIDTH,
+                         Ct.stroke_dasharray: self.__DEFAULT_STROKE_DASHARRAY,
                          }
 
         # Overwrite the internal default config with the settings from the Insertmaker.config
-        self.__read_config(f"{self.__DEFAULT_CONFIG_FILE}{C.config_separator}{self.__DEFAULT_SECTION_NAME}")
+        self.__read_config(f"{self.__DEFAULT_CONFIG_FILE}{Ct.config_separator}{self.__DEFAULT_SECTION_NAME}")
 
         # Overwrite the combined default/InsertMaker settings with the ones from the command line
         self.__update_settings_with_options(options)
 
-        self.verbose: bool = False
-        self.noprint: bool = False
-
-        if "verbose" in args and args["verbose"] is True:
-            self.verbose = True
-
-        if "noprint" in args and args["noprint"] is True:
-            self.noprint = True
+        self.verbose = args.get(Ct.verbose, False)
+        self.noprint = args.get(Ct.noprint, False)
 
         # corner points for the designs
         self.corners: list[float] = []
@@ -187,20 +172,20 @@ class Design(ABC):
         # https://stackoverflow.com/questions/11358411/silently-removing-key-from-a-python-dict
         for k in self.__settings_measures:
             # with pop missing keys will not raise an exception
-            self.settings.pop(k + '_tdpi', None)
+            self.settings.pop(k + Ct.tdpi, None)
 
-        # convert all keys to tdpi and add '_tdpi' to the key from the list of measures to be converted
+        # copy all measure keys to tdpi and add '_tdpi' to the key from the list of measures to be converted
         self.settings.update(
-            {k + "_tdpi": self.to_tdpi(self.settings[k]) for k in self.__settings_measures})
+            {k + Ct.tdpi: self.to_tdpi(self.settings[k]) for k in self.__settings_measures})
 
         return
 
     def conversion_factor(self) -> float:
         """
-        Delivers the factor for a unit to tdpi conversion
+        Delivers the factor for a unit to convert to tdpi
         :return: conversion factor
         """
-        return Design.__conversion_factor[self.settings['unit']]
+        return Design.__conversion_factor[self.settings[Ct.unit]]
 
     def to_tdpi(self, value: float) -> int:
         """ Converts a native unit (mm/mil) to tdpi
@@ -269,9 +254,9 @@ class Design(ABC):
         """
         Draws a half circle SVG path
         :param corners: all points of the drawing
-        :param path: start and end points, directon of arc
-        :param move_to
-        :return: XML string with <path />
+        :param points: start and end points, directon of arc
+        :param move_to: Optional. True include an M to move, False not
+        :return: string with <path />
         """
         path = ""
         start_x, start_y, end_x, end_y, diameter, rotation = Design.get_coords_for_arc(corners, points)
@@ -293,13 +278,12 @@ class Design(ABC):
         """
         Draws a quarter circle SVG path
         :param corners: all points of the drawing
-        :param move_to:
-        :param points:
+        :param move_to: Optional. True include an M to move, False not
+        :param points: Start and endpoints
         :return: XML string with <path />
         """
         path = ""
         start_x, start_y, end_x, end_y, radius, rotation = Design.get_coords_for_arc(corners, points)
-        # print(start_x , start_y, end_x, end_y)
 
         if radius == 0:
             return ""
@@ -332,11 +316,11 @@ class Design(ABC):
         return start_x, start_y, end_x, end_y, radius, rotation.value
 
     @staticmethod
-    def draw_thumbhole_path(corners, path):
+    def draw_thumbhole_path(corners: list, path: list):
         """
         Creates an --\\----/--- for thumb retrieve
         :param corners: Corners of design
-        :param path: path for the thumb hole
+        :param path: path for the thumbhole
         :return:
         """
         start_x, start_y = corners[path[0]]
@@ -366,6 +350,7 @@ class Design(ABC):
 
     @staticmethod
     def __draw_arc(start_x, start_y, radius, direction, end_x, end_y, move_to=True):
+        # TODO: Remove __DEFAULT_XML_PATH
         return Design.__DEFAULT_XML_PATH % (
             Design.thoudpi_to_dpi(start_x), Design.thoudpi_to_dpi(start_y), Design.thoudpi_to_dpi(radius),
             Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x), Design.thoudpi_to_dpi(end_y))
@@ -377,6 +362,7 @@ class Design(ABC):
             output = f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {direction} " \
                      f"{Design.thoudpi_to_dpi(end_x)}{Design.thoudpi_to_dpi(end_y)} "
         else:
+            # TODO: Remove __DEFAULT_XML_PATH
             output = Design.__DEFAULT_XML_PATH_NOMOVE % (
                 Design.thoudpi_to_dpi(radius), Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x),
                 Design.thoudpi_to_dpi(end_y))
@@ -384,6 +370,12 @@ class Design(ABC):
 
     @staticmethod
     def draw_lines(corners: list, lines: list) -> str:
+        """
+        Drav path according using the list of lines with the given corners.
+        :param corners: corner coordinates
+        :param lines: Style and information for drawing lines, arcs, thumbhiles, ...
+        :return: XML Path element
+        """
         xml_lines = ""
         for command, values in lines:
             if command == PathStyle.LINE:
@@ -432,41 +424,40 @@ class Design(ABC):
         if self.settings["filename"] == "":
             raise "No filename given"
 
-        if self.settings["template name"]:
-            template_values['TEMPLATE NAME'] = self.settings["template name"]
+        template_values[Cm.template_name] = self.settings.get(Ct.template_name, "")
 
-        if TEMPLATE not in template_values:
+        if Ct.template == "":
             raise " No template given"
 
-        if 'VIEWBOX_X' not in template_values:
+        if Cm.viewbox_x not in template_values:
             raise "VIEWBOX X is missing"
 
-        if 'VIEWBOX_Y' not in template_values:
+        if Cm.viewbox_y not in template_values:
             raise "VIEWBOX Y is missing"
 
-        template_string = Template.load_template(template_values[TEMPLATE])
+        template_string = Template.load_template(template_values[Ct.template])
 
-        self.template["$UNIT$"] = self.settings["unit"]
+        self.template[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
 
         # modify FILENAME with leading and trailing $
-        self.template["$FOOTER_PROJECT_NAME$"] = self.settings["project name"]
-        self.template["$FOOTER_TITLE$"] = self.settings["title"]
-        self.template["$HEADER_TITLE$"] = self.settings["title"]
+        self.template[Cm.footer_project_name] = self.settings.get(Ct.project_name, "")
+        self.template[Cm.footer_title] = self.settings.get(Ct.title, "")
+        self.template[Cm.header_title] = self.settings.get(Ct.title, "")
 
-        self.template["$FOOTER_FILENAME$"] = self.settings["filename"]
-        self.template["$FOOTER_ARGS_STRING$"] = self.args_string
-        self.template['$FOOTER_OVERALL_WIDTH$'] = round(self.template['VIEWBOX_X'] / self.conversion_factor(), 2)
-        self.template['$FOOTER_OVERALL_HEIGHT$'] = round(self.template['VIEWBOX_Y'] / self.conversion_factor(), 2)
+        self.template[Cm.footer_filename] = self.settings.get(Ct.filename, "")
+        self.template[Cm.footer_args_string] = self.args_string
+        self.template[Cm.footer_overall_width] = round(self.template[Cm.viewbox_x] / self.conversion_factor(), 2)
+        self.template[Cm.footer_overall_height] = round(self.template[Cm.viewbox_y] / self.conversion_factor(), 2)
 
-        self.template["$LABEL_X$"] = self.thoudpi_to_dpi(self.left_x)
+        self.template[Cm.label] = self.thoudpi_to_dpi(self.left_x)
 
-        ycoord = self.template['VIEWBOX_Y']
-        self.template["$LABEL_PROJECT_Y$"] = self.thoudpi_to_dpi(ycoord + self.settings["y text spacing_tdpi"])
-        self.template["$LABEL_Y_SPACING$"] = self.thoudpi_to_dpi(self.settings["y text spacing_tdpi"])
+        ycoord = self.template[Cm.viewbox_y]
+        self.template[Cm.label_project_y] = self.thoudpi_to_dpi(ycoord + self.settings[Ct.y_text_spacing_tdpi])
+        self.template[Cm.label_y_spacing] = self.thoudpi_to_dpi(self.settings[Ct.y_text_spacing_tdpi])
 
-        all_footers = [i for i in self.template if i.startswith('$FOOTER_')]
-        self.template['$VIEWBOX$'] = f"{self.thoudpi_to_dpi(self.template['VIEWBOX_X'])} " \
-                                     f" {self.thoudpi_to_dpi(self.template['VIEWBOX_Y'] + (len(all_footers) + 2) * self.settings['y text spacing_tdpi'])} "
+        all_footers = [i for i in self.template if i.startswith(Cm.footer_dash)]
+        self.template[Cm.viewbox] = f"{self.thoudpi_to_dpi(self.template[Cm.viewbox_x])} " \
+                                    f" {self.thoudpi_to_dpi(self.template[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} "
 
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
@@ -474,7 +465,7 @@ class Design(ABC):
         template_string = self.remove_xml_labels(template_string)
         template_string = self.remove_xml_labels(template_string)
 
-        with open(f"{self.settings['filename']}", 'w') as f:
+        with open(f"{self.settings.get(Ct.filename)}", 'w') as f:
             f.write(template_string)
 
     def remove_xml_labels(self, template_string):
@@ -490,7 +481,7 @@ class Design(ABC):
         newdom = minidom.parseString(ElementTree.tostring(root))
         xmlstr = '\n'.join([line for line in newdom.toprettyxml(indent=' ' * 2).split('\n') if line.strip()])
 
-        return  xmlstr
+        return xmlstr
 
     def tpi_to_unit(self, value: float) -> float:
         """
@@ -510,12 +501,11 @@ class Design(ABC):
         """
         return int(value * self.__conversion_factor[self.settings["unit"]]) / 10000
 
-
     @staticmethod
     def get_options(value: dict) -> dict:
         options = {}
-        if 'options' in value:
-            options = value['options']
+        if Ct.options in value:
+            options = value.get(Ct.options)
 
         return options
 
@@ -566,16 +556,12 @@ class Design(ABC):
         if name is None or name == "":
             return
 
-        if not self.settings["title"]:
+        if Ct.title not in self.settings:
             # set default title
             self.settings['title'] = name
 
         # set default filename for output
-        if not self.settings["filename"]:
-            self.settings["filename"] = name
-
-        if self.settings["filename"]:
-            self.settings['filename'] = File.set_svg_extension(self.settings["filename"])
+        self.settings[Ct.filename] = File.set_svg_extension(self.settings.get(Ct.filename, name))
 
     def load_settings(self, config_file_and_section: str) -> None:
         """
@@ -655,18 +641,14 @@ class Design(ABC):
             return value
 
     def get_project_name_for_title(self, prefix="", postfix="-"):
-        return f"{'' if len(self.settings['project name']) == 0 else prefix + self.settings['project name'] + postfix}"
+        return f"{'' if len(self.settings.get(Ct.project_name)) == 0 else prefix + self.settings.get(Ct.project_name) + postfix}"
 
-    def set_viewbox(self, x, y):
-        return round(self.settings["x offset_tdpi"] + x), round(self.settings["y offset_tdpi"] + y)
+    def set_viewbox(self, x: int, y: int):
+        return round(self.settings.get(Ct.x_offset_tdpi) + x), round(self.settings.get(Ct.y_offset_tdpi) + y)
 
     @staticmethod
     def get_string_or_list(value):
         retval = ""
-        #if isinstance(value, list):
-        #    retval = json.loads(value)
-        #else:
-        #    retval = value
         try:
             retval = json.loads(value)
         except JSONDecodeError as e:

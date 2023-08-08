@@ -1,7 +1,7 @@
 import importlib
 import sys
 from classes.Config import Config
-from classes.ConfigConstants import ConfigConstants as C
+from classes.ConfigConstants import ConfigConstantsText as C
 
 
 class Single:

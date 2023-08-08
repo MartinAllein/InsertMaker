@@ -2,7 +2,7 @@ import configparser
 import os
 import sys
 from classes.File import File
-from classes.ConfigConstants import ConfigConstants as c
+from classes.ConfigConstants import ConfigConstantsText as c
 
 
 class C:

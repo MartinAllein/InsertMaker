@@ -4,7 +4,7 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.Config import Config
-from classes.ConfigConstants import ConfigConstants as Cc
+from classes.ConfigConstants import ConfigConstantsText as Cc
 
 
 class C:
@@ -84,7 +84,7 @@ class ItemBoxPartition(Design):
                               }
                              )
 
-        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "thumbhole small radius",
+        self.add_settings_measures([Cc.thickness, Cc.width, Cc.height, "thumbhole radius", "thumbhole small radius",
                                     "longhole radius", "longhole rest height", "vertical separation",
                                     "mounting hole length", "tolerance", "height reduction"])
 
@@ -191,7 +191,7 @@ class ItemBoxPartition(Design):
         #                          |        |
         #   n                      08-------10
 
-        self.add_settings_measures(["thickness", "width", "height", "thumbhole radius", "longhole radius",
+        self.add_settings_measures([Cc.thickness, Cc.width, Cc.height, "thumbhole radius", "longhole radius",
                                     "longhole rest height", "vertical separation", "mounting hole length",
                                     "tolerance", "height reduction"])
 

@@ -5,8 +5,8 @@ import sys
 import classes.Project
 from classes.Single import Single
 from classes.Config import Config
-from classes.ConfigConstants import ConfigConstants as Cc
-
+from classes.ConfigConstants import ConfigConstantsText as Ct
+from classes.ConfigConstants import ConfigConstantsTemplate as Cm
 
 class Project:
     __PROJECT_SECTION = "Project"
@@ -17,8 +17,8 @@ class Project:
     def __init__(self, **kwargs):
 
         self.project_config_file = ""
-        if Cc.config_file in kwargs:
-            self.project_config_file = kwargs[Cc.config_file]
+        if Ct.config_file in kwargs:
+            self.project_config_file = kwargs[Ct.config_file]
 
         project_config_file = self.project_config_file
         self.kwargs = kwargs
@@ -32,7 +32,7 @@ class Project:
         if not Config.section_exists(sections, self.__PROJECT_SECTION):
             print(f"Missing section Project in file {project_config_file}")
 
-        self.__read_config(f"{project_config_file}{Cc.config_separator}{self.__PROJECT_SECTION}")
+        self.__read_config(f"{project_config_file}{Ct.config_separator}{self.__PROJECT_SECTION}")
 
     @staticmethod
     def parse_arguments():
@@ -60,25 +60,26 @@ class Project:
 
         self.options = {}
 
-        if config.has_option(self.__PROJECT_SECTION, Cc.project_name):
-            self.name = config.get(self.__PROJECT_SECTION, Cc.project_name)
-            self.options[Cc.project_name] = self.options.get(Cc.project_name, "")
+        if config.has_option(self.__PROJECT_SECTION, Ct.project_name):
+            self.name = config.get(self.__PROJECT_SECTION, Ct.project_name)
+            self.options[Ct.project_name] = self.options.get(Ct.project_name, "")
 
-        if config.has_option(self.__PROJECT_SECTION, Cc.x_offset):
-            self.x_offset = float(config.get(self.__PROJECT_SECTION, Cc.x_offset))
-            self.options[Cc.x_offset] = self.x_offset
+        if config.has_option(self.__PROJECT_SECTION, Ct.x_offset):
+            self.x_offset = float(config.get(self.__PROJECT_SECTION, Ct.x_offset))
+            self.options[Ct.x_offset] = self.x_offset
 
-        if config.has_option(self.__PROJECT_SECTION, Cc.y_offset):
-            self.y_offset = float(config.get(self.__PROJECT_SECTION, Cc.y_offset))
-            self.options[Cc.y_offset] = self.y_offset
+        if config.has_option(self.__PROJECT_SECTION, Ct.y_offset):
+            self.y_offset = float(config.get(self.__PROJECT_SECTION, Ct.y_offset))
+            self.options[Ct.y_offset] = self.y_offset
 
-        if config.has_option(self.__PROJECT_SECTION, Cc.thickness):
-            self.thickness = float(config.get(self.__PROJECT_SECTION, Cc.thickness))
-            self.options[Cc.thickness] = self.thickness
+        if config.has_option(self.__PROJECT_SECTION, Ct.thickness):
+            self.thickness = float(config.get(self.__PROJECT_SECTION, Ct.thickness))
+            self.options[Ct.thickness] = self.thickness
 
-        if config.has_option(self.__PROJECT_SECTION, Cc.y_text_spacing):
-            self.y_text_spacing = float(config.get(self.__PROJECT_SECTION, Cc.y_text_spacing))
-            self.options[Cc.y_text_spacing] = self.y_text_spacing
+        if config.has_option(self.__PROJECT_SECTION, Ct.y_text_spacing):
+
+            self.y_text_spacing = float(config.get(self.__PROJECT_SECTION, Ct.y_text_spacing))
+            self.options[Ct.y_text_spacing] = self.y_text_spacing
 
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
@@ -104,5 +105,5 @@ class Project:
         # iterate over all items in the project file
         for item in self.items:
             config = self.kwargs.copy()
-            config[Cc.config_file_and_section] = item
+            config[Ct.config_file_and_section] = item
             Single.create(**config)

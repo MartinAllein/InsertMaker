@@ -4,6 +4,7 @@ from datetime import datetime
 from classes.PathStyle import PathStyle
 from classes.Template import Template
 from classes.Direction import Rotation
+from classes.ConfigConstants import ConfigConstantsText as Cc
 
 
 class EnfordeDesign(Enum):
@@ -75,7 +76,7 @@ class CardBox(Design):
                               }
                              )
 
-        self.add_settings_measures(["length", "width", "height", "vertical separation", "slot width",
+        self.add_settings_measures([Cc.length, Cc.width, Cc.height, Cc.vertical_separation, "slot width",
                                     "corner gap", "funnel top width", "funnel bottom width", "funnel neck height",
                                     "center nose width"])
 
@@ -282,10 +283,10 @@ class CardBox(Design):
         #                         |                          length                                |
         #  ac                     19--------------------------------------------------------------61
 
-        length = self.settings["length_tdpi"]
-        height = self.settings["height_tdpi"]
-        width = self.settings["width_tdpi"]
-        thickness = self.settings["thickness_tdpi"]
+        length = self.settings.get(Cc.length_tdpi)
+        height = self.settings.get(Cc.height_tdpi)
+        width = self.settings.get(Cc.width_tdpi)
+        thickness = self.settings.get(Cc.thickness_tdpi)
 
         slot_width = self.settings["slot width_tdpi"]
         corner_gap = self.settings["corner gap_tdpi"]
