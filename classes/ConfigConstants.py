@@ -66,4 +66,7 @@ class ConfigConstantsTemplate:
     label_y_spacing = "$LABEL_Y_SPACING$"
     footer_dash = '$FOOTER_'
     viewbox = '$VIEWBOX$'
+    id = '$ID$'
+    svgpath = '$SVGPATH$'
+    translate = '$TRANSLATE$'
 
