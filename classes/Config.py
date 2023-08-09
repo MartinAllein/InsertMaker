@@ -186,7 +186,7 @@ class Config:
 
         # Only one separation character is allowed.
         if len(split) != 2:
-            print(f'There must be only a single separator '{c.config_separator}' in the {file_and_section}.')
+            print(f'There must be only a single separator "{c.config_separator}" in the {file_and_section}.')
             sys.exit(-1)
 
         filename = split[0]
