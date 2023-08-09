@@ -35,20 +35,20 @@ class Design(ABC):
     __DEFAULT_XML_PATH_NOMOVE = '<path d="A %s %s 0 0 %s %s %s"/>\n'
 
     # Default filename and section for the InsertMaker configuration file
-    __DEFAULT_SECTION_NAME = "STANDARD"
-    __DEFAULT_CONFIG_FILE = "InsertMaker.config"
+    __DEFAULT_SECTION_NAME = 'STANDARD'
+    __DEFAULT_CONFIG_FILE = 'InsertMaker.config'
 
     # Fallback settings when InsertMaker.config is missing
     __DEFAULT_X_OFFSET = 1.0
     __DEFAULT_Y_OFFSET = 2.0
     __DEFAULT_Y_TEXT_SPACING = 7
     __DEFAULT_THICKNESS = 1.5
-    __DEFAULT_STROKE_COLOR = "#aaaaaa"
-    __DEFAULT_STROKE_DASHARRAY = "20, 20"
+    __DEFAULT_STROKE_COLOR = '#aaaaaa'
+    __DEFAULT_STROKE_DASHARRAY = '20, 20'
     __DEFAULT_STROKE_WIDTH = 2
 
     # Default path  and extension definitions
-    __TEMPLATE_PATH = "templates"
+    __TEMPLATE_PATH = 'templates'
 
     # unit definitions
     __UNIT_MM_TEXT = Ct.unit_mm
@@ -110,10 +110,10 @@ class Design(ABC):
                          Ct.y_offset: self.__DEFAULT_Y_OFFSET,
                          Ct.y_text_spacing: self.__DEFAULT_Y_TEXT_SPACING,
                          Ct.thickness: self.__DEFAULT_THICKNESS,
-                         Ct.title: f"{__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-                         Ct.filename: "",
-                         Ct.project_name: "",
-                         Ct.template_name: "",
+                         Ct.title: f'{__class__.__name__}-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                         Ct.filename: '',
+                         Ct.project_name: '',
+                         Ct.template_name: '',
                          Ct.unit: self.__DEFAULT_UNIT,
                          Ct.resolution: self.__RESOLUTION,
                          Ct.stroke_color: self.__DEFAULT_STROKE_COLOR,
@@ -235,7 +235,7 @@ class Design(ABC):
 
         start = 1
         if move_to:
-            path = f"M {Design.thoudpi_to_dpi(corners[points[0]][0])} {Design.thoudpi_to_dpi(corners[points[0]][1])} "
+            path = f'M {Design.thoudpi_to_dpi(corners[points[0]][0])} {Design.thoudpi_to_dpi(corners[points[0]][1])} '
         else:
             start = 0
 
@@ -337,7 +337,7 @@ class Design(ABC):
                              [smallradius, -smallradius, 1 - direction]],
         }
 
-        xmlstring = ""
+        xmlstring = ''
         for values in delta[orientation]:
             end_x = start_x + values[0]
             end_y = start_y + values[1]
@@ -357,10 +357,10 @@ class Design(ABC):
 
     @staticmethod
     def __draw_arc_nomove(radius, direction, end_x, end_y, plainpath=False):
-        output = ""
+        output = ''
         if plainpath:
-            output = f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {direction} " \
-                     f"{Design.thoudpi_to_dpi(end_x)}{Design.thoudpi_to_dpi(end_y)} "
+            output = f'A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {direction} ' \
+                     f'{Design.thoudpi_to_dpi(end_x)}{Design.thoudpi_to_dpi(end_y)} '
         else:
             # TODO: Remove __DEFAULT_XML_PATH
             output = Design.__DEFAULT_XML_PATH_NOMOVE % (
@@ -376,7 +376,7 @@ class Design(ABC):
         :param lines: Style and information for drawing lines, arcs, thumbhiles, ...
         :return: XML Path element
         """
-        xml_lines = ""
+        xml_lines = ''
         for command, values in lines:
             if command == PathStyle.LINE:
                 xml_lines += Design.draw_line(corners, values)
@@ -421,19 +421,19 @@ class Design(ABC):
         :return:
         """
 
-        if self.settings["filename"] == "":
+        if self.settings.get(Ct.filename).strip() == '':
             raise "No filename given"
 
-        template_values[Cm.template_name] = self.settings.get(Ct.template_name, "")
+        template_values[Cm.template_name] = self.settings.get(Ct.template_name, '')
 
-        if Ct.template == "":
-            raise " No template given"
+        if Ct.template == '':
+            raise 'No template given'
 
         if Cm.viewbox_x not in template_values:
-            raise "VIEWBOX X is missing"
+            raise 'VIEWBOX X is missing'
 
         if Cm.viewbox_y not in template_values:
-            raise "VIEWBOX Y is missing"
+            raise 'VIEWBOX Y is missing'
 
         template_string = Template.load_template(template_values[Ct.template])
 
@@ -456,8 +456,8 @@ class Design(ABC):
         self.template[Cm.label_y_spacing] = self.thoudpi_to_dpi(self.settings[Ct.y_text_spacing_tdpi])
 
         all_footers = [i for i in self.template if i.startswith(Cm.footer_dash)]
-        self.template[Cm.viewbox] = f"{self.thoudpi_to_dpi(self.template[Cm.viewbox_x])} " \
-                                    f" {self.thoudpi_to_dpi(self.template[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} "
+        self.template[Cm.viewbox] = f'{self.thoudpi_to_dpi(self.template[Cm.viewbox_x])} ' \
+                                    f' {self.thoudpi_to_dpi(self.template[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} '
 
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
@@ -465,7 +465,7 @@ class Design(ABC):
         template_string = self.remove_xml_labels(template_string)
         template_string = self.remove_xml_labels(template_string)
 
-        with open(f"{self.settings.get(Ct.filename)}", 'w') as f:
+        with open(f'{self.settings.get(Ct.filename)}', 'w') as f:
             f.write(template_string)
 
     def remove_xml_labels(self, template_string):
@@ -474,10 +474,10 @@ class Design(ABC):
 
         root = ElementTree.fromstring(template_string)
         for elem in root.iter():
-            if 'id' in elem.attrib and elem.attrib["id"] == "document-labels":
+            if 'id' in elem.attrib and elem.attrib['id'] == 'document-labels':
                 root.remove(elem)
 
-        ElementTree.register_namespace("", "http://www.w3.org/2000/svg")
+        ElementTree.register_namespace('', 'http://www.w3.org/2000/svg')
         newdom = minidom.parseString(ElementTree.tostring(root))
         xmlstr = '\n'.join([line for line in newdom.toprettyxml(indent=' ' * 2).split('\n') if line.strip()])
 
@@ -491,7 +491,7 @@ class Design(ABC):
         :return: unit
         """
 
-        return round(value / self.__conversion_factor[self.settings["unit"]], 2)
+        return round(value / self.__conversion_factor[self.settings.get(Ct.unit)], 2)
 
     def to_dpi(self, value: float) -> float:
         """
@@ -499,7 +499,7 @@ class Design(ABC):
         :param value: value to convert
         :return: DPI value
         """
-        return int(value * self.__conversion_factor[self.settings["unit"]]) / 10000
+        return int(value * self.__conversion_factor[self.settings.get(Ct.unit)]) / 10000
 
     @staticmethod
     def get_options(value: dict) -> dict:
@@ -558,7 +558,7 @@ class Design(ABC):
 
         if Ct.title not in self.settings:
             # set default title
-            self.settings['title'] = name
+            self.settings[Ct.title] = name
 
         # set default filename for output
         self.settings[Ct.filename] = File.set_svg_extension(self.settings.get(Ct.filename, name))
@@ -573,7 +573,7 @@ class Design(ABC):
         """
         self.__read_config(config_file_and_section)
 
-        self.set_title_and_outfile(f"{self.__class__.__name__}-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+        self.set_title_and_outfile(f'{self.__class__.__name__}-{datetime.now().strftime("%Y%m%d-%H%M%S")}')
 
     def __read_config(self, filename_and_section: str):
         """ Read configuration from file and convert numbers from string to int/float
@@ -600,15 +600,15 @@ class Design(ABC):
                     # convert the config data into an enum by string
                     self.settings[key] = self.__settings_enum[key](value)
                 except ValueError as e:
-                    error += f"Unknown value for {key} in {filename} section {section}. Current value \"{value}\". " \
-                             f"Allowed values are {[e.value for e in self.__settings_enum[key]]}"
+                    error += f'Unknown value for {key} in {filename} section {section}. Current value \'{value}\'. ' \
+                             f'Allowed values are {[e.value for e in self.__settings_enum[key]]}'
 
         # iterate through all boolean settings
         for key in self.__settings_boolean:
             if config.has_option(section, key):
                 self.settings[key] = False
                 value = config.get(section, key)
-                if value.lower() in ["y", "yes", "1", "t", "true"]:
+                if value.lower() in ['y', 'yes', '1', 't', 'true']:
                     self.settings[key] = True
 
         if len(error) != 0:
@@ -667,8 +667,8 @@ class Design(ABC):
 
         for item in items:
             item = item.replace('"', '')
-            if len(item.split(",")) == item_count:
-                retval.append(item.split(","))
+            if len(item.split(',')) == item_count:
+                retval.append(item.split(','))
 
         return retval
 
