@@ -111,7 +111,7 @@ class CardSheet(Design):
         x_measure = self.settings.get(C.x_measure)
         y_measure = self.settings[C.y_measure]
 
-        output = ""
+        output = ''
         for row in range(rows):
             for col in range(columns):
                 svgpath = base_cut[self.__CUTLINES_CARD_FULL]
@@ -133,11 +133,11 @@ class CardSheet(Design):
                     elif row != 0 and col != 0:
                         svgpath = base_cut[self.__CUTLINES_CARD_TOPLEFT_OPEN]
 
-                template = {Cm.id: f"{row} - {col}",
+                template = {Cm.id: f'{row} - {col}',
                             Cm.svgpath: svgpath,
                             Cm.translate: str(
                                 self.to_dpi(
-                                    self.settings.get(Ct.x_offset) + (x_measure + x_separation) * col)) + ", " + str(
+                                    self.settings.get(Ct.x_offset) + (x_measure + x_separation) * col)) + ', ' + str(
                                 self.to_dpi(self.settings.get(Ct.y_offset) + (y_measure + y_separation) * row))
                             }
 
@@ -147,11 +147,11 @@ class CardSheet(Design):
 
                 output += temp
 
-        self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
+        self.template['TEMPLATE'] = self.__DEFAULT_TEMPLATE
         self.template[Cm.svgpath] = output
 
-        self.template[T.footer_card_width] = str(self.settings.get(C.x_measure)) + " " + self.settings.get(Ct.unit)
-        self.template[T.footer_card_height] = str(self.settings.get(C.y_measure)) + " " + self.settings.get(Ct.unit)
+        self.template[T.footer_card_width] = str(self.settings.get(C.x_measure)) + ' ' + self.settings.get(Ct.unit)
+        self.template[T.footer_card_height] = str(self.settings.get(C.y_measure)) + ' ' + self.settings.get(Ct.unit)
 
         viewbox_x = round(self.settings.get(Ct.x_offset_tdpi) + (self.right_x - self.left_x) * columns
                           + x_separation * self.conversion_factor() * (columns - 1))
@@ -162,7 +162,7 @@ class CardSheet(Design):
         self.template[Cm.viewbox_y] = viewbox_y
 
         self.write_to_file(self.template)
-        print(f'CardSheet "{self.settings["filename"]}" created')
+        print(f'CardSheet "{self.settings.get(Ct.filename)}" created')
 
     def __init_design(self):
 
