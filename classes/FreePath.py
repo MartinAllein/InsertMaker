@@ -1,38 +1,52 @@
+import ctypes
 import sys
 from datetime import datetime
 from classes.Design import Design
 from classes.Template import Template
+from classes.ConfigConstants import ConfigConstantsText as Ct
+from classes.ConfigConstants import ConfigConstantsTemplate as Cm
+
+
+class C:
+    paths = 'paths'
+    max_x = 'max x'
+    max_y = 'max y'
+    template_name = 'template name'
+    template_group = 'template group'
+
+    max_x_tdpi = f'{max_x}{Ct.tdpi}'
+    max_y_tdpi = f'{max_y}{Ct.tdpi}'
+
 
 
 class FreePath(Design):
     # Default values
-    __DEFAULT_FILENAME: str = "FreePath"
-    __DEFAULT_TEMPLATE: str = "FreePath.svg"
-    __DEFAULT_TEMPLATE_GROUP: str = "FreePathGroup.svg"
+    __DEFAULT_FILENAME: str = 'FreePath'
+    __DEFAULT_TEMPLATE: str = 'FreePath.svg'
+    __DEFAULT_TEMPLATE_GROUP: str = 'FreePathGroup.svg'
 
     # set defaults to A4 paper size
     __DEFAULT_MAX_X = 210
     __DEFAULT_MAX_Y = 297
-    __DEFAULT_UNIT = "mm"
 
-    def __init__(self, config_file: str, section: str, verbose=False, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        self.settings.update({'paths': [],
-                              'max x': self.__DEFAULT_MAX_X,
-                              'max y': self.__DEFAULT_MAX_Y,
-                              'template name': self.__DEFAULT_TEMPLATE,
-                              'template group': self.__DEFAULT_TEMPLATE_GROUP
+        self.settings.update({C.paths: [],
+                              C.max_x: self.__DEFAULT_MAX_X,
+                              C.max_y: self.__DEFAULT_MAX_Y,
+                              C.template_name: self.__DEFAULT_TEMPLATE,
+                              C.template_group: self.__DEFAULT_TEMPLATE_GROUP
                               })
 
-        self.add_settings_measures(["max x", "max y"])
+        self.add_settings_measures([C.max_x, C.max_y])
 
         self.settings[
-            "title"] = f"{'' if self.settings['project name'] is None else self.settings['project name']}" \
-                       f"{self.__DEFAULT_FILENAME}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            Ct.title] = f'{"" if self.settings.get(Ct.project_name) is None else self.settings.get(Ct.project_name)}' \
+                        f'{self.__DEFAULT_FILENAME}-{datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
         # : encloses config values to replace
-        self.load_settings(config_file, section, verbose)
+        self.load_settings(self.config_file_and_section)
 
         self.convert_measures_to_tdpi()
 
@@ -47,18 +61,18 @@ class FreePath(Design):
                      'L': self.__line}
 
         output = ""
-        card_template = Template.load_template(self.settings['template group'])
+        card_template = Template.load_template(self.settings.get(C.template_group))
         id_count = 1
 
-        path_groups = self.settings["path_groups"] = self.settings["paths"].split("\n\n")
+        path_groups = self.settings.get(C.paths).split("\n\n")
 
         for pathlist in path_groups:
             # split path list for a group by carrage return
             # there is only one command per line allowed
             paths = [i.upper() for i in pathlist.split('\n')]
-            group_output = ""
-            items = {"color": self.settings["stroke color"],
-                     "dasharray": self.settings["stroke dasharray"]
+            group_output = ''
+            items = {'color': self.settings['stroke color'],
+                     'dasharray': self.settings['stroke dasharray']
                      }
 
             for path in paths:
@@ -83,24 +97,24 @@ class FreePath(Design):
                     else:
                         group_output += result
 
-            if group_output != "":
+            if group_output != '':
                 a = card_template
-                a = a.replace("$ID$", f"{id_count}")
-                a = a.replace("$COLOR$", self.settings['stroke color'])
-                a = a.replace("$DASHARRAY$", self.settings['stroke dasharray'])
+                a = a.replace(Cm.id, f'{id_count}')
+                a = a.replace(Cm.color, self.settings.get(Ct.stroke_color))
+                a = a.replace(Cm.dasharray, self.settings.get(Ct.stroke_dasharray))
 
                 id_count += 1
-                group_output = a.replace("$SVGPATH$", group_output)
+                group_output = a.replace(Cm.svgpath, group_output)
 
                 output += group_output
 
-        self.template["$SVGPATH$"] = output
+        self.template[Cm.svgpath] = output
 
-        self.template["VIEWBOX_X"] = self.settings['max x_tdpi']
-        self.template["VIEWBOX_Y"] = self.settings['max y_tdpi']
+        self.template[Cm.viewbox_x] = self.settings.get(C.max_x_tdpi)
+        self.template[Cm.viewbox_y] = self.settings.get(C.max_y_tdpi)
 
         self.write_to_file(self.template)
-        print(f"FreePath \"{self.settings['filename']}\" created")
+        print(f'FreePath "{self.settings.get(Ct.filename)}" created')
 
     def __init_design(self):
         pass
@@ -109,8 +123,8 @@ class FreePath(Design):
         print(self.__dict__)
 
     def __rectangle(self, command: str) -> str:
-        error = ""
-        parameter = command.split(" ")
+        error = ''
+        parameter = command.split(' ')
 
         # test on validity
         if len(parameter) != 5:
@@ -123,7 +137,7 @@ class FreePath(Design):
         if not self.is_float(parameter[2]) or not self.is_float(parameter[4]):
             error += 'Width and/or height not a float\n'
 
-        start_xy = parameter[0].split(",")
+        start_xy = parameter[0].split(',')
         if len(start_xy) != 2:
             error += 'Start point of rectangle must be x,y\n'
 
@@ -134,56 +148,56 @@ class FreePath(Design):
             print('Error in config file R ' + command + '\n' + error)
             sys.exit(-1)
 
-        start_x = self.to_dpi(float(start_xy[0]) + self.settings['x offset'])
-        start_y = self.to_dpi(float(start_xy[1]) + self.settings['y offset'])
+        start_x = self.to_dpi(float(start_xy[0]) + self.settings.get(Ct.x_offset))
+        start_y = self.to_dpi(float(start_xy[1]) + self.settings.get(Ct.y_offset))
         width = self.to_dpi(float(parameter[2]))
         height = self.to_dpi(float(parameter[4]))
 
-        return f"M {start_x} {start_y} h {width} v {height} h {-width} z "
+        return f'M {start_x} {start_y} h {width} v {height} h {-width} z '
 
     def __circle(self, command: str) -> str:
-        error = ""
-        parameter = command.split(" ")
+        error = ''
+        parameter = command.split(' ')
 
         # test on validity
         if len(parameter) != 2:
             print('Number of parameters is wrong in C ' + command)
             sys.exit(-1)
 
-        start_xy = parameter[0].split(",")
+        start_xy = parameter[0].split(',')
         if len(start_xy) != 2:
             print('Start point of rectangle must be x,y\n')
             sys.exit(-1)
 
         if not [float(f) for f in start_xy]:
-            print("All parameter must be of type float. C " + command)
+            print('All parameter must be of type float. C ' + command)
             sys.exit(-1)
 
-        start_x = self.to_dpi(float(start_xy[0]) + self.settings['x offset'])
-        start_y = self.to_dpi(float(start_xy[1]) + self.settings['y offset'])
+        start_x = self.to_dpi(float(start_xy[0]) + self.settings.get(Ct.x_offset))
+        start_y = self.to_dpi(float(start_xy[1]) + self.settings.get(Ct.y_offset))
         radius = self.to_dpi(float(parameter[1]))
         start_x_left = start_x - radius
 
         # https: // www.mediaevent.de / tutorial / svg - circle - arc.html
-        return f"M {start_x_left} {start_y} a {radius} {radius} 0 1 1 0 1 z "
+        return f'M {start_x_left} {start_y} a {radius} {radius} 0 1 1 0 1 z '
 
     def __color(self, command: str) -> dict:
-        return {"color": command}
+        return {'color': command}
 
     def __dasharray(self, command: str) -> dict:
-        return {"dasharray": command}
+        return {'dasharray': command}
 
     def __line(self, command: str) -> str:
-        error = ""
-        parameter = command.split(" ")
+        error = ''
+        parameter = command.split(' ')
 
         # test on validity
         if len(parameter) != 2:
             print('Number of parameters is wrong in L ' + command)
             sys.exit(-1)
 
-        start = parameter[0].split(",")
-        end = parameter[1].split(",")
+        start = parameter[0].split(',')
+        end = parameter[1].split(',')
 
         if len(start) != 2:
             print('Start point of rectangle must be x,y\n')
@@ -194,16 +208,16 @@ class FreePath(Design):
             sys.exit(-1)
 
         if not [float(f) for f in start]:
-            print("Start parameter must be of type float. C " + command)
+            print('Start parameter must be of type float. C ' + command)
             sys.exit(-1)
 
         if not [float(f) for f in end]:
-            print("End parameter must be of type float. C " + command)
+            print('End parameter must be of type float. C ' + command)
             sys.exit(1)
 
-        start_x = self.to_dpi(float(start[0]) + self.settings['x offset'])
-        start_y = self.to_dpi(float(start[1]) + self.settings['y offset'])
-        end_x = self.to_dpi(float(end[0]) + self.settings['x offset'])
-        end_y = self.to_dpi(float(end[1]) + self.settings['y offset'])
+        start_x = self.to_dpi(float(start[0]) + self.settings.get(Ct.x_offset))
+        start_y = self.to_dpi(float(start[1]) + self.settings.get(Ct.y_offset))
+        end_x = self.to_dpi(float(end[0]) + self.settings.get(Ct.x_offset) )
+        end_y = self.to_dpi(float(end[1]) + self.settings.get(Ct.y_offset))
 
-        return f"M {start_x} {start_y} L {end_x} {end_y}"
+        return f'M {start_x} {start_y} L {end_x} {end_y}'

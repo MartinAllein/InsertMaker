@@ -70,4 +70,5 @@ class ConfigConstantsTemplate:
     id = '$ID$'
     svgpath = '$SVGPATH$'
     translate = '$TRANSLATE$'
-
+    color = '$COLOR$'
+    dasharray = '$DASHARRAY$'
