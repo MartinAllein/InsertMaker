@@ -9,6 +9,7 @@ class ConfigConstantsText:
     config_file_extension = "config"
     config_file_and_section = "config file and section"
     config_separator = "#"
+    separated = 'separated'
 
     title = "title"
     filename = "filename"
