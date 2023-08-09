@@ -33,13 +33,13 @@ class Config:
 
         # Test if requested section exists
         if not config.has_section(config_section):
-            print(f"Sections in file {config_file}")
+            print(f'Sections in file {config_file}')
             for part in config.sections():
                 print(part)
-            print("Section " + config_section + " in config file " + config_file)
+            print('Section ' + config_section + ' in config file ' + config_file)
             if config_section[0] == '"' or config_section[-1] == '"' or config_section[0] == '"' \
                     or config_section[-1] == '"':
-                print("Please remove the quotation marks around the section!")
+                print('Please remove the quotation marks around the section!')
             sys.exit(-1)
 
         return config
@@ -59,7 +59,7 @@ class Config:
         style = config.get(section, C.style)
 
         if style is None:
-            print(f"Config file {filename} with Section {section} has no style entry.")
+            print(f'Config file {filename} with Section {section} has no style entry.')
             sys.exit(-1)
 
         return config.get(section, C.style)
@@ -78,8 +78,8 @@ class Config:
 
         except configparser.DuplicateSectionError as e:
             print(
-                f"Duplicate Section {e.args[0]} in file {e.args[1]} in line {e.args[2]}"
-                f"\nPlease correct this line and run configMaker again.")
+                f'Duplicate Section {e.args[0]} in file {e.args[1]} in line {e.args[2]}'
+                f'\nPlease correct this line and run configMaker again.')
 
             sys.exit(-1)
 
@@ -107,7 +107,7 @@ class Config:
         """
         # Test if configuration file exists
         if not os.path.isfile(file):
-            print("File " + file + " does not exist")
+            print('File ' + file + ' does not exist')
             sys.exit(-1)
         return True
 
@@ -157,7 +157,7 @@ class Config:
     @staticmethod
     def write_config(filename: str, section: str, values: dict):
         config = configparser.ConfigParser()
-        with open(filename + "CR", "r+") as configfile:
+        with open(filename + 'CR', 'r+') as configfile:
             config.write_config(dict)
 
     @staticmethod
@@ -173,12 +173,12 @@ class Config:
         # If there is a default filename and the first parameter is missing the # separator
         # then this is only the section of the configuration
         # Combine default filename with section and seperator to full config information
-        if default_filename is not None and "#" not in file_and_section:
-            file_and_section = f"{default_filename}{c.config_separator}{file_and_section}"
+        if default_filename is not None and '#' not in file_and_section:
+            file_and_section = f'{default_filename}{c.config_separator}{file_and_section}'
 
         # If the separation character is missing here then there is no valid config information.
         if c.config_separator not in file_and_section:
-            print(f"Missing section for config file {file_and_section}. I.e. /foo/bar#the_section")
+            print(f'Missing section for config file {file_and_section}. I.e. /foo/bar#the_section')
             sys.exit(-1)
 
         # split config informsation at config separator
@@ -186,18 +186,18 @@ class Config:
 
         # Only one separation character is allowed.
         if len(split) != 2:
-            print(f"There must be only a single separator '{c.config_separator}' in the {file_and_section}.")
+            print(f'There must be only a single separator '{c.config_separator}' in the {file_and_section}.')
             sys.exit(-1)
 
         filename = split[0]
         section = split[1]
 
         # if the config file is missing the extension so append it.
-        filename = File.path_and_extension("", filename, c.config_file_extension)
+        filename = File.path_and_extension('', filename, c.config_file_extension)
 
         # Test if configuration file exists
         if not os.path.isfile(filename):
-            print(f"Config file  {filename} does not exist. ")
+            print(f'Config file  {filename} does not exist. ')
             sys.exit(-1)
 
         return filename, section
