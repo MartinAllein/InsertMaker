@@ -45,8 +45,8 @@ class Thumbhole(Enum):
 
 
 class Funnel(Enum):
-    SINGLE = "single"
-    DUAL = "double"
+    SINGLE = 'single'
+    DUAL = 'double'
 
 
 class CardBox(Design):
