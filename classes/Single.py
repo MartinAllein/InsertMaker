@@ -14,15 +14,15 @@ class Single:
         """
         config_file_and_section = kwargs.setdefault(Ct.config_file_and_section, '')
 
-        # read config file and extract the style to dynamically load the class
-        style = Config.get_style(config_file_and_section)
+        # read config file and extract the design to dynamically load the class
+        design = Config.get_design(config_file_and_section)
 
-        # Import the style from the config file and load the same named class
+        # Import the design from the config file and load the same named class
         try:
-            module = importlib.import_module(f'classes.{style}')
-            class_ = getattr(module, style)
+            module = importlib.import_module(f'classes.{design}')
+            class_ = getattr(module, design)
         except ModuleNotFoundError:
-            print(f'Unknown style "{style}" in config file {config_file_and_section}.')
+            print(f'Unknown design "{design}" in config file {config_file_and_section}.')
             sys.exit(-1)
         except Exception as inst:
             print('Unknown Error')

@@ -6,7 +6,7 @@ from classes.ConfigConstants import ConfigConstantsText as c
 
 
 class C:
-    style = 'style'
+    design = 'design'
 
 
 class Config:
@@ -46,23 +46,23 @@ class Config:
 
     @classmethod
     # def get_style(cls, filename: str, section: str):
-    def get_style(cls, filename_and_section: str) -> str:
+    def get_design(cls, filename_and_section: str) -> str:
         """ Returns the style from a configuration within a configuration file
 
         :param filename_and_section: configuration file with section
         :return: style of the item (CardSheet, CardBox, ....)
         """
-        config = cls.read_config(filename_and_section, C.style)
+        config = cls.read_config(filename_and_section, C.design)
 
         filename, section = Config.get_config_file_and_section(filename_and_section)
 
-        style = config.get(section, C.style)
+        style = config.get(section, C.design)
 
         if style is None:
             print(f'Config file {filename} with Section {section} has no style entry.')
             sys.exit(-1)
 
-        return config.get(section, C.style)
+        return config.get(section, C.design)
 
     @classmethod
     def get_sections(cls, file_and_path: str):
