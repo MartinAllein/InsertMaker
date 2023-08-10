@@ -12,6 +12,9 @@
             $SVGPATH$
         </g>
     </g>
+    <g id="slots" transform="translate(0, 0)">
+        $SVGPATH_SLOTS$
+    </g>
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
         <text x="$LABEL_X$" y="$LABEL_PROJECT_Y$">
             <tspan x="$LABEL_X$" dy="$LABEL_Y_SPACING$" class="small">Project: $FOOTER_PROJECT_NAME$</tspan>

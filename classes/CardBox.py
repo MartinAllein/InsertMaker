@@ -148,7 +148,7 @@ class CardBox(Design):
         self.template['TEMPLATE'] = self.__DEFAULT_TEMPLATE
         self.template[Cm.svgpath] = base_cut
 
-        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
+        viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
         self.template[Cm.viewbox_x] = viewbox_x
         self.template[Cm.viewbox_y] = viewbox_y
