@@ -12,10 +12,10 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(add_help=False)
 
-    parser.add_argument('-c', type=str, help="Config File and section")
-    parser.add_argument('-p', type=str, help="Project File and section")
-    parser.add_argument('-v', action="store_true", help="verbose")
-    parser.add_argument('-n', action="store_true", help="noprint")
+    parser.add_argument('-c', type=str, help='Config File and section')
+    parser.add_argument('-p', type=str, help='Project File and section')
+    parser.add_argument('-v', action='store_true', help='verbose')
+    parser.add_argument('-n', action='store_true', help='noprint')
 
     return parser.parse_args()
 
@@ -30,12 +30,10 @@ if __name__ == "__main__":
 
     # Verbose output
     verbose = False
-    if args.v:
-        kwargs[Cc.verbose] = True
+    kwargs[Cc.verbose] = args.v
 
     noprint = False
-    if args.n:
-        kwargs[Cc.noprint] = True
+    kwargs[Cc.noprint] = args.n
 
     # configuration file
     if args.c:
@@ -43,8 +41,7 @@ if __name__ == "__main__":
 
         single = Single.create(**kwargs)
         sys.exit(0)
-
-    if args.p:
+    elif args.p:
         kwargs[Cc.config_file] = args.p
         project = Project(**kwargs)
         project.create()
