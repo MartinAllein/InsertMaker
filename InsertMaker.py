@@ -29,10 +29,7 @@ if __name__ == "__main__":
     kwargs = {}
 
     # Verbose output
-    verbose = False
     kwargs[Cc.verbose] = args.v
-
-    noprint = False
     kwargs[Cc.noprint] = args.n
 
     # configuration file
