@@ -21,16 +21,13 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
-    outfile = ""
+    outfile = ''
 
     # parse vom cli
     args = parse_arguments()
 
-    kwargs = {}
-
-    # Verbose output
-    kwargs[Cc.verbose] = args.v
-    kwargs[Cc.noprint] = args.n
+    kwargs = {Cc.verbose: args.v,
+              Cc.noprint: args.n}
 
     # configuration file
     if args.c:
