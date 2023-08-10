@@ -51,6 +51,7 @@ class ConfigConstantsText:
 
 
 class ConfigConstantsTemplate:
+    template = "TEMPLATE"
     template_name = 'TEMPLATE NAME'
     viewbox_x = 'VIEWBOX_X'
     viewbox_y = 'VIEWBOX_Y'

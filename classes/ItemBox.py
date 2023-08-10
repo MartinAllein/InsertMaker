@@ -5,9 +5,8 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ItemBoxPartition import ItemBoxPartition
-from classes.ConfigConstants import ConfigConstantsText as Cc
-from classes.Config import Config
-
+from classes.ConfigConstants import ConfigConstantsText as Ct
+from classes.ConfigConstants import ConfigConstantsTemplate as Cm
 
 class C:
     partitions_main_config = 'partitions main config'
@@ -15,24 +14,36 @@ class C:
 
     distance = "distance"
 
+    thumbhole = 'thumbhole'
+    thumbhole_radius = 'thumbhole radius'
+    enforce_design = 'enforce design'
+    slot_width = 'slot width'
+    corner_gap = 'corner gap'
+    small_height = 'small height'
+    
+    thumbhole_radius_tdpi = f'{thumbhole_radius}{Ct.tdpi}'
+    slot_width_tdpi = f'{slot_width}{Ct.tdpi}'
+    corner_gap_tdpi = f'{corner_gap}{Ct.tdpi}'
+    small_height_tdpi = f'{small_height}{Ct.tdpi}'
+
 
 class EnfordeDesign(Enum):
-    NONE = "none"
-    SMALL = "small"
-    LARGE = "large"
-    EMPTY = ""
+    NONE = 'none'
+    SMALL = 'small'
+    LARGE = 'large'
+    EMPTY = ''
 
 
 class Thumbhole(Enum):
-    SINGLE = "single"
-    DOUBLE = "double"
-    NONE = "none"
+    SINGLE = 'single'
+    DOUBLE = 'double'
+    NONE = 'none'
 
 
 class ItemBox(Design):
-    __DEFAULT_FILENAME = "ItemBox"
-    __DEFAULT_TEMPLATE = "ItemBox.svg"
-    __DEFAULT_TEMPLATE_SEPARATED = "ItemBoxSeparated.svg"
+    __DEFAULT_FILENAME = 'ItemBox'
+    __DEFAULT_TEMPLATE = 'ItemBox.svg'
+    __DEFAULT_TEMPLATE_SEPARATED = 'ItemBoxSeparated.svg'
 
     __DEFAULT_VERTICAL_SEPARATION = 3
 
@@ -51,7 +62,7 @@ class ItemBox(Design):
     __DEFAULT_ENFORCEDESIGN = EnfordeDesign.NONE
     __DEFAULT_THUMBHOLE = Thumbhole.NONE
 
-    __DEFAULT_PARTITIONS_MAIN_CONFIG = "ITEMBOXPARTITION"
+    __DEFAULT_PARTITIONS_MAIN_CONFIG = 'ITEMBOXPARTITION'
     __DEFAULT_PARTITIONS_CONFIG = []
 
     __DEFAULT_PARTITION_THUMBHOLE_SMALL_RADIUS = 2
@@ -77,45 +88,43 @@ class ItemBox(Design):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
+        self.settings.update({Ct.template_name: self.__DEFAULT_TEMPLATE})
 
         self.inner_dimensions = []
         self.outer_dimensions = []
 
-        self.settings.update({'length': self.__DEFAULT_LENGTH,
-                              'width': self.__DEFAULT_WIDTH,
-                              'height': self.__DEFAULT_HEIGHT,
-                              'separated': False,
-                              'thumbhole': self.__DEFAULT_THUMBHOLE,
-                              'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
-                              'enforce design': self.__DEFAULT_ENFORCEDESIGN,
-                              'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
-                              'slot width': self.__DEFAULT_SLOT_WIDTH,
-                              'corner gap': self.__DEFAULT_CORNER_GAP,
-                              'small height': self.__DEFAULT_SMALL_HEIGHT,
+        self.settings.update({Ct.length: self.__DEFAULT_LENGTH,
+                              Ct.width: self.__DEFAULT_WIDTH,
+                              Ct.height: self.__DEFAULT_HEIGHT,
+                              Ct.separated: False,
+                              C.thumbhole: self.__DEFAULT_THUMBHOLE,
+                              C.thumbhole_radius: self.__DEFAULT_THUMBHOLE_RADIUS,
+                              C.enforce_design: self.__DEFAULT_ENFORCEDESIGN,
+                              Ct.vertical_separation: self.__DEFAULT_VERTICAL_SEPARATION,
+                              C.slot_width: self.__DEFAULT_SLOT_WIDTH,
+                              C.corner_gap: self.__DEFAULT_CORNER_GAP,
+                              C.small_height: self.__DEFAULT_SMALL_HEIGHT,
                               C.partitions_main_config: self.__DEFAULT_PARTITIONS_MAIN_CONFIG,
                               C.partitions_config: self.__DEFAULT_PARTITIONS_CONFIG,
                               }
                              )
 
-        self.add_settings_measures([Cc.length, Cc.width, Cc.height, "vertical separation", "thumbhole radius",
-                                    "corner gap", "slot width",
+        self.add_settings_measures([Ct.length, Ct.width, Ct.height, Ct.vertical_separation, C.thumbhole_radius,
+                                    C.corner_gap, C.slot_width,
                                     ])
 
-        self.add_settings_enum({"enforce design": EnfordeDesign,
-                                "thumbhole": Thumbhole,
+        self.add_settings_enum({C.enforce_design: EnfordeDesign,
+                                C.thumbhole: Thumbhole,
                                 })
 
-        self.add_settings_boolean(["separated"])
+        self.add_settings_boolean([Ct.separated])
 
         self.load_settings(self.config_file_and_section)
 
-        # self.convert_to_json([C.partitions_config])
-
         self.settings[
-            "title"] = f"{self.__DEFAULT_FILENAME}-L{self.settings[Cc.length]}-W{self.settings[Cc.width]}-" \
-                       f"H{self.settings[Cc.height]}-S{self.settings[Cc.thickness]}-" \
-                       f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            Ct.title] = f'{self.__DEFAULT_FILENAME}-L{self.settings[Ct.length]}-W{self.settings[Ct.width]}-' \
+                       f'H{self.settings[Ct.height]}-S{self.settings[Ct.thickness]}-' \
+                       f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
         self.convert_measures_to_tdpi()
 
@@ -125,55 +134,50 @@ class ItemBox(Design):
 
         base_cut = Design.draw_lines(self.corners, self.cutlines)
 
-        self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template["$SVGPATH$"] = base_cut
+        self.template[Cm.template] = self.__DEFAULT_TEMPLATE
+        self.template[Cm.svgpath] = base_cut
 
         viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
 
-        self.template["VIEWBOX_X"] = viewbox_x
-        self.template["VIEWBOX_Y"] = viewbox_y
+        self.template[Cm.viewbox_x] = viewbox_x
+        self.template[Cm.viewbox_y] = viewbox_y
 
-        # self.template["$FOOTER__OVERALL_WIDTH$"] = str(
-        #     round((self.right_x - self.left_x) / self.conversion_factor(), 2))
+        self.template[Cm.footer_overall_width] = self.tpi_to_unit(self.right_x - self.left_x)
+        self.template[Cm.footer_overall_height] = self.tpi_to_unit(self.bottom_y - self.top_y)
 
-        self.template["$FOOTER__OVERALL_WIDTH$"] = self.tpi_to_unit(self.right_x - self.left_x)
-        self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
-
-        self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
-        self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
-        self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
-        self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
-        self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
-        self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
+        self.template['$FOOTER_INNER_LENGTH$'] = self.inner_dimensions[0]
+        self.template['$FOOTER_INNER_WIDTH$'] = self.inner_dimensions[1]
+        self.template['$FOOTER_INNER_HEIGHT$'] = self.inner_dimensions[2]
+        self.template['$FOOTER_OUTER_LENGTH$'] = self.outer_dimensions[0]
+        self.template['$FOOTER_OUTER_WIDTH$'] = self.outer_dimensions[1]
+        self.template['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions[2]
 
         self.write_to_file(self.template)
 
         print(
-            f"Inner Length: {self.inner_dimensions[0]} , "
-            f"Inner Width: {self.inner_dimensions[1]} , "
-            f"Inner Height: {self.inner_dimensions[2]}")
+            f'Inner Length: {self.inner_dimensions[0]} , '
+            f'Inner Width: {self.inner_dimensions[1]} , '
+            f'Inner Height: {self.inner_dimensions[2]}')
 
         print(
-            f"Outer Length: {self.outer_dimensions[0]} , "
-            f"Outer Width: {self.outer_dimensions[1]} , "
-            f"Outer Height: {self.outer_dimensions[2]}")
+            f'Outer Length: {self.outer_dimensions[0]} , '
+            f'Outer Width: {self.outer_dimensions[1]} , '
+            f'Outer Height: {self.outer_dimensions[2]}')
 
         # stop creation when Itembox has no separators
-        if "partitions config" not in self.settings:
+        if C.partitions_config not in self.settings:
             return
 
-        # config_file, config_section = Config.get_config_file_and_section(self.config_file_and_section)
-
         itembox_separation_arguments = {}
-        itembox_separation_arguments.update({Cc.config_file_and_section: self.config_file_and_section})
+        itembox_separation_arguments.update({Ct.config_file_and_section: self.config_file_and_section})
 
         # noinspection DuplicatedCode
         itembox_separation_arguments.update(
             {
-                Cc.width: self.settings[Cc.width],
-                Cc.height: self.settings[Cc.height],
-                Cc.thickness: self.settings[Cc.thickness],
-                'options': {'project name': self.settings['project name']}
+                Ct.width: self.settings[Ct.width],
+                Ct.height: self.settings[Ct.height],
+                Ct.thickness: self.settings[Ct.thickness],
+                'options': {Ct.project_name: self.settings.get(Ct.project_name)}
             }
         )
 
@@ -283,18 +287,18 @@ class ItemBox(Design):
         #                         |                          length                                |
         #  ab                     21--------------------------------------------------------------61
 
-        length = self.settings['length_tdpi']
-        height = self.settings['height_tdpi']
-        width = self.settings['width_tdpi']
-        thickness = self.settings['thickness_tdpi']
+        length = self.settings.get(Ct.length_tdpi)
+        height = self.settings.get(Ct.height_tdpi)
+        width = self.settings.get(Ct.width_tdpi)
+        thickness = self.settings.get(Ct.thickness_tdpi)
 
-        slot_width = self.settings['slot width_tdpi']
-        thumbholeradius = self.settings['thumbhole radius_tdpi']
-        corner_gap = self.settings['corner gap_tdpi']
+        slot_width = self.settings.get(C.slot_width_tdpi)
+        thumbholeradius = self.settings.get(C.thumbhole_radius_tdpi)
+        corner_gap = self.settings.get(C.corner_gap_tdpi)
 
         # noinspection DuplicatedCode
         # X - Points
-        a = self.settings["x offset_tdpi"]
+        a = self.settings.get(Ct.x_offset_tdpi)
         b = a + int(height / 2) - int(slot_width / 2)
         c = a + int(height / 2) + int(slot_width / 2)
         d = a + height
@@ -313,7 +317,7 @@ class ItemBox(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        q = self.settings['y offset_tdpi']
+        q = self.settings.get(Ct.y_offset_tdpi)
         r = q + int(height / 2) - int(slot_width / 2)
         s = q + int(height / 2) + int(slot_width / 2)
         t = q + height
@@ -354,9 +358,9 @@ class ItemBox(Design):
         self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(y - t), self.tpi_to_unit(e - a)]
         self.cutlines = []
 
-        if self.settings["enforce design"] is EnfordeDesign.SMALL or \
-                (self.tpi_to_unit(height) <= self.settings["small height"] and
-                 not self.settings["enforce design"] is EnfordeDesign.LARGE):
+        if self.settings.get(C.enforce_design) is EnfordeDesign.SMALL or \
+                (self.tpi_to_unit(height) <= self.settings.get(C.small_height) and
+                 not self.settings.get(C.enforce_design) is EnfordeDesign.LARGE):
 
             # right with no thumbhole
             right_full = [PathStyle.LINE, [53, 102, 103, 70, 71, 104, 105, 58]]
@@ -410,16 +414,16 @@ class ItemBox(Design):
             # middle lower
             self.cutlines.append([PathStyle.LINE, [18, 31, 30, 34, 35, 39, 38, 42, 43, 58]])
 
-        if not self.settings['thumbhole']:
+        if not self.settings.get(C.thumbhole):
             self.cutlines.append(left_full)
             self.cutlines.append(right_full)
         else:
-            if self.settings['thumbhole'] is Thumbhole.SINGLE:
+            if self.settings.get(C.thumbhole) is Thumbhole.SINGLE:
                 self.cutlines.append(left_thumbhole_top)
                 self.cutlines.append(left_thumbhole_bottom)
                 self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),
                 self.cutlines.append(right_full)
-            elif self.settings['thumbhole'] is Thumbhole.DOUBLE:
+            elif self.settings.get(C.thumbhole) is  Thumbhole.DOUBLE:
                 self.cutlines.append(left_thumbhole_top)
                 self.cutlines.append(left_thumbhole_bottom)
                 self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),
