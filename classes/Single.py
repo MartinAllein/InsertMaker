@@ -1,7 +1,7 @@
 import importlib
 import sys
 from classes.Config import Config
-from classes.ConfigConstants import ConfigConstantsText as C
+from classes.ConfigConstants import ConfigConstantsText as Ct
 
 
 class Single:
@@ -12,7 +12,7 @@ class Single:
 
         :return:
         """
-        config_file_and_section = kwargs.get(C.config_file_and_section, '')
+        config_file_and_section = kwargs.setdefault(Ct.config_file_and_section, '')
 
         # read config file and extract the style to dynamically load the class
         style = Config.get_style(config_file_and_section)
