@@ -24,13 +24,13 @@ class Single:
 
         # Import the style from the config file and load the same named class
         try:
-            module = importlib.import_module("classes." + style)
+            module = importlib.import_module(f'classes.{style}')
             class_ = getattr(module, style)
         except ModuleNotFoundError:
-            print(f"Unknown style \"{style}\" in config file {config_file_and_section}.")
+            print(f'Unknown style "{style}" in config file {config_file_and_section}.')
             sys.exit(-1)
         except Exception as inst:
-            print("Unknown Error")
+            print('Unknown Error')
             print(type(inst))  # the exception instance
             print(inst.args)  # arguments stored in .args
             print(inst)
