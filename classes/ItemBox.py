@@ -10,9 +10,9 @@ from classes.ConfigConstants import ConfigConstantsTemplate as Cm
 
 class C:
     partitions_main_config = 'partitions main config'
-    partitions_config = "partitions config"
+    partitions_config = 'partitions config'
 
-    distance = "distance"
+    distance = 'distance'
 
     thumbhole = 'thumbhole'
     thumbhole_radius = 'thumbhole radius'

@@ -6,7 +6,7 @@ from classes.ConfigConstants import ConfigConstantsText as c
 
 
 class C:
-    style = "style"
+    style = 'style'
 
 
 class Config:

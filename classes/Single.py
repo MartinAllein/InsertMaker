@@ -12,12 +12,7 @@ class Single:
 
         :return:
         """
-        config_file_and_section = kwargs.get(C.config_file_and_section, "")
-
-        # configuration section is mandatory
-        # if not config_file_and_section or config_file_and_section == "":
-        #    print(f"No section for config file {config_file}\n-c <config_file-file> -C <section of config_file file>")
-        #    sys.exit(-1)
+        config_file_and_section = kwargs.get(C.config_file_and_section, '')
 
         # read config file and extract the style to dynamically load the class
         style = Config.get_style(config_file_and_section)

@@ -122,7 +122,7 @@ class Design(ABC):
                          }
 
         # Overwrite the internal default config with the settings from the Insertmaker.config
-        self.__read_config(f"{self.__DEFAULT_CONFIG_FILE}{Ct.config_separator}{self.__DEFAULT_SECTION_NAME}")
+        self.__read_config(f'{self.__DEFAULT_CONFIG_FILE}{Ct.config_separator}{self.__DEFAULT_SECTION_NAME}')
 
         # Overwrite the combined default/InsertMaker settings with the ones from the command line
         self.__update_settings_with_options(options)
