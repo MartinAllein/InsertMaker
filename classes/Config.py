@@ -178,7 +178,7 @@ class Config:
 
         # If the separation character is missing here then there is no valid config information.
         if c.config_separator not in file_and_section:
-            print(f'Missing section for config file {file_and_section}. I.e. /foo/bar#the_section')
+            print(f'Missing section for config file "{file_and_section}". I.e. /foo/bar#the_section')
             sys.exit(-1)
 
         # split config informsation at config separator
