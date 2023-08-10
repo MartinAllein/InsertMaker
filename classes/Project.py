@@ -2,35 +2,34 @@ import argparse
 import json
 import sys
 
-import classes.Project
 from classes.Single import Single
 from classes.Config import Config
 from classes.ConfigConstants import ConfigConstantsText as Ct
-from classes.ConfigConstants import ConfigConstantsTemplate as Cm
+
 
 class Project:
-    __PROJECT_SECTION = "Project"
+    __PROJECT_SECTION = 'Project'
     __CONFIG = 0
     __SECTION = 1
     __SECTION_ONLY = 0
 
     def __init__(self, **kwargs):
 
-        self.project_config_file = ""
+        self.project_config_file = ''
         if Ct.config_file in kwargs:
             self.project_config_file = kwargs[Ct.config_file]
 
         project_config_file = self.project_config_file
         self.kwargs = kwargs
 
-        if project_config_file == "":
-            print("No project file.\n-p <config_file-file>")
+        if project_config_file == '':
+            print('No project file.\n-p <config_file-file>')
             sys.exit(-1)
 
-        # Test if "Project" section exists in project file
+        # Test if 'Project' section exists in project file
         sections = Config.get_sections(project_config_file)
         if not Config.section_exists(sections, self.__PROJECT_SECTION):
-            print(f"Missing section Project in file {project_config_file}")
+            print(f'Missing section Project in file {project_config_file}')
 
         self.__read_config(f"{project_config_file}{Ct.config_separator}{self.__PROJECT_SECTION}")
 
@@ -38,9 +37,8 @@ class Project:
     def parse_arguments():
         parser = argparse.ArgumentParser(add_help=False)
 
-        parser.add_argument('-p', type=str, help="Project File")
-        parser.add_argument('-P', type=str, help="Project section")
-        parser.add_argument('-v', action="store_true", help="verbose")
+        parser.add_argument('-p', type=str, help='Project File')
+        parser.add_argument('-v', action='store_true', help='verbose')
 
         return parser.parse_args()
 
@@ -51,7 +49,7 @@ class Project:
         config = Config.read_config(filename_and_section)
 
         if not config.has_option(self.__PROJECT_SECTION, 'items'):
-            print(f"Project configuration {filename_and_section} has no items!")
+            print(f'Project configuration {filename_and_section} has no items!')
             sys.exit(-1)
 
         self.items = config.get(self.__PROJECT_SECTION, 'items')
@@ -94,7 +92,7 @@ class Project:
 
     def create(self):
         # items = json.loads(self.items)
-        self.kwargs["options"] = self.options
+        self.kwargs[Ct.options] = self.options
 
         # Split string with \n separated items into an array
         # self.items = Config.split_config_lines_to_list(self.items)
