@@ -1,5 +1,5 @@
 import argparse
-import json
+import os
 import sys
 
 from classes.Single import Single
@@ -7,38 +7,43 @@ from classes.Config import Config
 from classes.ConfigConstants import ConfigConstantsText as Ct
 
 
+class C:
+    designs = 'designs'
+    project = 'Project'
+
+
 class Project:
-    __PROJECT_SECTION = 'Project'
-    __CONFIG = 0
-    __SECTION = 1
-    __SECTION_ONLY = 0
 
     def __init__(self, **kwargs):
 
-        self.project_config_file = ''
-        if Ct.config_file in kwargs:
-            self.project_config_file = kwargs[Ct.config_file]
+        # A keyword argument for the project settings file is mandatory. If it does not
+        # exist create an empty entry
+        project_config_file = kwargs.setdefault(Ct.config_file, '')
 
-        project_config_file = self.project_config_file
         self.kwargs = kwargs
 
-        if project_config_file == '':
-            print('No project file.\n-p <config_file-file>')
+        # Terminate if project file does not exist.
+        if not os.path.isfile(project_config_file):
+            print(f'Project file "{project_config_file}" does not exist.')
             sys.exit(-1)
 
         # Test if 'Project' section exists in project file
         sections = Config.get_sections(project_config_file)
-        if not Config.section_exists(sections, self.__PROJECT_SECTION):
-            print(f'Missing section Project in file {project_config_file}')
 
-        self.__read_config(f"{project_config_file}{Ct.config_separator}{self.__PROJECT_SECTION}")
+        # [Project] section is madatory for projects. Terminate if it is not existing
+        if not Config.section_exists(sections, C.project):
+            print(f'Missing section [{C.project}] in file {project_config_file}')
+            sys.exit(-1)
+
+        # read the Project configuration from the settings
+        self.__read_config(f"{project_config_file}{Ct.config_separator}{C.project}")
 
     @staticmethod
     def parse_arguments():
         parser = argparse.ArgumentParser(add_help=False)
 
         parser.add_argument('-p', type=str, help='Project File')
-        parser.add_argument('-v', action='store_true', help='verbose')
+        parser.add_argument('-v', action='store_false', help='verbose')
 
         return parser.parse_args()
 
@@ -48,60 +53,52 @@ class Project:
 
         config = Config.read_config(filename_and_section)
 
-        if not config.has_option(self.__PROJECT_SECTION, 'items'):
-            print(f'Project configuration {filename_and_section} has no items!')
+        # A project has to have a "designs" entry with the list of designs to create
+        if not config.has_option(C.project, C.designs):
+            print(f'Project configuration {filename_and_section} has no designs!')
             sys.exit(-1)
 
-        self.items = config.get(self.__PROJECT_SECTION, 'items')
-        self.items = Config.split_config_lines_to_list(self.items)
-        self.items = Config.normalize_config_file_and_section(self.items, self.project_config_file)
+        # the designes are read as a string with \n separation between the designs
+        self.designs = config.get(C.project, C.designs)
 
-        self.options = {}
+        # Split the line at the \n character and get the list of designs
+        self.designs = Config.split_config_lines_to_list(self.designs)
 
-        if config.has_option(self.__PROJECT_SECTION, Ct.project_name):
-            self.name = config.get(self.__PROJECT_SECTION, Ct.project_name)
-            self.options[Ct.project_name] = self.options.get(Ct.project_name, "")
+        # The designs refer to sections in configuration files. Complete every entry that
+        # it has the format config_file#section. If the file is missing, complete the entry
+        # with the project file name
+        project_file, _ = Config.get_config_file_and_section(filename_and_section)
+        self.designs = Config.normalize_config_file_and_section(self.designs, project_file)
 
-        if config.has_option(self.__PROJECT_SECTION, Ct.x_offset):
-            self.x_offset = float(config.get(self.__PROJECT_SECTION, Ct.x_offset))
-            self.options[Ct.x_offset] = self.x_offset
+        if config.has_option(C.project, Ct.project_name):
+            self.options[Ct.project_name] = config.get(C.project, Ct.project_name)
 
-        if config.has_option(self.__PROJECT_SECTION, Ct.y_offset):
-            self.y_offset = float(config.get(self.__PROJECT_SECTION, Ct.y_offset))
-            self.options[Ct.y_offset] = self.y_offset
+        if config.has_option(C.project, Ct.x_offset):
+            self.options[Ct.x_offset] = config.get(C.project, Ct.x_offset)
 
-        if config.has_option(self.__PROJECT_SECTION, Ct.thickness):
-            self.thickness = float(config.get(self.__PROJECT_SECTION, Ct.thickness))
-            self.options[Ct.thickness] = self.thickness
+        if config.has_option(C.project, Ct.y_offset):
+            self.options[Ct.y_offset] = config.get(C.project, Ct.y_offset)
 
-        if config.has_option(self.__PROJECT_SECTION, Ct.y_text_spacing):
+        if config.has_option(C.project, Ct.thickness):
+            self.options[Ct.thickness] = config.get(C.project, Ct.thickness)
 
-            self.y_text_spacing = float(config.get(self.__PROJECT_SECTION, Ct.y_text_spacing))
-            self.options[Ct.y_text_spacing] = self.y_text_spacing
+        if config.has_option(C.project, Ct.y_text_spacing):
+            self.options[Ct.y_text_spacing] = config.get(C.project, Ct.y_text_spacing)
 
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
-        self.name = None
-        self.thickness = None
-        self.x_offset = None
-        self.y_offset = None
-        self.y_text_spacing = None
-        self.items = []
-        self.options = None
-        self.config_path = None
+        self.designs = []
+        self.options = {}
 
     def create(self):
-        # items = json.loads(self.items)
+        """ Create the designs of the project
+
+        :return: None
+        """
         self.kwargs[Ct.options] = self.options
 
-        # Split string with \n separated items into an array
-        # self.items = Config.split_config_lines_to_list(self.items)
-
-        # add the configuration file to the configuration section
-        # self.items = Config.beautify_config_array(self.items, self.project_config_file)
-
-        # iterate over all items in the project file
-        for item in self.items:
+        # iterate over all designs in the project file
+        for design in self.designs:
             config = self.kwargs.copy()
-            config[Ct.config_file_and_section] = item
+            config[Ct.config_file_and_section] = design
             Single.create(**config)
