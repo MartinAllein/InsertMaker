@@ -126,16 +126,16 @@ class Matchbox(Design):
         template = template.replace("$TITLE$", self.title)
         template = template.replace("$FILENAME$", self.outfile)
 
-        template = template.replace("$LABEL_X$", Design.thoudpi_to_dpi(self.base_corners[0][0]))
+        template = template.replace("$LABEL_X$", Design.tdpi_to_dpi(self.base_corners[0][0]))
 
         ycoord = self.wrap_corners[1][1] + Design.__DEFAULT_Y_LINE_SEPARATION
-        template = template.replace("$LABEL_TITLE_Y$", Design.thoudpi_to_dpi(ycoord))
+        template = template.replace("$LABEL_TITLE_Y$", Design.tdpi_to_dpi(ycoord))
         ycoord += Design.__DEFAULT_Y_LINE_SEPARATION
-        template = template.replace("$LABEL_FILENAME_Y$", Design.thoudpi_to_dpi(ycoord))
+        template = template.replace("$LABEL_FILENAME_Y$", Design.tdpi_to_dpi(ycoord))
         ycoord += Design.__DEFAULT_Y_LINE_SEPARATION
-        template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.thoudpi_to_dpi(ycoord))
+        template = template.replace("$LABEL_BASE_WIDTH_Y$", Design.tdpi_to_dpi(ycoord))
         ycoord += Design.__DEFAULT_Y_LINE_SEPARATION
-        template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.thoudpi_to_dpi(ycoord))
+        template = template.replace("$LABEL_FLAP_WIDTH_Y$", Design.tdpi_to_dpi(ycoord))
 
         template = template.replace("$LABEL_BASE_WIDTH_X$",
                                     round((self.base_corners[34][0] - self.base_corners[0][0]) / Design.FACTOR, 2))
@@ -143,11 +143,11 @@ class Matchbox(Design):
         template = template.replace("$LABEL_WRAP_WIDTH_X$",
                                     round((self.wrap_corners[10][0] - self.wrap_corners[0][0]) / Design.FACTOR, 2))
 
-        template = template.replace("$TRANSLATE-WRAP$", "0 " + Design.thoudpi_to_dpi(self.base_corners[25][1]))
+        template = template.replace("$TRANSLATE-WRAP$", "0 " + Design.tdpi_to_dpi(self.base_corners[25][1]))
 
         temp = self.base_corners[25][1] + self.wrap_corners[1][1] + 2 * Design.FACTOR + 4 * Design.__DEFAULT_Y_LINE_SEPARATION
-        viewport = f"{Design.thoudpi_to_dpi(int(self.base_corners[34][0] + 2 * Design.FACTOR))}," \
-                   f" {Design.thoudpi_to_dpi(int(temp))}"
+        viewport = f"{Design.tdpi_to_dpi(int(self.base_corners[34][0] + 2 * Design.FACTOR))}," \
+                   f" {Design.tdpi_to_dpi(int(temp))}"
 
         template = template.replace("$VIEWPORT$", viewport)
 
@@ -294,14 +294,14 @@ class Matchbox(Design):
     # TODO: cutlines und outlines in eine eigene Methode, die dann __create_Lines (jetzt create_base) aufruft
 
     def __create_base_cutline(self):
-        return Design.draw_lines(self.base_corners, self.base_cutlines)
+        return Design.draw_paths(self.base_corners, self.base_cutlines)
 
     def __create_base_foldline(self):
-        return Design.draw_lines(self.base_corners, self.base_foldlines)
+        return Design.draw_paths(self.base_corners, self.base_foldlines)
 
     def __create_wrap_cutline(self):
-        return Design.draw_lines(self.wrap_corners, self.wrap_cutlines)
+        return Design.draw_paths(self.wrap_corners, self.wrap_cutlines)
 
     def __create_wrap_foldline(self):
-        return Design.draw_lines(self.wrap_corners, self.wrap_foldlines)
+        return Design.draw_paths(self.wrap_corners, self.wrap_foldlines)
 

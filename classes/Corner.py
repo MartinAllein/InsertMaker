@@ -263,12 +263,12 @@ class Corner:
         self.template["$PROJECT$"] = self.project
         self.template["$TITLE$"] = self.title
         self.template["$FILENAME$"] = self.outfile
-        self.template["$LABEL_X$"] = Design.thoudpi_to_dpi(self.left_x)
+        self.template["$LABEL_X$"] = Design.tdpi_to_dpi(self.left_x)
 
         ycoord = self.bottom_y + self.vertical_separation
 
         if not self.separated:
-            base_cut = Design.draw_lines(self.corners, self.cutlines)
+            base_cut = Design.draw_paths(self.corners, self.cutlines)
 
             # if self.thumbholeradius:
             #     base_cut = Design.create_xml_cutlines(self.corners, self.cutlines_with_thumbhole)
@@ -285,64 +285,64 @@ class Corner:
 
             # TOP CUT
             self.template[
-                '$TRANSLATE_TOP$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[10][0])}, 0"
-            top_cut = Design.draw_lines(self.corners, self.cutlines_top)
+                '$TRANSLATE_TOP$'] = f"{Design.tdpi_to_dpi(self.corners[0][0] - self.corners[10][0])}, 0"
+            top_cut = Design.draw_paths(self.corners, self.cutlines_top)
             self.template["$TOP-CUT$"] = top_cut
 
             # CENTER CUT
             self.template[
-                '$TRANSLATE_CENTER$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[13][0])}, " \
-                                        + f"{Design.thoudpi_to_dpi(self.thickness + separation)}"
+                '$TRANSLATE_CENTER$'] = f"{Design.tdpi_to_dpi(self.corners[0][0] - self.corners[13][0])}, " \
+                                        + f"{Design.tdpi_to_dpi(self.thickness + separation)}"
 
-            center_cut = Design.draw_lines(self.corners, self.cutlines_center)
+            center_cut = Design.draw_paths(self.corners, self.cutlines_center)
             self.template["$CENTER-CUT$"] = center_cut
 
             # Bottom Cut
             self.template[
-                '$TRANSLATE_BOTTOM$'] = f"{Design.thoudpi_to_dpi(self.corners[0][0] - self.corners[18][0])}, " \
-                                        + f"{Design.thoudpi_to_dpi(2 * (self.thickness + separation))}"
-            bottom_cut = Design.draw_lines(self.corners, self.cutlines_bottom)
+                '$TRANSLATE_BOTTOM$'] = f"{Design.tdpi_to_dpi(self.corners[0][0] - self.corners[18][0])}, " \
+                                        + f"{Design.tdpi_to_dpi(2 * (self.thickness + separation))}"
+            bottom_cut = Design.draw_paths(self.corners, self.cutlines_bottom)
             self.template["$BOTTOM-CUT$"] = bottom_cut
 
             # LEFT CUT
             self.template[
-                '$TRANSLATE_LEFT$'] = f"{Design.thoudpi_to_dpi(self.length + self.thickness + separation)}, " \
-                                      + f"-{Design.thoudpi_to_dpi(self.height)}"
-            left_cut = Design.draw_lines(self.corners, self.cutlines_left)
+                '$TRANSLATE_LEFT$'] = f"{Design.tdpi_to_dpi(self.length + self.thickness + separation)}, " \
+                                      + f"-{Design.tdpi_to_dpi(self.height)}"
+            left_cut = Design.draw_paths(self.corners, self.cutlines_left)
             self.template["$LEFT-CUT$"] = left_cut
 
             # RIGHT CUT
             self.template[
-                '$TRANSLATE_RIGHT$'] = f"-{Design.thoudpi_to_dpi(self.height - self.thickness - separation)}, " \
-                                       + f" {Design.thoudpi_to_dpi(-self.height + self.width + self.thickness + separation)}"
+                '$TRANSLATE_RIGHT$'] = f"-{Design.tdpi_to_dpi(self.height - self.thickness - separation)}, " \
+                                       + f" {Design.tdpi_to_dpi(-self.height + self.width + self.thickness + separation)}"
             # + f" {Design.convert_coord(self.thickness + separation)}"
-            right_cut = Design.draw_lines(self.corners, self.cutlines_right)
+            right_cut = Design.draw_paths(self.corners, self.cutlines_right)
             self.template["$RIGHT-CUT$"] = right_cut
 
         ycoord += 2 * self.vertical_separation
-        self.template["$LABEL_PROJECT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_PROJECT_Y$"] = Design.tdpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_TITLE_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_TITLE_Y$"] = Design.tdpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_FILENAME_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_FILENAME_Y$"] = Design.tdpi_to_dpi(ycoord)
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_WIDTH_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_OVERALL_WIDTH_Y$"] = Design.tdpi_to_dpi(ycoord)
         self.template["$LABEL_OVERALL_WIDTH$"] = str(round((self.right_x - self.left_x) / Design.FACTOR, 2))
 
         ycoord += self.vertical_separation
-        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$LABEL_OVERALL_HEIGHT_Y$"] = Design.tdpi_to_dpi(ycoord)
         self.template["$LABEL_OVERALL_HEIGHT$"] = round((self.bottom_y - self.top_y) / Design.FACTOR, 2)
 
         ycoord += self.vertical_separation
-        self.template["$ARGS_STRING_Y$"] = Design.thoudpi_to_dpi(ycoord)
+        self.template["$ARGS_STRING_Y$"] = Design.tdpi_to_dpi(ycoord)
         self.template["$ARGS_STRING$"] = self.args_string
 
         ycoord += self.vertical_separation
-        self.template["$VIEWPORT$"] = f"{Design.thoudpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
-                                      f" {Design.thoudpi_to_dpi(ycoord)}"
+        self.template["$VIEWPORT$"] = f"{Design.tdpi_to_dpi(round(self.right_x + 2 * Design.FACTOR))}," \
+                                      f" {Design.tdpi_to_dpi(ycoord)}"
 
         Design.write_to_file(self.template)
 

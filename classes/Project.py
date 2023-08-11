@@ -85,6 +85,9 @@ class Project:
         if config.has_option(C.project, Ct.y_text_spacing):
             self.options[Ct.y_text_spacing] = config.get(C.project, Ct.y_text_spacing)
 
+        if config.has_option(C.project, Ct.resolution):
+            self.options[Ct.thickness] = config.get(C.project, Ct.resolution)
+
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
         self.designs = []

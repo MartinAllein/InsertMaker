@@ -83,7 +83,7 @@ class CardSheet(Design):
 
         self.load_settings(self.config_file_and_section)
 
-        self.convert_measures_to_tdpi()
+        self.convert_settings_measures_to_tdpi()
 
     def create(self):
         # noinspection DuplicatedCode
@@ -92,16 +92,16 @@ class CardSheet(Design):
         card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
 
         if self.settings[C.corner_radius] == 0:
-            base_cut = [self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_FULL]),
-                        self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_TOP_OPEN]),
-                        self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_LEFT_OPEN]),
-                        self.draw_lines(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_TOPLEFT_OPEN])
+            base_cut = [self.draw_paths(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_FULL]),
+                        self.draw_paths(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_TOP_OPEN]),
+                        self.draw_paths(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_LEFT_OPEN]),
+                        self.draw_paths(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_TOPLEFT_OPEN])
                         ]
         else:
-            base_cut = [self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL]),
-                        self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOP_OPEN]),
-                        self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN]),
-                        self.draw_lines(self.corners, self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN])
+            base_cut = [self.draw_paths(self.corners, self.cutlines[self.__CUTLINES_CARD_FULL]),
+                        self.draw_paths(self.corners, self.cutlines[self.__CUTLINES_CARD_TOP_OPEN]),
+                        self.draw_paths(self.corners, self.cutlines[self.__CUTLINES_CARD_LEFT_OPEN]),
+                        self.draw_paths(self.corners, self.cutlines[self.__CUTLINES_CARD_TOPLEFT_OPEN])
                         ]
 
         rows = self.settings.get(C.rows)
@@ -136,9 +136,9 @@ class CardSheet(Design):
                 template = {Cm.id: f'{row} - {col}',
                             Cm.svgpath: svgpath,
                             Cm.translate: str(
-                                self.to_dpi(
+                                self.unit_to_dpi(
                                     self.settings.get(Ct.x_offset) + (x_measure + x_separation) * col)) + ', ' + str(
-                                self.to_dpi(self.settings.get(Ct.y_offset) + (y_measure + y_separation) * row))
+                                self.unit_to_dpi(self.settings.get(Ct.y_offset) + (y_measure + y_separation) * row))
                             }
 
                 temp = card_template
@@ -147,21 +147,21 @@ class CardSheet(Design):
 
                 output += temp
 
-        self.template['TEMPLATE'] = self.__DEFAULT_TEMPLATE
-        self.template[Cm.svgpath] = output
+        self.template_variables['TEMPLATE'] = self.__DEFAULT_TEMPLATE
+        self.template_variables[Cm.svgpath] = output
 
-        self.template[T.footer_card_width] = str(self.settings.get(C.x_measure)) + ' ' + self.settings.get(Ct.unit)
-        self.template[T.footer_card_height] = str(self.settings.get(C.y_measure)) + ' ' + self.settings.get(Ct.unit)
+        self.template_variables[T.footer_card_width] = str(self.settings.get(C.x_measure)) + ' ' + self.settings.get(Ct.unit)
+        self.template_variables[T.footer_card_height] = str(self.settings.get(C.y_measure)) + ' ' + self.settings.get(Ct.unit)
 
         viewbox_x = round(self.settings.get(Ct.x_offset_tdpi) + (self.right_x - self.left_x) * columns
                           + x_separation * self.conversion_factor() * (columns - 1))
         viewbox_y = round(self.settings.get(Ct.y_offset_tdpi) + (self.bottom_y - self.top_y) * rows
                           + y_separation * self.conversion_factor() * (rows - 1))
 
-        self.template[Cm.viewbox_x] = viewbox_x
-        self.template[Cm.viewbox_y] = viewbox_y
+        self.template_variables[Cm.viewbox_x] = viewbox_x
+        self.template_variables[Cm.viewbox_y] = viewbox_y
 
-        self.write_to_file(self.template)
+        self.write_to_file(self.template_variables)
         print(f'CardSheet "{self.settings.get(Ct.filename)}" created')
 
     def __init_design(self):

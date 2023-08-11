@@ -48,7 +48,7 @@ class FreePath(Design):
         # : encloses config values to replace
         self.load_settings(self.config_file_and_section)
 
-        self.convert_measures_to_tdpi()
+        self.convert_settings_measures_to_tdpi()
 
     def create(self):
         self.__init_design()
@@ -108,12 +108,12 @@ class FreePath(Design):
 
                 output += group_output
 
-        self.template[Cm.svgpath] = output
+        self.template_variables[Cm.svgpath] = output
 
-        self.template[Cm.viewbox_x] = self.settings.get(C.max_x_tdpi)
-        self.template[Cm.viewbox_y] = self.settings.get(C.max_y_tdpi)
+        self.template_variables[Cm.viewbox_x] = self.settings.get(C.max_x_tdpi)
+        self.template_variables[Cm.viewbox_y] = self.settings.get(C.max_y_tdpi)
 
-        self.write_to_file(self.template)
+        self.write_to_file(self.template_variables)
         print(f'FreePath "{self.settings.get(Ct.filename)}" created')
 
     def __init_design(self):
@@ -148,10 +148,10 @@ class FreePath(Design):
             print('Error in config file R ' + command + '\n' + error)
             sys.exit(-1)
 
-        start_x = self.to_dpi(float(start_xy[0]) + self.settings.get(Ct.x_offset))
-        start_y = self.to_dpi(float(start_xy[1]) + self.settings.get(Ct.y_offset))
-        width = self.to_dpi(float(parameter[2]))
-        height = self.to_dpi(float(parameter[4]))
+        start_x = self.unit_to_dpi(float(start_xy[0]) + self.settings.get(Ct.x_offset))
+        start_y = self.unit_to_dpi(float(start_xy[1]) + self.settings.get(Ct.y_offset))
+        width = self.unit_to_dpi(float(parameter[2]))
+        height = self.unit_to_dpi(float(parameter[4]))
 
         return f'M {start_x} {start_y} h {width} v {height} h {-width} z '
 
@@ -173,9 +173,9 @@ class FreePath(Design):
             print('All parameter must be of type float. C ' + command)
             sys.exit(-1)
 
-        start_x = self.to_dpi(float(start_xy[0]) + self.settings.get(Ct.x_offset))
-        start_y = self.to_dpi(float(start_xy[1]) + self.settings.get(Ct.y_offset))
-        radius = self.to_dpi(float(parameter[1]))
+        start_x = self.unit_to_dpi(float(start_xy[0]) + self.settings.get(Ct.x_offset))
+        start_y = self.unit_to_dpi(float(start_xy[1]) + self.settings.get(Ct.y_offset))
+        radius = self.unit_to_dpi(float(parameter[1]))
         start_x_left = start_x - radius
 
         # https: // www.mediaevent.de / tutorial / svg - circle - arc.html
@@ -215,9 +215,9 @@ class FreePath(Design):
             print('End parameter must be of type float. C ' + command)
             sys.exit(1)
 
-        start_x = self.to_dpi(float(start[0]) + self.settings.get(Ct.x_offset))
-        start_y = self.to_dpi(float(start[1]) + self.settings.get(Ct.y_offset))
-        end_x = self.to_dpi(float(end[0]) + self.settings.get(Ct.x_offset) )
-        end_y = self.to_dpi(float(end[1]) + self.settings.get(Ct.y_offset))
+        start_x = self.unit_to_dpi(float(start[0]) + self.settings.get(Ct.x_offset))
+        start_y = self.unit_to_dpi(float(start[1]) + self.settings.get(Ct.y_offset))
+        end_x = self.unit_to_dpi(float(end[0]) + self.settings.get(Ct.x_offset))
+        end_y = self.unit_to_dpi(float(end[1]) + self.settings.get(Ct.y_offset))
 
         return f'M {start_x} {start_y} L {end_x} {end_y}'

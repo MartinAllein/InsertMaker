@@ -110,7 +110,7 @@ class ItemBoxPartition(Design):
         if C.partitions in self.settings:
             self.settings[C.partitions] = Config.split_config_lines_to_list(self.settings[C.partitions], 3)
 
-        self.convert_measures_to_tdpi()
+        self.convert_settings_measures_to_tdpi()
 
     def create(self, output=True):
         # noinspection DuplicatedCode
@@ -126,7 +126,7 @@ class ItemBoxPartition(Design):
 
             # load the settings for the new partition
             self.load_settings(self.config_file, config_section)
-            self.convert_measures_to_tdpi()
+            self.convert_settings_measures_to_tdpi()
             self.partition_settings.append(self.settings)
 
             if output:
@@ -136,27 +136,27 @@ class ItemBoxPartition(Design):
 
         # noinspection DuplicatedCode
         self.__init_design()
-        base_cut = Design.draw_lines(self.corners, self.cutlines)
+        base_cut = Design.draw_paths(self.corners, self.cutlines)
 
-        self.template["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template["$SVGPATH$"] = base_cut
+        self.template_variables["TEMPLATE"] = self.__DEFAULT_TEMPLATE
+        self.template_variables["$SVGPATH$"] = base_cut
 
-        viewbox_x, viewbox_y = self.set_viewbox(self.right_x, self.bottom_y)
+        viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
-        self.template["VIEWBOX_X"] = viewbox_x
-        self.template["VIEWBOX_Y"] = viewbox_y
+        self.template_variables["VIEWBOX_X"] = viewbox_x
+        self.template_variables["VIEWBOX_Y"] = viewbox_y
 
-        self.template["$FOOTER__OVERALL_WIDTH$"] = self.tpi_to_unit(self.right_x - self.left_x)
-        self.template["$FOOTER_OVERALL_HEIGHT$"] = self.tpi_to_unit(self.bottom_y - self.top_y)
+        self.template_variables["$FOOTER__OVERALL_WIDTH$"] = self.tdpi_to_unit(self.right_x - self.left_x)
+        self.template_variables["$FOOTER_OVERALL_HEIGHT$"] = self.tdpi_to_unit(self.bottom_y - self.top_y)
 
-        self.template["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
-        self.template["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
-        self.template["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
-        self.template["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
-        self.template["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
-        self.template["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
+        self.template_variables["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
+        self.template_variables["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
+        self.template_variables["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
+        self.template_variables["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
+        self.template_variables["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
+        self.template_variables["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
 
-        self.write_to_file(self.template)
+        self.write_to_file(self.template_variables)
 
         print(
             f"Inner Length: {self.inner_dimensions[0]} , "
@@ -245,8 +245,8 @@ class ItemBoxPartition(Design):
                         ]
 
         # noinspection DuplicatedCode
-        self.inner_dimensions = [self.tpi_to_unit(thickness), self.tpi_to_unit(g - b), self.tpi_to_unit(m - i)]
-        self.outer_dimensions = [self.tpi_to_unit(thickness), self.tpi_to_unit(h - a), self.tpi_to_unit(n - i)]
+        self.inner_dimensions = [self.tdpi_to_unit(thickness), self.tdpi_to_unit(g - b), self.tdpi_to_unit(m - i)]
+        self.outer_dimensions = [self.tdpi_to_unit(thickness), self.tdpi_to_unit(h - a), self.tdpi_to_unit(n - i)]
 
         if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
             self.cutlines = [

@@ -119,7 +119,7 @@ class CardBox(Design):
                        f'H{self.settings.get(Ct.height)}-S{self.settings.get(Ct.thickness)}-' \
                        f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
-        self.convert_measures_to_tdpi()
+Desi        self.convert_settings_measures_to_tdpi()
 
     def create(self, separated=False):
         self.__init_design()
@@ -129,42 +129,42 @@ class CardBox(Design):
             # Two funnels
             if self.settings.get(C.thumbhole) is Thumbhole.DUAL:
                 # Two funnels and two thumbholes
-                base_cut = Design.draw_lines(self.corners, self.cutlines_double_funnel_double_thumbholes)
+                base_cut = Design.draw_paths(self.corners, self.cutlines_double_funnel_double_thumbholes)
             elif self.settings.get(C.thumbhole) is Thumbhole.SINGLE:
                 # Two funnels and one thumbole
-                base_cut = Design.draw_lines(self.corners, self.cutlines_double_funnel_single_thumbhole)
+                base_cut = Design.draw_paths(self.corners, self.cutlines_double_funnel_single_thumbhole)
             else:
-                base_cut = Design.draw_lines(self.corners, self.cutlines_double_funnel_no_thumbholes)
+                base_cut = Design.draw_paths(self.corners, self.cutlines_double_funnel_no_thumbholes)
 
         else:
             # One funnel
             if self.settings.get(C.thumbhole) is Thumbhole.NONE:
                 # One funnel, no thumbholes
-                base_cut = Design.draw_lines(self.corners, self.cutlines_single_funnel_no_thumbholes)
+                base_cut = Design.draw_paths(self.corners, self.cutlines_single_funnel_no_thumbholes)
             else:
                 # One funnel, one thumbhole even if two are selected
-                base_cut = Design.draw_lines(self.corners, self.cutlines_single_funnel_single_thumbhole)
+                base_cut = Design.draw_paths(self.corners, self.cutlines_single_funnel_single_thumbhole)
 
-        self.template['TEMPLATE'] = self.__DEFAULT_TEMPLATE
-        self.template[Cm.svgpath] = base_cut
+        self.template_variables['TEMPLATE'] = self.__DEFAULT_TEMPLATE
+        self.template_variables[Cm.svgpath] = base_cut
 
         viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
-        self.template[Cm.viewbox_x] = viewbox_x
-        self.template[Cm.viewbox_y] = viewbox_y
+        self.template_variables[Cm.viewbox_x] = viewbox_x
+        self.template_variables[Cm.viewbox_y] = viewbox_y
 
-        self.template[Cm.footer_overall_width] = str(
+        self.template_variables[Cm.footer_overall_width] = str(
             round((self.right_x - self.left_x) / self.conversion_factor(), 2))
 
-        self.template[Cm.footer_overall_height] = self.tpi_to_unit(self.bottom_y - self.top_y)
-        self.template['$FOOTER_INNER_LENGTH$'] = self.inner_dimensions[0]
-        self.template['$FOOTER_INNER_WIDTH$'] = self.inner_dimensions[1]
-        self.template['$FOOTER_INNER_HEIGHT$'] = self.inner_dimensions[2]
-        self.template['$FOOTER_OUTER_LENGTH$'] = self.outer_dimensions[0]
-        self.template['$FOOTER_OUTER_WIDTH$'] = self.outer_dimensions[1]
-        self.template['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions[2]
+        self.template_variables[Cm.footer_overall_height] = self.tdpi_to_unit(self.bottom_y - self.top_y)
+        self.template_variables['$FOOTER_INNER_LENGTH$'] = self.inner_dimensions[0]
+        self.template_variables['$FOOTER_INNER_WIDTH$'] = self.inner_dimensions[1]
+        self.template_variables['$FOOTER_INNER_HEIGHT$'] = self.inner_dimensions[2]
+        self.template_variables['$FOOTER_OUTER_LENGTH$'] = self.outer_dimensions[0]
+        self.template_variables['$FOOTER_OUTER_WIDTH$'] = self.outer_dimensions[1]
+        self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions[2]
 
-        self.write_to_file(self.template)
+        self.write_to_file(self.template_variables)
         print(f'CardBox \'{self.settings.get(Ct.filename)}\' created')
 
     def __init_design(self):
@@ -333,11 +333,11 @@ class CardBox(Design):
                         ]
 
         # noinspection DuplicatedCode
-        self.inner_dimensions = [self.tpi_to_unit(j - e), self.tpi_to_unit(z - s), self.tpi_to_unit(d - a)]
-        self.outer_dimensions = [self.tpi_to_unit(k - d), self.tpi_to_unit(aa - r), self.tpi_to_unit(e - a)]
+        self.inner_dimensions = [self.tdpi_to_unit(j - e), self.tdpi_to_unit(z - s), self.tdpi_to_unit(d - a)]
+        self.outer_dimensions = [self.tdpi_to_unit(k - d), self.tdpi_to_unit(aa - r), self.tdpi_to_unit(e - a)]
 
         if self.settings.get(C.enforce_design) is EnfordeDesign.SMALL or \
-                (self.tpi_to_unit(height) <= self.settings.get(C.small_height) and
+                (self.tdpi_to_unit(height) <= self.settings.get(C.small_height) and
                  not self.settings.get(C.enforce_design) is EnfordeDesign.LARGE):
 
             # small design

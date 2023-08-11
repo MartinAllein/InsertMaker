@@ -21,18 +21,12 @@ from classes.ConfigConstants import ConfigConstantsTemplate as Cm
 
 
 class Design(ABC):
-    __initialized = False
-
     # number of decimal places for tdpi values
     __PRECISION = 4
 
     # resolution of the SVG drawing. Standard for the Cricut is 72dpi
     # TODO: Resolution as parameter for the config
     __RESOLUTION = 72
-
-    # XML element definitions
-    __DEFAULT_XML_PATH = '<path d="M %s %s A %s %s 0 0 %s %s %s"/>\n'
-    __DEFAULT_XML_PATH_NOMOVE = '<path d="A %s %s 0 0 %s %s %s"/>\n'
 
     # Default filename and section for the InsertMaker configuration file
     __DEFAULT_SECTION_NAME = 'STANDARD'
@@ -61,7 +55,8 @@ class Design(ABC):
     # y text spacing : vertical spacing of the describing text lines at the bottom of the drawing
     # thickness      : thickness of the uses material
     # stroke width   : stroke width of the lines in the SVG drawing
-    __settings_standard_measures = [Ct.x_offset, Ct.y_offset, Ct.y_text_spacing, Ct.thickness, Ct.stroke_width]
+    __settings_standard_measures = [Ct.x_offset, Ct.y_offset, Ct.y_text_spacing, Ct.thickness, Ct.stroke_width,
+                                    Ct.resolution]
 
     # unit             : used unit in the settings (mm or mil)
     # stroke color     : color of the lines drawn in the SVG image
@@ -101,10 +96,6 @@ class Design(ABC):
 
         self.config_file_and_section = args.get(Ct.config_file_and_section)
 
-        options = {}
-        if Ct.options in args:
-            options = args.get(Ct.options)
-
         # default settings
         self.settings = {Ct.x_offset: self.__DEFAULT_X_OFFSET,
                          Ct.y_offset: self.__DEFAULT_Y_OFFSET,
@@ -125,25 +116,27 @@ class Design(ABC):
         self.__read_config(f'{self.__DEFAULT_CONFIG_FILE}{Ct.config_separator}{self.__DEFAULT_SECTION_NAME}')
 
         # Overwrite the combined default/InsertMaker settings with the ones from the command line
-        self.__update_settings_with_options(options)
+        if Ct.options in args:
+            options = args.get(Ct.options)
+            self.__update_settings_with_options(options)
 
         self.verbose = args.get(Ct.verbose, False)
         self.noprint = args.get(Ct.noprint, False)
 
-        # corner points for the designs
+        # corner points for the design
         self.corners: list[float] = []
 
         # lines for cutting/drawing
         self.cutlines: list[float] = []
 
         # x and y positions for the boundaries
-        self.left_x: float = 0
-        self.right_x: float = 0
-        self.top_y: float = 0
-        self.bottom_y: float = 0
+        self.left_x: float = 0.0
+        self.right_x: float = 0.0
+        self.top_y: float = 0.0
+        self.bottom_y: float = 0.0
 
         # content for the template
-        self.template = {}
+        self.template_variables = {}
 
         # command line as string
         self.args_string: str = ' '.join(sys.argv[1:])
@@ -162,7 +155,7 @@ class Design(ABC):
         self.settings = self.settings | options
         return
 
-    def convert_measures_to_tdpi(self) -> None:
+    def convert_settings_measures_to_tdpi(self) -> None:
         """
             Convert the measures from their nativ unint (mm/mil) to dpi * 10000 (tdpi)
         :return: nothing
@@ -176,7 +169,7 @@ class Design(ABC):
 
         # copy all measure keys to tdpi and add '_tdpi' to the key from the list of measures to be converted
         self.settings.update(
-            {k + Ct.tdpi: self.to_tdpi(self.settings[k]) for k in self.__settings_measures})
+            {k + Ct.tdpi: self.unit_to_tdpi(self.settings[k]) for k in self.__settings_measures})
 
         return
 
@@ -187,7 +180,7 @@ class Design(ABC):
         """
         return Design.__conversion_factor[self.settings[Ct.unit]]
 
-    def to_tdpi(self, value: float) -> int:
+    def unit_to_tdpi(self, value: float) -> int:
         """ Converts a native unit (mm/mil) to tdpi
 
         :param value: value to be converted
@@ -195,8 +188,8 @@ class Design(ABC):
         """
         return int(float(value) * self.conversion_factor())
 
-    @staticmethod
-    def __tdpi_to_dpi(value: str) -> str:
+    @classmethod
+    def __tdpi_to_dpi(cls, value: str) -> str:
         """
         Converts tdpi to dpi
         :param value: convert to dpi with 4 decimals
@@ -204,15 +197,15 @@ class Design(ABC):
         """
         value = str(value)
 
-        # if the length of the string, add leading 0 for the division
+        # if the length of the string is shorter than the precision then add leading 0 for the division
         if len(value) < Design.__PRECISION + 1:
-            value = ("00000" + value)[-Design.__PRECISION - 1:]
+            value = ('0' * (cls.__PRECISION + 1) + value)[-Design.__PRECISION - 1:]
 
         # add decimal point
-        return value[:-Design.__PRECISION] + "." + value[-Design.__PRECISION:]
+        return value[:-Design.__PRECISION] + '.' + value[-Design.__PRECISION:]
 
     @staticmethod
-    def thoudpi_to_dpi(value) -> str:
+    def tdpi_to_dpi(value) -> str:
         """
         Convert tdpi to dpi
         :param value: item or list to convert to dpi
@@ -226,7 +219,6 @@ class Design(ABC):
 
     @staticmethod
     def draw_line(corners: list, points: list, move_to=True) -> str:
-        # TODO:
         """
         Draws a line from the start to the end coordinates
         :return: path string with
@@ -235,17 +227,17 @@ class Design(ABC):
 
         start = 1
         if move_to:
-            path = f'M {Design.thoudpi_to_dpi(corners[points[0]][0])} {Design.thoudpi_to_dpi(corners[points[0]][1])} '
+            path = f'M {Design.tdpi_to_dpi(corners[points[0]][0])} {Design.tdpi_to_dpi(corners[points[0]][1])} '
         else:
             start = 0
 
         if start > len(points):
-            return ""
+            return ''
 
         for point in points[start:]:
-            x = Design.thoudpi_to_dpi(corners[point][0])
-            y = Design.thoudpi_to_dpi(corners[point][1])
-            path += f"L {x} {y} "
+            x = Design.tdpi_to_dpi(corners[point][0])
+            y = Design.tdpi_to_dpi(corners[point][1])
+            path += f'L {x} {y} '
 
         return path
 
@@ -262,16 +254,8 @@ class Design(ABC):
         start_x, start_y, end_x, end_y, diameter, rotation = Design.get_coords_for_arc(corners, points)
         radius = int(diameter / 2)
 
-        if diameter == 0:
-            return ""
+        return Design.draw_arc(start_x, start_y, radius, rotation, end_x, end_y, move_to)
 
-        if move_to:
-            path += f"M {Design.thoudpi_to_dpi(start_x)} {Design.thoudpi_to_dpi(start_y)} "
-
-        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {rotation} " \
-                f"{Design.thoudpi_to_dpi(end_x)} {Design.thoudpi_to_dpi(end_y)} "
-
-        return path
 
     @staticmethod
     def draw_quartercircle(corners: list, points: list, move_to=True):
@@ -282,19 +266,10 @@ class Design(ABC):
         :param points: Start and endpoints
         :return: XML string with <path />
         """
-        path = ""
+        path = ''
         start_x, start_y, end_x, end_y, radius, rotation = Design.get_coords_for_arc(corners, points)
 
-        if radius == 0:
-            return ""
-
-        if move_to:
-            path += f"M {Design.thoudpi_to_dpi(start_x)} {Design.thoudpi_to_dpi(start_y)} "
-
-        path += f"A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {rotation} " \
-                f"{Design.thoudpi_to_dpi(end_x)} {Design.thoudpi_to_dpi(end_y)} "
-
-        return path
+        return Design.draw_arc(start_x, start_y, radius, rotation, end_x, end_y, move_to)
 
     @staticmethod
     def get_coords_for_arc(corners: list, path: list):
@@ -341,7 +316,7 @@ class Design(ABC):
         for values in delta[orientation]:
             end_x = start_x + values[0]
             end_y = start_y + values[1]
-            outstring = Design.__draw_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
+            outstring = Design.draw_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
             xmlstring += outstring
             start_x = end_x
             start_y = end_y
@@ -349,27 +324,32 @@ class Design(ABC):
         return xmlstring
 
     @staticmethod
-    def __draw_arc(start_x, start_y, radius, direction, end_x, end_y, move_to=True):
-        # TODO: Remove __DEFAULT_XML_PATH
-        return Design.__DEFAULT_XML_PATH % (
-            Design.thoudpi_to_dpi(start_x), Design.thoudpi_to_dpi(start_y), Design.thoudpi_to_dpi(radius),
-            Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x), Design.thoudpi_to_dpi(end_y))
+    def draw_arc(start_x, start_y, radius, direction, end_x, end_y, move_to=True):
+        """
+        Draws an scg arv
+        :param start_x x startcoordinate
+        :param start_y y startcoordinate
+        :param radius of the arc
+        :param end_x x endcoordinate
+        :param end_y y endcoordinate
+        :param move_to: Optional. True include an M to move, False not
+        :return: string with <path />
+        """
 
-    @staticmethod
-    def __draw_arc_nomove(radius, direction, end_x, end_y, plainpath=False):
         output = ''
-        if plainpath:
-            output = f'A {Design.thoudpi_to_dpi(radius)} {Design.thoudpi_to_dpi(radius)} 0 0 {direction} ' \
-                     f'{Design.thoudpi_to_dpi(end_x)}{Design.thoudpi_to_dpi(end_y)} '
-        else:
-            # TODO: Remove __DEFAULT_XML_PATH
-            output = Design.__DEFAULT_XML_PATH_NOMOVE % (
-                Design.thoudpi_to_dpi(radius), Design.thoudpi_to_dpi(radius), direction, Design.thoudpi_to_dpi(end_x),
-                Design.thoudpi_to_dpi(end_y))
+        if radius == 0:
+            return ''
+
+        if move_to:
+            output += f'M {Design.tdpi_to_dpi(start_x)} {Design.tdpi_to_dpi(start_y)} '
+
+        output += f'A {Design.tdpi_to_dpi(radius)} {Design.tdpi_to_dpi(radius)} 0 0 {direction} ' \
+                  f'{Design.tdpi_to_dpi(end_x)} {Design.tdpi_to_dpi(end_y)}'
+
         return output
 
     @staticmethod
-    def draw_lines(corners: list, lines: list) -> str:
+    def draw_paths(corners: list, lines: list) -> str:
         """
         Drav path according using the list of lines with the given corners.
         :param corners: corner coordinates
@@ -390,14 +370,12 @@ class Design(ABC):
                 xml_lines += Design.draw_halfcircle(corners, values)
             elif command == PathStyle.HALFCIRCLE_NOMOVE:
                 xml_lines += Design.draw_halfcircle(corners, values, move_to=False)
-
+            # not yet used
             elif command == PathStyle.THUMBHOLE:
                 xml_lines += Design.draw_thumbhole_path(corners, values)
             elif command == PathStyle.PAIR:
                 for start, end in zip(values[::2], values[1::2]):
                     xml_lines += Design.draw_line(corners[start], corners[end])
-            elif command == PathStyle.QUARTERCIRCLE:
-                xml_lines += Design.draw_quartercircle(corners, values)
 
         return f'<path d="{xml_lines.strip()}"/>'
 
@@ -407,10 +385,10 @@ class Design(ABC):
         :param corners: all corners of the design
         :return: min x, max x, min y, max y
         """
-        self.left_x = min(a for (a, b) in corners)
-        self.top_y = min(b for (a, b) in corners)
-        self.right_x = max(a for (a, b) in corners)
-        self.bottom_y = max(b for (a, b) in corners)
+        self.left_x = min(x for (x, y) in corners)
+        self.top_y = min(y for (x, y) in corners)
+        self.right_x = max(x for (x, y) in corners)
+        self.bottom_y = max(y for (x, y) in corners)
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
@@ -422,11 +400,11 @@ class Design(ABC):
         """
 
         if self.settings.get(Ct.filename).strip() == '':
-            raise "No filename given"
+            raise 'No filename given'
 
         template_values[Cm.template_name] = self.settings.get(Ct.template_name, '')
 
-        if Ct.template == '':
+        if Ct.template.strip() == '':
             raise 'No template given'
 
         if Cm.viewbox_x not in template_values:
@@ -437,32 +415,34 @@ class Design(ABC):
 
         template_string = Template.load_template(template_values[Ct.template])
 
-        self.template[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
+        self.template_variables[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
 
         # modify FILENAME with leading and trailing $
-        self.template[Cm.footer_project_name] = self.settings.get(Ct.project_name, "")
-        self.template[Cm.footer_title] = self.settings.get(Ct.title, "")
-        self.template[Cm.header_title] = self.settings.get(Ct.title, "")
+        self.template_variables[Cm.footer_project_name] = self.settings.get(Ct.project_name, '')
+        self.template_variables[Cm.footer_title] = self.settings.get(Ct.title, '')
+        self.template_variables[Cm.header_title] = self.settings.get(Ct.title, '')
 
-        self.template[Cm.footer_filename] = self.settings.get(Ct.filename, "")
-        self.template[Cm.footer_args_string] = self.args_string
-        self.template[Cm.footer_overall_width] = round(self.template[Cm.viewbox_x] / self.conversion_factor(), 2)
-        self.template[Cm.footer_overall_height] = round(self.template[Cm.viewbox_y] / self.conversion_factor(), 2)
+        self.template_variables[Cm.footer_filename] = self.settings.get(Ct.filename, '')
+        self.template_variables[Cm.footer_args_string] = self.args_string
+        self.template_variables[Cm.footer_overall_width] = round(
+            self.template_variables[Cm.viewbox_x] / self.conversion_factor(), 2)
+        self.template_variables[Cm.footer_overall_height] = round(
+            self.template_variables[Cm.viewbox_y] / self.conversion_factor(), 2)
 
-        self.template[Cm.label] = self.thoudpi_to_dpi(self.left_x)
+        self.template_variables[Cm.label] = self.tdpi_to_dpi(self.left_x)
 
-        ycoord = self.template[Cm.viewbox_y]
-        self.template[Cm.label_project_y] = self.thoudpi_to_dpi(ycoord + self.settings[Ct.y_text_spacing_tdpi])
-        self.template[Cm.label_y_spacing] = self.thoudpi_to_dpi(self.settings[Ct.y_text_spacing_tdpi])
+        ycoord = self.template_variables[Cm.viewbox_y]
+        self.template_variables[Cm.label_project_y] = self.tdpi_to_dpi(
+            ycoord + self.settings[Ct.y_text_spacing_tdpi])
+        self.template_variables[Cm.label_y_spacing] = self.tdpi_to_dpi(self.settings[Ct.y_text_spacing_tdpi])
 
-        all_footers = [i for i in self.template if i.startswith(Cm.footer_dash)]
-        self.template[Cm.viewbox] = f'{self.thoudpi_to_dpi(self.template[Cm.viewbox_x])} ' \
-                                    f' {self.thoudpi_to_dpi(self.template[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} '
+        all_footers = [i for i in self.template_variables if i.startswith(Cm.footer_dash)]
+        self.template_variables[Cm.viewbox] = f'{self.tdpi_to_dpi(self.template_variables[Cm.viewbox_x])} ' \
+                                              f' {self.tdpi_to_dpi(self.template_variables[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} '
 
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
 
-        template_string = self.remove_xml_labels(template_string)
         template_string = self.remove_xml_labels(template_string)
 
         with open(f'{self.settings.get(Ct.filename)}', 'w') as f:
@@ -483,7 +463,7 @@ class Design(ABC):
 
         return xmlstr
 
-    def tpi_to_unit(self, value: float) -> float:
+    def tdpi_to_unit(self, value: int) -> float:
         """
         Convert values from tdpi to the unit from the settings
 
@@ -491,23 +471,15 @@ class Design(ABC):
         :return: unit
         """
 
-        return round(value / self.__conversion_factor[self.settings.get(Ct.unit)], 2)
+        return round(value / self.conversion_factor(), 2)
 
-    def to_dpi(self, value: float) -> float:
+    def unit_to_dpi(self, value: float) -> float:
         """
-        convert measure from settings unit to DPI
+        convert measure from mil/mm to DPI
         :param value: value to convert
         :return: DPI value
         """
-        return int(value * self.__conversion_factor[self.settings.get(Ct.unit)]) / 10000
-
-    @staticmethod
-    def get_options(value: dict) -> dict:
-        options = {}
-        if Ct.options in value:
-            options = value.get(Ct.options)
-
-        return options
+        return int(value * self.conversion_factor()) / (10 ** self.__PRECISION)
 
     def add_settings_boolean(self, keys: list) -> None:
         """
@@ -527,10 +499,6 @@ class Design(ABC):
         """
         self.__settings_enum.update(keys)
 
-    def convert_to_json(self, keys):
-        for key in keys:
-            self.settings[key] = self.get_string_or_list(self.settings[key])
-
     def add_settings_measures(self, keys: list) -> None:
         """
         Add list of config measure keys to standard measure keys for converting unit -> tdpi
@@ -547,21 +515,21 @@ class Design(ABC):
         """
         self.__settings_texts += texts
 
-    def set_title_and_outfile(self, name: str) -> None:
+    def set_title_and_outfile(self, default_title: str) -> None:
         """
         Set the title of the sheet and the filename for the output
-        :param name:
+        :param default_title: title used when no title in the settings
         :return:
         """
-        if name is None or name == "":
+        if default_title is None or default_title.strip() == '':
             return
 
         if Ct.title not in self.settings:
             # set default title
-            self.settings[Ct.title] = name
+            self.settings[Ct.title] = default_title
 
         # set default filename for output
-        self.settings[Ct.filename] = File.set_svg_extension(self.settings.get(Ct.filename, name))
+        self.settings[Ct.filename] = File.set_svg_extension(self.settings.get(Ct.filename, default_title))
 
     def load_settings(self, config_file_and_section: str) -> None:
         """
@@ -578,6 +546,7 @@ class Design(ABC):
     def __read_config(self, filename_and_section: str):
         """ Read configuration from file and convert numbers from string to int/float
 
+        :param filename_and_section Filename and section of configuration to load
         """
 
         error = ""
@@ -588,7 +557,6 @@ class Design(ABC):
         self.settings.update({k: self.try_float(config.get(section, k)) for k in config.options(section) if
                               config.has_option(section, k) and section not in self.__settings_enum})
 
-        foo = self.__settings_enum
         # iterate through all enums of the settings
         for key in self.__settings_enum:
             # enum_item is a dict with settings name as the key and the enm as value
@@ -615,8 +583,6 @@ class Design(ABC):
             print(error)
             sys.exit(1)
 
-        # print(json.dumps(self.settings, indent=4))
-
         return config
 
     @staticmethod
@@ -631,7 +597,7 @@ class Design(ABC):
     def try_float(value: str):
 
         try:
-            if value.__contains__("."):
+            if value.__contains__('.'):
                 float(value)
                 return float(value)
             else:
@@ -640,37 +606,11 @@ class Design(ABC):
         except ValueError:
             return value
 
-    def get_project_name_for_title(self, prefix="", postfix="-"):
-        return f"{'' if len(self.settings.get(Ct.project_name)) == 0 else prefix + self.settings.get(Ct.project_name) + postfix}"
+    def get_project_name_for_title(self, prefix='', postfix='-'):
+        return f'{"" if len(self.settings.get(Ct.project_name)) == 0 else prefix + self.settings.get(Ct.project_name) + postfix}'
 
-    def set_viewbox(self, x: int, y: int):
+    def get_viewbox(self, x: int, y: int) -> (int, int):
         return round(self.settings.get(Ct.x_offset_tdpi) + x), round(self.settings.get(Ct.y_offset_tdpi) + y)
-
-    @staticmethod
-    def get_string_or_list(value):
-        retval = ""
-        try:
-            retval = json.loads(value)
-        except JSONDecodeError as e:
-            retval = value
-
-        return retval
-
-    @staticmethod
-    def split_config_lines_to_list_____(config_array: str, item_count: int) -> list:
-        retval = []
-
-        if len(config_array) == 0:
-            return retval
-
-        items = list(filter(None, (x.strip() for x in config_array.splitlines())))
-
-        for item in items:
-            item = item.replace('"', '')
-            if len(item.split(',')) == item_count:
-                retval.append(item.split(','))
-
-        return retval
 
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
