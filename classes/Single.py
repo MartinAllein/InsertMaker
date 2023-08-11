@@ -31,7 +31,7 @@ class Single:
             print(inst)
             sys.exit(-1)
 
-            # invoke creation of the item
+        # invoke creation of the item
         design = class_(**kwargs)
 
         # execute the content
