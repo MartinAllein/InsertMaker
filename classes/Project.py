@@ -70,23 +70,13 @@ class Project:
         project_file, _ = Config.get_config_file_and_section(filename_and_section)
         self.designs = Config.normalize_config_file_and_section(self.designs, project_file)
 
-        if config.has_option(C.project, Ct.project_name):
-            self.options[Ct.project_name] = config.get(C.project, Ct.project_name)
+        self.set_option_from_config(config, [Ct.project_name, Ct.x_offset, Ct.y_offset, Ct.thickness, Ct.y_text_spacing,
+                                             Ct.resolution])
 
-        if config.has_option(C.project, Ct.x_offset):
-            self.options[Ct.x_offset] = config.get(C.project, Ct.x_offset)
-
-        if config.has_option(C.project, Ct.y_offset):
-            self.options[Ct.y_offset] = config.get(C.project, Ct.y_offset)
-
-        if config.has_option(C.project, Ct.thickness):
-            self.options[Ct.thickness] = config.get(C.project, Ct.thickness)
-
-        if config.has_option(C.project, Ct.y_text_spacing):
-            self.options[Ct.y_text_spacing] = config.get(C.project, Ct.y_text_spacing)
-
-        if config.has_option(C.project, Ct.resolution):
-            self.options[Ct.thickness] = config.get(C.project, Ct.resolution)
+    def set_option_from_config(self, config, items: list):
+        for item in items:
+            if config.has_option(C.project, item):
+                self.options[item] = config.get(C.project, item)
 
     def __set_defaults(self):
         """ Set default values for all variables from built in values"""
