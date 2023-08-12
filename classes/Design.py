@@ -20,11 +20,6 @@ from classes.ConfigConstants import ConfigConstantsTemplate as Cm
     """
 
 
-class C:
-    x = 0
-    y = 1
-
-
 class Design(ABC):
     # number of decimal places for tdpi values
     __PRECISION = 4
