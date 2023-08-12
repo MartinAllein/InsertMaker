@@ -307,8 +307,8 @@ class Design(ABC):
         :param path: path for the thumbhole
         :return:
         """
-        start_x, start_y = corners[path[0]]
-        smallradius, thumbholeradius, direction, orientation = path[1:]
+        start, smallradius, thumbholeradius, direction, orientation = path
+        start_x, start_y = start
 
         delta = {
             Direction.NORTH: [[-smallradius, -smallradius, direction], [0, -2 * thumbholeradius, 1 - direction],
@@ -323,12 +323,10 @@ class Design(ABC):
 
         xmlstring = ''
         for values in delta[orientation]:
-            end_x = start_x + values[C.x]
-            end_y = start_y + values[C.y]
-            outstring = Design.draw_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
+            end = start + values
+            outstring = Design.draw_arc(start, smallradius, direction, end)
             xmlstring += outstring
-            start_x = end_x
-            start_y = end_y
+            start = end
 
         return xmlstring
 
