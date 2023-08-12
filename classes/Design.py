@@ -20,6 +20,11 @@ from classes.ConfigConstants import ConfigConstantsTemplate as Cm
     """
 
 
+class C:
+    x = 0
+    y = 1
+
+
 class Design(ABC):
     # number of decimal places for tdpi values
     __PRECISION = 4
@@ -218,6 +223,13 @@ class Design(ABC):
         return result
 
     @staticmethod
+    def ctdpi_to_dpi(point: (int, int)) -> (float, float):
+        retval = []
+        for item in point:
+            retval.append(Design.tdpi_to_dpi(item))
+        return retval
+
+    @staticmethod
     def draw_line(corners: list, points: list, move_to=True) -> str:
         """
         Draws a line from the start to the end coordinates
@@ -227,7 +239,8 @@ class Design(ABC):
 
         start = 1
         if move_to:
-            path = f'M {Design.tdpi_to_dpi(corners[points[0]][0])} {Design.tdpi_to_dpi(corners[points[0]][1])} '
+            x, y = Design.ctdpi_to_dpi(corners[points[0]])
+            path = f'M {x} {y} '
         else:
             start = 0
 
@@ -235,8 +248,7 @@ class Design(ABC):
             return ''
 
         for point in points[start:]:
-            x = Design.tdpi_to_dpi(corners[point][0])
-            y = Design.tdpi_to_dpi(corners[point][1])
+            x, y = Design.ctdpi_to_dpi(corners[point])
             path += f'L {x} {y} '
 
         return path
@@ -255,7 +267,6 @@ class Design(ABC):
         radius = int(diameter / 2)
 
         return Design.draw_arc(start_x, start_y, radius, rotation, end_x, end_y, move_to)
-
 
     @staticmethod
     def draw_quartercircle(corners: list, points: list, move_to=True):
@@ -314,8 +325,8 @@ class Design(ABC):
 
         xmlstring = ''
         for values in delta[orientation]:
-            end_x = start_x + values[0]
-            end_y = start_y + values[1]
+            end_x = start_x + values[C.x]
+            end_y = start_y + values[C.y]
             outstring = Design.draw_arc(start_x, start_y, smallradius, values[2], end_x, end_y)
             xmlstring += outstring
             start_x = end_x
