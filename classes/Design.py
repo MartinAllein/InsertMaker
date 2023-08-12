@@ -262,11 +262,10 @@ class Design(ABC):
         :param move_to: Optional. True include an M to move, False not
         :return: string with <path />
         """
-        path = ""
-        start_x, start_y, end_x, end_y, diameter, rotation = Design.get_coords_for_arc(corners, points)
+        start, end, diameter, rotation = Design.get_coords_for_arc(corners, points)
         radius = int(diameter / 2)
 
-        return Design.draw_arc(start_x, start_y, radius, rotation, end_x, end_y, move_to)
+        return Design.draw_arc(start, radius, rotation, end, move_to)
 
     @staticmethod
     def draw_quartercircle(corners: list, points: list, move_to=True):
@@ -278,9 +277,9 @@ class Design(ABC):
         :return: XML string with <path />
         """
         path = ''
-        start_x, start_y, end_x, end_y, radius, rotation = Design.get_coords_for_arc(corners, points)
+        start, end, radius, rotation = Design.get_coords_for_arc(corners, points)
 
-        return Design.draw_arc(start_x, start_y, radius, rotation, end_x, end_y, move_to)
+        return Design.draw_arc(start, radius, rotation, end, move_to)
 
     @staticmethod
     def get_coords_for_arc(corners: list, path: list):
@@ -290,16 +289,15 @@ class Design(ABC):
         :param path: start and end points, direction of arc
         :return:
         """
-        start_x, start_y = corners[path[0]]
-        end_x, end_y = corners[path[1]]
-
-        rotation = path[2]
+        start, end, rotation = path
+        start_x, start_y = corners[start]
+        end_x, end_y = corners[end]
 
         radius = abs(end_y - start_y)
         if start_y == end_y:
             radius = abs(end_x - start_x)
 
-        return start_x, start_y, end_x, end_y, radius, rotation.value
+        return [start_x, start_y], [end_x, end_y], radius, rotation.value
 
     @staticmethod
     def draw_thumbhole_path(corners: list, path: list):
@@ -335,7 +333,7 @@ class Design(ABC):
         return xmlstring
 
     @staticmethod
-    def draw_arc(start_x, start_y, radius, direction, end_x, end_y, move_to=True):
+    def draw_arc(start, radius, direction, end, move_to=True):
         """
         Draws an scg arv
         :param start_x x startcoordinate
@@ -346,6 +344,8 @@ class Design(ABC):
         :param move_to: Optional. True include an M to move, False not
         :return: string with <path />
         """
+        start_x, start_y = start
+        end_x, end_y = end
 
         output = ''
         if radius == 0:
