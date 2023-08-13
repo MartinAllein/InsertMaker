@@ -7,6 +7,8 @@ from classes.ThumbholeStyle import ThumbholeStyle
 from classes.ItemBoxPartition import ItemBoxPartition
 from classes.ConfigConstants import ConfigConstantsText as Ct
 from classes.ConfigConstants import ConfigConstantsTemplate as Cm
+from classes.Config import Config
+
 
 class C:
     partitions_main_config = 'partitions main config'
@@ -20,7 +22,7 @@ class C:
     slot_width = 'slot width'
     corner_gap = 'corner gap'
     small_height = 'small height'
-    
+
     thumbhole_radius_tdpi = f'{thumbhole_radius}{Ct.tdpi}'
     slot_width_tdpi = f'{slot_width}{Ct.tdpi}'
     corner_gap_tdpi = f'{corner_gap}{Ct.tdpi}'
@@ -123,8 +125,8 @@ class ItemBox(Design):
 
         self.settings[
             Ct.title] = f'{self.__DEFAULT_FILENAME}-L{self.settings[Ct.length]}-W{self.settings[Ct.width]}-' \
-                       f'H{self.settings[Ct.height]}-S{self.settings[Ct.thickness]}-' \
-                       f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+                        f'H{self.settings[Ct.height]}-S{self.settings[Ct.thickness]}-' \
+                        f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
         self.convert_settings_measures_to_tdpi()
 
@@ -169,20 +171,24 @@ class ItemBox(Design):
             return
 
         itembox_separation_arguments = {}
-        itembox_separation_arguments.update({Ct.config_file_and_section: self.config_file_and_section})
+
+        fn, _ = Config.get_config_file_and_section(self.config_file_and_section)
+        itembox_separation_arguments.update(
+            {Ct.config_file_and_section: Config.normalize_config_file_and_section(
+                self.settings.get(C.partitions_config), fn)})
 
         # noinspection DuplicatedCode
         itembox_separation_arguments.update(
             {
-                Ct.width: self.settings[Ct.width],
-                Ct.height: self.settings[Ct.height],
-                Ct.thickness: self.settings[Ct.thickness],
-                'options': {Ct.project_name: self.settings.get(Ct.project_name)}
+                Ct.options: {Ct.width: self.settings[Ct.width],
+                             Ct.height: self.settings[Ct.height],
+                             Ct.thickness: self.settings[Ct.thickness],
+                             Ct.project_name: self.settings.get(Ct.project_name)}
             }
         )
 
-        # itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
-        # itemboxpartition.create()
+        itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
+        itemboxpartition.create()
 
     def __init_design(self):
         self.__init_base()
@@ -423,7 +429,7 @@ class ItemBox(Design):
                 self.cutlines.append(left_thumbhole_bottom)
                 self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),
                 self.cutlines.append(right_full)
-            elif self.settings.get(C.thumbhole) is  Thumbhole.DOUBLE:
+            elif self.settings.get(C.thumbhole) is Thumbhole.DOUBLE:
                 self.cutlines.append(left_thumbhole_top)
                 self.cutlines.append(left_thumbhole_bottom)
                 self.cutlines.append([PathStyle.HALFCIRCLE, [83, 82, Rotation.CCW]]),

@@ -84,8 +84,8 @@ class Design(ABC):
     __settings_enum = {}
 
     # conversion values for unit<->tdpi
-    __conversion_factor = {Ct.unit_mm: (__RESOLUTION * 10000) / 25.4,
-                           Ct.unit_mil: (__RESOLUTION * 10000)
+    __conversion_factor = {Ct.unit_mm: (__RESOLUTION * (10 ** __PRECISION)) / 25.4,
+                           Ct.unit_mil: (__RESOLUTION * (10 ** __PRECISION))
                            }
 
     __default_configuration = {}

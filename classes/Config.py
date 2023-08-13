@@ -203,7 +203,7 @@ class Config:
         return filename, section
 
     @staticmethod
-    def normalize_config_file_and_section(configs: list, filename: str) -> list:
+    def normalize_config_files_and_sections(configs: list, filename: str) -> list:
         """ Complete the items in the list of configurations that they are all in the
         format of filename#section.
 
@@ -215,6 +215,14 @@ class Config:
         for config in configs:
             fn, cf = Config.get_config_file_and_section(config, filename)
             retval.append(f"{fn}{c.config_separator}{cf}")
+
+        return retval
+
+    @staticmethod
+    def normalize_config_file_and_section(config: str, filename: str) -> str:
+        retval = ''
+        fn, cf = Config.get_config_file_and_section(config, filename)
+        retval = f'{fn}{c.config_separator}{cf}'
 
         return retval
 

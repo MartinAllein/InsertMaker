@@ -4,16 +4,34 @@ from classes.PathStyle import PathStyle
 from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.Config import Config
-from classes.ConfigConstants import ConfigConstantsText as Cc
+from classes.ConfigConstants import ConfigConstantsText as Ct
 
 
 class C:
-    partitions = "partitions"
+    partitions = 'partitions'
+    thumbhole_radius = 'thumbhole radius'
+    thumbhole_small_radius = 'thumbhole small radius'
+    longhole_radius = 'longhole radius'
+    longhole_rest_height = 'longhole rest height'
+    mounting_hole_length = 'mounting hole length'
+    tolerance = 'tolerance'
+    height_reduction = 'height reduction'
+    thumbhole_style = 'thumbhole style'
+    general_filename = 'general filename'
+
+    thumbhole_radius_tdpi = f'{thumbhole_radius}{Ct.tdpi}'
+    thumbhole_small_radius_tdpi = f'{thumbhole_small_radius}{Ct.tdpi}'
+    longhole_radius_tdpi = f'{longhole_radius}{Ct.tdpi}'
+    longhole_rest_height_tdpi = f'{longhole_rest_height}{Ct.tdpi}'
+    mounting_hole_length_tdpi = f'{mounting_hole_length}{Ct.tdpi}'
+    tolerance_tdpi = f'{tolerance}{Ct.tdpi}'
+    height_reduction_tdpi = f'{height_reduction}{Ct.tdpi}'
+
 
 
 class ItemBoxPartition(Design):
-    __DEFAULT_FILENAME = "ItemBoxPartition"
-    __DEFAULT_TEMPLATE = "ItemBoxPartition.svg"
+    __DEFAULT_FILENAME = 'ItemBoxPartition'
+    __DEFAULT_TEMPLATE = 'ItemBoxPartition.svg'
 
     __DEFAULT_VERTICAL_SEPARATION = 3
 
@@ -45,66 +63,52 @@ class ItemBoxPartition(Design):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        self.settings.update({'template name': self.__DEFAULT_TEMPLATE})
+        self.settings.update({Ct.template_name: self.__DEFAULT_TEMPLATE})
 
         self.inner_dimensions = []
         self.outer_dimensions = []
         self.partition_settings = []
 
-        thickness = self.__DEFAULT_THICKNESS
-        if Cc.thickness in kwargs:
-            thickness = kwargs[Cc.thickness]
+        # ensure that option exists in kwargs
+        _ = kwargs.setdefault(Ct.options, {})
 
-        width = self.__DEFAULT_WIDTH
-        if Cc.width in kwargs:
-            width = kwargs[Cc.width]
-
-        height = self.__DEFAULT_HEIGHT
-        if Cc.height in kwargs:
-            height = kwargs[Cc.height]
-
-        project_name = ""
-        if "project name" in kwargs:
-            project_name = kwargs["project name"]
-
-        self.settings.update({Cc.thickness: thickness,
-                              Cc.width: width,
-                              Cc.height: height,
-                              'project name': self.settings["project name"],
-                              'thumbhole style': self.__DEFAULT_THUMBHOLE_STYLE,
-                              'thumbhole radius': self.__DEFAULT_THUMBHOLE_RADIUS,
-                              'thumbhole small radius': self.__DEFAULT_THUMBHOLE_SMALL_RADIUS,
-                              'longhole radius': self.__DEFAULT_LONGHOLE_RADIUS,
-                              'longhole rest height': self.__DEFAULT_LONGHOLE_REST_HEIGHT,
-                              'vertical separation': self.__DEFAULT_VERTICAL_SEPARATION,
-                              'mounting hole length': self.__DEFAULT_MOUNTING_HOLE_LENGTH,
-                              'tolerance': self.__DEFAULT_TOLERANCE,
-                              'height reduction': self.__DEFAULT_HEIGHT_REDUCTION,
-                              C.partitions: ""
+        self.settings.update({Ct.thickness: kwargs[Ct.options].get(Ct.thickness, self.__DEFAULT_THICKNESS),
+                              Ct.width: kwargs[Ct.options].get(Ct.width, self.__DEFAULT_WIDTH),
+                              Ct.height: kwargs[Ct.options].get(Ct.height, self.__DEFAULT_HEIGHT),
+                              Ct.project_name: kwargs[Ct.options].get(Ct.project_name, ''),
+                              C.thumbhole_style: self.__DEFAULT_THUMBHOLE_STYLE,
+                              C.thumbhole_radius: self.__DEFAULT_THUMBHOLE_RADIUS,
+                              C.thumbhole_small_radius: self.__DEFAULT_THUMBHOLE_SMALL_RADIUS,
+                              C.longhole_radius: self.__DEFAULT_LONGHOLE_RADIUS,
+                              C.longhole_rest_height: self.__DEFAULT_LONGHOLE_REST_HEIGHT,
+                              Ct.vertical_separation: self.__DEFAULT_VERTICAL_SEPARATION,
+                              C.mounting_hole_length: self.__DEFAULT_MOUNTING_HOLE_LENGTH,
+                              C.tolerance: self.__DEFAULT_TOLERANCE,
+                              C.height_reduction: self.__DEFAULT_HEIGHT_REDUCTION,
+                              C.partitions: ''
                               }
                              )
 
-        self.add_settings_measures([Cc.thickness, Cc.width, Cc.height, "thumbhole radius", "thumbhole small radius",
-                                    "longhole radius", "longhole rest height", "vertical separation",
-                                    "mounting hole length", "tolerance", "height reduction"])
+        self.add_settings_measures([Ct.thickness, Ct.width, Ct.height, C.thumbhole_radius, C.thumbhole_small_radius,
+                                    C.longhole_radius, C.longhole_rest_height, Ct.vertical_separation,
+                                    C.longhole_rest_height, C.tolerance, C.height_reduction])
 
-        self.add_settings_enum({"thumbhole style": ThumbholeStyle,
+        self.add_settings_enum({C.thumbhole_style: ThumbholeStyle,
                                 })
 
-        self.add_settings_boolean(["separated"])
+        self.add_settings_boolean([Ct.separated])
 
         # General settings are loaded. Overwritten later by settings for each separation
-        self.load_settings(self.config_file, self.config_section)
+        self.load_settings(self.config_file_and_section)
 
         self.settings[
-            "title"] = f"{self.__DEFAULT_FILENAME}-W{self.settings['width']}-" \
-                       f"H{self.settings['height']}-S{self.settings['thickness']}-" \
-                       f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        self.settings[
-            "general filename"] = self.settings["title"][:]
+            Ct.title] = f'{self.__DEFAULT_FILENAME}-W{self.settings[Ct.width]}-' \
+                        f'H{self.settings[Ct.height]}-S{self.settings[Ct.thickness]}-' \
+                        f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+        self.settings[C.general_filename] = self.settings.get(Ct.title)
 
         # copy the settings for later use when making the partitions. Before creating a partition
-        # the general settings have to be restored
+        # the general settings must be restored
         self.general_settings = self.settings.copy()
 
         if C.partitions in self.settings:
@@ -116,18 +120,18 @@ class ItemBoxPartition(Design):
         # noinspection DuplicatedCode
 
         for idx, partition in enumerate(self.settings[C.partitions]):
-            config_file, config_section = self.get_config_file_and_section(self.config_file,
-                                                                           partition[0])
+
+            config_file, config_section = Config.get_config_file_and_section(partition)
 
             # restore the general settings that the settings from the last separator are
             # reverted.
             self.settings = self.general_settings.copy()
-            self.settings["filename"] = self.settings["general filename"] + "-" + str(idx + 1)
+            self.settings[Ct.filename] = self.settings[C.general_filename] + '-' + str(idx + 1)
 
             # load the settings for the new partition
-            self.load_settings(self.config_file, config_section)
-            self.convert_settings_measures_to_tdpi()
-            self.partition_settings.append(self.settings)
+            self.load_settings(partition)
+            # self.convert_settings_measures_to_tdpi()
+            # self.partition_settings.append(self.settings)
 
             if output:
                 self.__create_single_separation()
@@ -191,35 +195,37 @@ class ItemBoxPartition(Design):
         #                          |        |
         #   n                      08-------10
 
-        self.add_settings_measures([Cc.thickness, Cc.width, Cc.height, "thumbhole radius", "longhole radius",
-                                    "longhole rest height", "vertical separation", "mounting hole length",
-                                    "tolerance", "height reduction"])
+        self.add_settings_measures([Ct.thickness, Ct.width, Ct.height, C.thumbhole_radius, C.longhole_radius,
+                                    C.longhole_rest_height, C.mounting_hole_length,
+                                    C.tolerance, C.height_reduction, C.thumbhole_small_radius])
 
-        height = self.settings['height_tdpi']
-        width = self.settings['width_tdpi']
-        thickness = self.settings['thickness_tdpi']
+        self.convert_settings_measures_to_tdpi()
 
-        thumbhole_radius = self.settings['thumbhole radius_tdpi']
-        longhole_radius = self.settings['longhole radius_tdpi']
-        longhole_rest_height = self.settings['longhole rest height_tdpi']
-        vertical_separation = self.settings['vertical separation_tdpi']
-        mounting_hole_length = self.settings['mounting hole length_tdpi']
-        tolerance = self.settings['tolerance_tdpi']
-        height_reduction = self.settings['height reduction_tdpi']
-        thumbhole_small_radius = self.settings['thumbhole small radius_tdpi']
+        height = self.settings.get(Ct.height_tdpi)
+        width = self.settings.get(Ct.width_tdpi)
+        thickness = self.settings.get(Ct.thickness_tdpi)
 
+        thumbhole_radius = self.settings.get(C.thumbhole_radius_tdpi)
+        longhole_radius = self.settings.get(C.longhole_radius_tdpi)
+        longhole_rest_height = self.settings.get(C.longhole_rest_height_tdpi)
+        mounting_hole_length = self.settings[C.mounting_hole_length_tdpi]
+        tolerance = self.settings.get(C.tolerance_tdpi)
+        height_reduction = self.settings.get(C.height_reduction_tdpi)
+        thumbhole_small_radius = self.settings.get(C.thumbhole_small_radius_tdpi)
+
+        print(self.settings.get(C.thumbhole_style))
         # noinspection DuplicatedCode
         # X - Points
-        a = self.settings["x offset_tdpi"]
+        a = self.settings.get(Ct.x_offset_tdpi)
         b = int(a + thickness + tolerance)
-        if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
+        if self.settings.get(C.thumbhole_style) is ThumbholeStyle.THUMBHOLE:
             c = int(a + thickness + width / 2 - thumbhole_radius)
         else:
             c = int(a + thickness + width / 2 - longhole_radius)
         d = int(a + thickness + width / 2 - mounting_hole_length / 2)
         h = int(a + width + 2 * thickness)
         e = int(h - thickness - width / 2 + (mounting_hole_length / 2))
-        if self.settings['thumbhole style'] is ThumbholeStyle.THUMBHOLE:
+        if self.settings.get(C.thumbhole_style) is ThumbholeStyle.THUMBHOLE:
             f = int(h - thickness - width / 2 + thumbhole_radius)
         else:
             f = int(h - thickness - width / 2 + longhole_radius)
@@ -230,7 +236,7 @@ class ItemBoxPartition(Design):
 
         # noinspection DuplicatedCode
         # Y - Points
-        i = self.settings['y offset_tdpi']
+        i = self.settings.get(Ct.y_offset_tdpi)
 
         j = int(i + (height - height_reduction) / 2)
         m = i + height - height_reduction
@@ -278,7 +284,7 @@ class ItemBoxPartition(Design):
             if len(partition) == 1:
                 # Section is in the Project file
                 # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
-                self.settings.update({Cc.config_file: self.config_file, Cc.config_section: partition})
+                self.settings.update({Ct.config_file: self.config_file, Ct.config_section: partition})
                 ItemBoxPartition(**self.settings)
             elif len(partition) == 2:
                 # section is in a separate file
