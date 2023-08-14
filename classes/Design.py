@@ -519,21 +519,25 @@ class Design(ABC):
         """
         self.__settings_texts += texts
 
-    def set_title_and_outfile(self, default_title: str) -> None:
+    def set_title_and_outfile(self, default_value: str) -> None:
         """
         Set the title of the sheet and the filename for the output
-        :param default_title: title used when no title in the settings
+        :param default_value: title used when no title in the settings
         :return:
         """
-        if default_title is None or default_title.strip() == '':
+        if default_value is None or default_value.strip() == '':
             return
 
         if Ct.title not in self.settings:
             # set default title
-            self.settings[Ct.title] = default_title
+            self.settings[Ct.title] = default_value
 
         # set default filename for output
-        self.settings[Ct.filename] = File.set_svg_extension(self.settings.get(Ct.filename, default_title))
+        filename = self.settings.get(Ct.filename, default_value)
+        if len(filename.strip()) == 0:
+            filename = Design.make_safe_filename(default_value)
+
+        self.settings[Ct.filename] = File.set_svg_extension(filename)
 
     def load_settings(self, config_file_and_section: str) -> None:
         """
@@ -615,6 +619,10 @@ class Design(ABC):
 
     def get_viewbox(self, x: int, y: int) -> (int, int):
         return round(self.settings.get(Ct.x_offset_tdpi) + x), round(self.settings.get(Ct.y_offset_tdpi) + y)
+
+    @staticmethod
+    def make_safe_filename(filename: str) -> str:
+        return "".join([c for c in filename if c.isalpha() or c.isdigit() or c in [' ', '_', '-']]).rstrip()
 
 # found things to consider in later designs
 #     self.measures.update({k: args['options'][k] for k in keys if k in args['options']})
