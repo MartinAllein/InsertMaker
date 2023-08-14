@@ -121,7 +121,8 @@ class ItemBoxPartition(Design):
 
         for idx, partition in enumerate(self.settings[C.partitions]):
 
-            config_file, config_section = Config.get_config_file_and_section(partition)
+            main_file, _ = Config.get_config_file_and_section(self.config_file_and_section)
+            config_file, config_section = Config.get_config_file_and_section(partition, main_file)
 
             # restore the general settings that the settings from the last separator are
             # reverted.
@@ -129,7 +130,7 @@ class ItemBoxPartition(Design):
             self.settings[Ct.filename] = self.settings[C.general_filename] + '-' + str(idx + 1)
 
             # load the settings for the new partition
-            self.load_settings(partition)
+            self.load_settings(f'{config_file}{Ct.config_separator}{config_section}')
             # self.convert_settings_measures_to_tdpi()
             # self.partition_settings.append(self.settings)
 
