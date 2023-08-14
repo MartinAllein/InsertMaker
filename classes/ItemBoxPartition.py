@@ -5,6 +5,7 @@ from classes.Direction import Rotation
 from classes.ThumbholeStyle import ThumbholeStyle
 from classes.Config import Config
 from classes.ConfigConstants import ConfigConstantsText as Ct
+from classes.ConfigConstants import ConfigConstantsTemplate as Cm
 
 
 class C:
@@ -26,7 +27,6 @@ class C:
     mounting_hole_length_tdpi = f'{mounting_hole_length}{Ct.tdpi}'
     tolerance_tdpi = f'{tolerance}{Ct.tdpi}'
     height_reduction_tdpi = f'{height_reduction}{Ct.tdpi}'
-
 
 
 class ItemBoxPartition(Design):
@@ -143,35 +143,34 @@ class ItemBoxPartition(Design):
         self.__init_design()
         base_cut = Design.draw_paths(self.corners, self.cutlines)
 
-        self.template_variables["TEMPLATE"] = self.__DEFAULT_TEMPLATE
-        self.template_variables["$SVGPATH$"] = base_cut
+        self.template_variables[Cm.template] = self.__DEFAULT_TEMPLATE
+        self.template_variables[Cm.svgpath] = base_cut
 
         viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
 
-        self.template_variables["VIEWBOX_X"] = viewbox_x
-        self.template_variables["VIEWBOX_Y"] = viewbox_y
+        self.template_variables[Cm.viewbox_x] = viewbox_x
+        self.template_variables[Cm.viewbox_y] = viewbox_y
 
-        self.template_variables["$FOOTER__OVERALL_WIDTH$"] = self.tdpi_to_unit(self.right_x - self.left_x)
-        self.template_variables["$FOOTER_OVERALL_HEIGHT$"] = self.tdpi_to_unit(self.bottom_y - self.top_y)
+        self.template_variables[Cm.footer_overall_width] = self.tdpi_to_unit(self.right_x - self.left_x)
+        self.template_variables[Cm.footer_overall_height] = self.tdpi_to_unit(self.bottom_y - self.top_y)
 
-        self.template_variables["$FOOTER_INNER_LENGTH$"] = self.inner_dimensions[0]
-        self.template_variables["$FOOTER_INNER_WIDTH$"] = self.inner_dimensions[1]
-        self.template_variables["$FOOTER_INNER_HEIGHT$"] = self.inner_dimensions[2]
-        self.template_variables["$FOOTER_OUTER_LENGTH$"] = self.outer_dimensions[0]
-        self.template_variables["$FOOTER_OUTER_WIDTH$"] = self.outer_dimensions[1]
-        self.template_variables["$FOOTER_OUTER_HEIGHT$"] = self.outer_dimensions[2]
+        self.template_variables['$FOOTER_INNER_LENGTH$'], self.template_variables['$FOOTER_INNER_WIDTH$'], \
+            self.template_variables['$FOOTER_INNER_HEIGHT$'] = self.inner_dimensions
+
+        self.template_variables['$FOOTER_OUTER_LENGTH$'], self.template_variables['$FOOTER_OUTER_WIDTH$'], \
+        self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions
 
         self.write_to_file(self.template_variables)
 
         print(
-            f"Inner Length: {self.inner_dimensions[0]} , "
-            f"Inner Width: {self.inner_dimensions[1]} , "
-            f"Inner Height: {self.inner_dimensions[2]}")
+            f'Inner Length: {self.inner_dimensions[0]} , '
+            f'Inner Width: {self.inner_dimensions[1]} , '
+            f'Inner Height: {self.inner_dimensions[2]}')
 
         print(
-            f"Outer Length: {self.outer_dimensions[0]} , "
-            f"Outer Width: {self.outer_dimensions[1]} , "
-            f"Outer Height: {self.outer_dimensions[2]}")
+            f'Outer Length: {self.outer_dimensions[0]} , '
+            f'Outer Width: {self.outer_dimensions[1]} , '
+            f'Outer Height: {self.outer_dimensions[2]}')
 
     def __init_design(self):
         self.__init_base()
@@ -278,16 +277,3 @@ class ItemBoxPartition(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
-
-    def __do_partitions(self):
-        for partition in self.partitions:
-            print(partition)
-            if len(partition) == 1:
-                # Section is in the Project file
-                # Single.create(self.project, item[self.__SECTION_ONLY], **self.kwargs)
-                self.settings.update({Ct.config_file: self.config_file, Ct.config_section: partition})
-                ItemBoxPartition(**self.settings)
-            elif len(partition) == 2:
-                # section is in a separate file
-                # Single.create(item[self.__CONFIG], item[self.__SECTION], **self.kwargs)
-                pass
