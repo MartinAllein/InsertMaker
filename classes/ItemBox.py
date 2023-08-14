@@ -167,7 +167,7 @@ class ItemBox(Design):
             f'Outer Height: {self.outer_dimensions[2]}')
 
         # stop creation when Itembox has no separators
-        if C.partitions_config not in self.settings:
+        if C.partitions_config not in self.settings or len(self.settings.get(C.partitions_config)) == 0:
             return
 
         itembox_separation_arguments = {}
