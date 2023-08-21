@@ -323,6 +323,7 @@ class ItemBoxPartition(Design):
         template_variables[Cm.scale_x] = 1
         template_variables[Cm.scale_y] = 1
         self.partitions_corners_and_cuts[partition_name][Ct.template_file] = self.fill_template(template_variables)
+        ...
 
     def __create_side_cut(self, noxml=False) -> str:
         #    a     b

@@ -399,7 +399,8 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    def write_to_file(self, template_values: dict, template_file=None, output_filename=None, nowrite=False):
+    def write_to_file(self, template_values: dict, template_file=None, output_filename=None, nowrite=False,
+                      noviewbox=False):
         """
         Fills the template with the values from the dict and writes it to a file
         :param template_values:
@@ -415,10 +416,10 @@ class Design(ABC):
         if template_file is None or template_file == '':
             raise 'No template file given.'
 
-        if Cm.viewbox_x not in template_values:
+        if Cm.viewbox_x not in template_values and not noviewbox:
             raise 'VIEWBOX X is missing'
 
-        if Cm.viewbox_y not in template_values:
+        if Cm.viewbox_y not in template_values and not noviewbox:
             raise 'VIEWBOX Y is missing'
 
         template_values[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
@@ -453,8 +454,11 @@ class Design(ABC):
 
         return template_string
 
-    def fill_template(self, template_values: dict) -> str:
-        template_string = Template.load_template(template_values[Ct.template_file])
+    def fill_template(self, template_values: dict, template_string: str=None) -> str:
+
+        if not template_string:
+            template_string = Template.load_template(template_values[Ct.template_file])
+
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
 

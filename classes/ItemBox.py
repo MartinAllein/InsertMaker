@@ -140,9 +140,12 @@ class ItemBox(Design):
         self.template_variables['$FOOTER_OUTER_WIDTH$'] = self.outer_dimensions[1]
         self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions[2]
 
+        template_variables = {}
         if partitions_cut is not None:
             # there are side and bottom cuts
-           ...
+            for partition in partitions_cut:
+                cut = partitions_cut[partition]
+                ...
 
         self.write_to_file(self.template_variables)
 
