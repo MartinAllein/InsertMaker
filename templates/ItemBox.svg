@@ -12,8 +12,8 @@
             $SVGPATH$
         </g>
     </g>
-    <g id="slots" transform="translate(0, 0)">
-        $SVGPATH_SLOTS$
+    <g id="partitions">
+        $SVGPATH_PARTITION_CUTS$
     </g>
     <g id="document-labels" class="labels" fill='#75777a' stroke='none'>
         <text x="$LABEL_X$" y="$LABEL_PROJECT_Y$">

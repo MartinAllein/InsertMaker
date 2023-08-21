@@ -14,7 +14,7 @@ class ConfigConstantsText:
     title = 'title'
     filename = 'filename'
     project_name = 'project name'
-    template_name = 'template name'
+    template_file = 'template file'
     options = 'option'
     tdpi = '_tdpi'
 
@@ -71,5 +71,9 @@ class ConfigConstantsTemplate:
     id = '$ID$'
     svgpath = '$SVGPATH$'
     translate = '$TRANSLATE$'
+    translate_x = '$TRANSLATE_X$'
+    translate_y = '$TRANSLATE_Y$'
+    scale_x = "$SCALE_X$"
+    scale_y = "$SCALE_Y$"
     color = '$COLOR$'
     dasharray = '$DASHARRAY$'

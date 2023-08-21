@@ -44,7 +44,7 @@ class Thumbhole(Enum):
 
 class ItemBox(Design):
     __DEFAULT_FILENAME = 'ItemBox'
-    __DEFAULT_TEMPLATE = 'ItemBox.svg'
+    __DEFAULT_TEMPLATE_FILE = 'ItemBox.svg'
     __DEFAULT_TEMPLATE_SEPARATED = 'ItemBoxSeparated.svg'
 
     __DEFAULT_VERTICAL_SEPARATION = 3
@@ -65,35 +65,16 @@ class ItemBox(Design):
     __DEFAULT_THUMBHOLE = Thumbhole.NONE
 
     __DEFAULT_PARTITIONS_MAIN_CONFIG = 'ITEMBOXPARTITION'
-    __DEFAULT_PARTITIONS_CONFIG = []
-
-    __DEFAULT_PARTITION_THUMBHOLE_SMALL_RADIUS = 2
-    __DEFAULT_PARTITION_THUMBHOLE_RADIUS = 10
-    __DEFAULT_PARTITION_LONGHOLE_RADIUS = 12
-    __DEFAULT_PARTITION_LONGHOLE_REST_HEIGHT = 2
-
-    # default tolerance for slots for better mounting
-    __DEFAULT_PARTITION_TOLERANCE = 0.5
-
-    # reducing of the height of the separator
-    __DEFAULT_PARTITION_HEIGHT_REDUCTION = 2
-
-    # default length for the slot for mounting the separator in the box
-    __DEFAULT_PARTITION_MOUNTING_HOLE_LENGTH = 10
-
-    # default separation width
-    __DEFAULT_PARTITION_SEPARATION_WIDTH = 10
-
-    # default style of thumbhole
-    __DEFAULT_PARTITION_THUMBHOLE_STYLE = ThumbholeStyle.LONGHOLE
 
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        self.settings.update({Ct.template_name: self.__DEFAULT_TEMPLATE})
+        self.settings.update({Ct.template_file: self.__DEFAULT_TEMPLATE_FILE})
 
         self.inner_dimensions = []
         self.outer_dimensions = []
+        self.side_and_bottom_cuts = {}
+        self.translate_partition = []
 
         self.settings.update({Ct.length: self.__DEFAULT_LENGTH,
                               Ct.width: self.__DEFAULT_WIDTH,
@@ -107,7 +88,6 @@ class ItemBox(Design):
                               C.corner_gap: self.__DEFAULT_CORNER_GAP,
                               C.small_height: self.__DEFAULT_SMALL_HEIGHT,
                               C.partitions_main_config: self.__DEFAULT_PARTITIONS_MAIN_CONFIG,
-                              C.partitions_config: self.__DEFAULT_PARTITIONS_CONFIG,
                               }
                              )
 
@@ -136,7 +116,13 @@ class ItemBox(Design):
 
         base_cut = Design.draw_paths(self.corners, self.cutlines)
 
-        self.template_variables[Cm.template] = self.__DEFAULT_TEMPLATE
+        partitions_cut = None
+
+        # make partitions
+        if C.partitions_config in self.settings:
+            partitions_cut = self.__make_partitions()
+
+        self.template_variables[Ct.template_file] = self.__DEFAULT_TEMPLATE_FILE
         self.template_variables[Cm.svgpath] = base_cut
 
         viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
@@ -154,6 +140,10 @@ class ItemBox(Design):
         self.template_variables['$FOOTER_OUTER_WIDTH$'] = self.outer_dimensions[1]
         self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions[2]
 
+        if partitions_cut is not None:
+            # there are side and bottom cuts
+           ...
+
         self.write_to_file(self.template_variables)
 
         print(
@@ -165,30 +155,6 @@ class ItemBox(Design):
             f'Outer Length: {self.outer_dimensions[0]} , '
             f'Outer Width: {self.outer_dimensions[1]} , '
             f'Outer Height: {self.outer_dimensions[2]}')
-
-        # stop creation when Itembox has no separators
-        if C.partitions_config not in self.settings or len(self.settings.get(C.partitions_config)) == 0:
-            return
-
-        itembox_separation_arguments = {}
-
-        fn, _ = Config.get_config_file_and_section(self.config_file_and_section)
-        itembox_separation_arguments.update(
-            {Ct.config_file_and_section: Config.normalize_config_file_and_section(
-                self.settings.get(C.partitions_config), fn)})
-
-        # noinspection DuplicatedCode
-        itembox_separation_arguments.update(
-            {
-                Ct.options: {Ct.width: self.settings[Ct.width],
-                             Ct.height: self.settings[Ct.height],
-                             Ct.thickness: self.settings[Ct.thickness],
-                             Ct.project_name: self.settings.get(Ct.project_name)}
-            }
-        )
-
-        itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
-        itemboxpartition.create()
 
     def __init_design(self):
         self.__init_base()
@@ -363,6 +329,7 @@ class ItemBox(Design):
         self.inner_dimensions = [self.tdpi_to_unit(j - e), self.tdpi_to_unit(x - u), self.tdpi_to_unit(d - a)]
         self.outer_dimensions = [self.tdpi_to_unit(k - d), self.tdpi_to_unit(y - t), self.tdpi_to_unit(e - a)]
         self.cutlines = []
+        self.translate_partition = [[e, q], [e, ab], [e, t]]
 
         if self.settings.get(C.enforce_design) is EnfordeDesign.SMALL or \
                 (self.tdpi_to_unit(height) <= self.settings.get(C.small_height) and
@@ -442,3 +409,25 @@ class ItemBox(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
+
+    def __make_partitions(self):
+        itembox_separation_arguments = {}
+
+        fn, _ = Config.get_config_file_and_section(self.config_file_and_section)
+        itembox_separation_arguments.update(
+            {Ct.config_file_and_section: Config.normalize_config_file_and_section(
+                self.settings.get(C.partitions_config), fn)})
+
+        # noinspection DuplicatedCode
+        itembox_separation_arguments.update(
+            {
+                Ct.options: {Ct.width: self.settings[Ct.width],
+                             Ct.height: self.settings[Ct.height],
+                             Ct.thickness: self.settings[Ct.thickness],
+                             Ct.project_name: self.settings.get(Ct.project_name)}
+            }
+        )
+
+        itemboxpartition = ItemBoxPartition(**itembox_separation_arguments)
+        itemboxpartition.create()
+        return itemboxpartition.get_side_and_bottom_cuts()

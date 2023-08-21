@@ -19,6 +19,8 @@ class C:
     height_reduction = 'height reduction'
     thumbhole_style = 'thumbhole style'
     general_filename = 'general filename'
+    separation_distance = "separation distance"
+    cut_template = "cut template"
 
     thumbhole_radius_tdpi = f'{thumbhole_radius}{Ct.tdpi}'
     thumbhole_small_radius_tdpi = f'{thumbhole_small_radius}{Ct.tdpi}'
@@ -27,11 +29,18 @@ class C:
     mounting_hole_length_tdpi = f'{mounting_hole_length}{Ct.tdpi}'
     tolerance_tdpi = f'{tolerance}{Ct.tdpi}'
     height_reduction_tdpi = f'{height_reduction}{Ct.tdpi}'
+    separation_distance_tdpi = f'{separation_distance}{Ct.tdpi}'
+
+    path_side = "path_side"
+    path_bottom = 'path_bottom'
+    path_side_noxml = f'{path_side}_noxml'
+    path_bottom_noxml = f'{path_bottom}_noxml'
 
 
 class ItemBoxPartition(Design):
     __DEFAULT_FILENAME = 'ItemBoxPartition'
-    __DEFAULT_TEMPLATE = 'ItemBoxPartition.svg'
+    __DEFAULT_TEMPLATE_FILE = 'ItemBoxPartition.svg'
+    __DEFAULT_CUT_TEMPLATE_FILE = 'ItemBoxPartitionCut.svg'
 
     __DEFAULT_VERTICAL_SEPARATION = 3
 
@@ -49,8 +58,8 @@ class ItemBoxPartition(Design):
     # default length for the slot for mounting the separator in the box
     __DEFAULT_MOUNTING_HOLE_LENGTH = 10
 
-    # default separation width
-    __DEFAULT_SEPARATION_WIDTH = 10
+    # default separation distance
+    __DEFAULT_SEPARATION_DISTANCE = 10
 
     # default style of thumbhole
     __DEFAULT_THUMBHOLE_STYLE = ThumbholeStyle.NONE
@@ -63,11 +72,12 @@ class ItemBoxPartition(Design):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        self.settings.update({Ct.template_name: self.__DEFAULT_TEMPLATE})
+        self.settings.update({Ct.template_file: self.__DEFAULT_TEMPLATE_FILE})
 
         self.inner_dimensions = []
         self.outer_dimensions = []
         self.partition_settings = []
+        self.partitions_corners_and_cuts = {}
 
         # ensure that option exists in kwargs
         _ = kwargs.setdefault(Ct.options, {})
@@ -82,16 +92,18 @@ class ItemBoxPartition(Design):
                               C.longhole_radius: self.__DEFAULT_LONGHOLE_RADIUS,
                               C.longhole_rest_height: self.__DEFAULT_LONGHOLE_REST_HEIGHT,
                               Ct.vertical_separation: self.__DEFAULT_VERTICAL_SEPARATION,
+                              C.separation_distance: self.__DEFAULT_SEPARATION_DISTANCE,
                               C.mounting_hole_length: self.__DEFAULT_MOUNTING_HOLE_LENGTH,
                               C.tolerance: self.__DEFAULT_TOLERANCE,
                               C.height_reduction: self.__DEFAULT_HEIGHT_REDUCTION,
-                              C.partitions: ''
+                              C.partitions: '',
+                              C.cut_template: self.__DEFAULT_CUT_TEMPLATE_FILE,
                               }
                              )
 
         self.add_settings_measures([Ct.thickness, Ct.width, Ct.height, C.thumbhole_radius, C.thumbhole_small_radius,
                                     C.longhole_radius, C.longhole_rest_height, Ct.vertical_separation,
-                                    C.longhole_rest_height, C.tolerance, C.height_reduction])
+                                    C.longhole_rest_height, C.tolerance, C.height_reduction, C.separation_distance])
 
         self.add_settings_enum({C.thumbhole_style: ThumbholeStyle,
                                 })
@@ -136,6 +148,9 @@ class ItemBoxPartition(Design):
 
             if output:
                 self.__create_single_separation()
+                if config_section not in self.partitions_corners_and_cuts:
+                    self.__create_additional_cuts(config_section)
+        pass
 
     def __create_single_separation(self):
 
@@ -143,7 +158,7 @@ class ItemBoxPartition(Design):
         self.__init_design()
         base_cut = Design.draw_paths(self.corners, self.cutlines)
 
-        self.template_variables[Cm.template] = self.__DEFAULT_TEMPLATE
+        self.template_variables[Ct.template_file] = self.__DEFAULT_TEMPLATE_FILE
         self.template_variables[Cm.svgpath] = base_cut
 
         viewbox_x, viewbox_y = self.get_viewbox(self.right_x, self.bottom_y)
@@ -158,7 +173,7 @@ class ItemBoxPartition(Design):
             self.template_variables['$FOOTER_INNER_HEIGHT$'] = self.inner_dimensions
 
         self.template_variables['$FOOTER_OUTER_LENGTH$'], self.template_variables['$FOOTER_OUTER_WIDTH$'], \
-        self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions
+            self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions
 
         self.write_to_file(self.template_variables)
 
@@ -277,3 +292,92 @@ class ItemBoxPartition(Design):
 
         # detect boundaries of drawing
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
+
+    def __create_additional_cuts(self, partition_name: str):
+        path_side_cut = self.__create_side_cut()
+        path_side_cut_noxml = self.__create_side_cut(noxml=True)
+        self.partitions_corners_and_cuts[partition_name] = {}
+        self.partitions_corners_and_cuts[partition_name][C.path_side] = path_side_cut
+        self.partitions_corners_and_cuts[partition_name][C.path_side_noxml] = path_side_cut_noxml
+
+        path_bottom_cut = self.__create_bottom_cut()
+        path_bottom_cut_noxml = self.__create_bottom_cut(noxml=True)
+        self.partitions_corners_and_cuts[partition_name][C.path_bottom] = path_bottom_cut
+        self.partitions_corners_and_cuts[partition_name][C.path_bottom_noxml] = path_bottom_cut_noxml
+        self.partitions_corners_and_cuts[partition_name][C.separation_distance] = self.settings[C.separation_distance]
+        self.partitions_corners_and_cuts[partition_name][C.separation_distance_tdpi] = self.settings[
+            C.separation_distance_tdpi]
+
+        #< g id = "base" transform = "translate($TRANSLATE_X$, $TRANSLATE_Y$, scale = ( $SCALE_X$, $SCALE_Y$ )" >
+        #    < g id = "cut-$DESCRIPTON$>" class ="cut" fill='none' stroke='#d41a5a' stroke-width='1' >
+        #        $SVGPATH$
+        #    < / g >
+        #< / g >
+        template_variables = {}
+        template_variables[Ct.template_file] = self.__DEFAULT_CUT_TEMPLATE_FILE
+        # translate_top, translate_mid, translate_bottom = translate
+        template_variables['$DESCRIPTION$'] = f'SIDE-CUT-TOP-{partition_name}'
+        template_variables[Cm.svgpath] = path_side_cut
+        # template_variables[Cm.translate_x] = Design.unit_to_dpi(translate_top[0])
+        # template_variables[Cm.translate_y] = Design.unit_to_dpi(translate_top[1])
+        template_variables[Cm.scale_x] = 1
+        template_variables[Cm.scale_y] = 1
+        self.partitions_corners_and_cuts[partition_name][Ct.template_file] = self.fill_template(template_variables)
+
+    def __create_side_cut(self, noxml=False) -> str:
+        #    a     b
+        # c -00----03
+        #           |
+        # d  |      |
+        #    |      |
+        #    |      |
+        #    |      |
+        #    |      |
+        #    |      |
+        # e  01----03
+        #
+        #
+        # f   ---------  bottom
+
+        tolerance = self.settings.get(C.tolerance_tdpi)
+        a = 0
+        b = a + self.settings.get(Ct.thickness_tdpi) + tolerance
+
+        c = 0
+        d = c + self.settings.get(C.height_reduction_tdpi)
+        f = self.settings.get(Ct.height)
+        e = int((f - d) >> 1) + tolerance
+
+        corners = [[a, c], [a, e], [b, c], [b, e]]
+        cutlines = [[PathStyle.LINE, [0, 1, 3, 2]]]
+        path = Design.draw_paths(corners, cutlines, noxml)
+
+        return path
+
+    def __create_bottom_cut(self, noxml=False) -> str:
+        #     a       b
+        #  c  00-----02
+        #     |       |
+        #     |       |
+        #     |       |
+        #     |       |
+        #  d  01-----03
+
+        tolerance = self.settings.get(C.tolerance_tdpi)
+        a = 0
+        b = a + self.settings.get(Ct.thickness_tdpi) + tolerance
+
+        c = 0
+        d = self.settings.get(C.mounting_hole_length) + tolerance
+        corners = [[a, c], [a, d], [b, d], [b, c]]
+        cutlines = [[PathStyle.LINE, [0, 1, 3, 2, 1]]]
+        path = Design.draw_paths(corners, cutlines, noxml)
+
+        return path
+
+    def get_side_and_bottom_cuts(self) -> dict:
+        if len(self.partitions_corners_and_cuts) == 0:
+            for idx, partition in enumerate(self.settings[C.partitions]):
+                self.__create_additional_cuts(partition)
+
+        return self.partitions_corners_and_cuts

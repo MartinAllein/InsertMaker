@@ -75,7 +75,7 @@ class CardBox(Design):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        self.settings.update({Ct.template_name: self.__DEFAULT_TEMPLATE,
+        self.settings.update({Ct.template_file: self.__DEFAULT_TEMPLATE,
                               C.template_card_name: self.__DEFAULT_TEMPLATE,
                               })
 

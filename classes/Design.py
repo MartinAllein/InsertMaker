@@ -69,7 +69,7 @@ class Design(ABC):
     # filename      : filename of the utput file
     # project name  : project (i.e. boardgame) to which the design belongs
     # template name : SVG template to use for the design
-    __settings_nonstandards = [Ct.title, Ct.filename, Ct.project_name, Ct.template_name]
+    __settings_nonstandards = [Ct.title, Ct.filename, Ct.project_name, Ct.template_file]
 
     # all measure keys
     __settings_measures = __settings_standard_measures
@@ -104,7 +104,7 @@ class Design(ABC):
                          Ct.title: f'{__class__.__name__}-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
                          Ct.filename: '',
                          Ct.project_name: '',
-                         Ct.template_name: '',
+                         Ct.template_file: '',
                          Ct.unit: self.__DEFAULT_UNIT,
                          Ct.resolution: self.__RESOLUTION,
                          Ct.stroke_color: self.__DEFAULT_STROKE_COLOR,
@@ -353,7 +353,7 @@ class Design(ABC):
         return output
 
     @staticmethod
-    def draw_paths(corners: list, lines: list) -> str:
+    def draw_paths(corners: list, lines: list, noxml=False) -> str:
         """
         Drav path according using the list of lines with the given corners.
         :param corners: corner coordinates
@@ -381,6 +381,9 @@ class Design(ABC):
                 for start, end in zip(values[::2], values[1::2]):
                     xml_lines += Design.draw_line(corners[start], corners[end])
 
+        if noxml:
+            return xml_lines.strip()
+
         return f'<path d="{xml_lines.strip()}"/>'
 
     def set_bounds(self, corners):
@@ -396,7 +399,7 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    def write_to_file(self, template_values: dict):
+    def write_to_file(self, template_values: dict, template=None, nofile=False):
         """
         Fills the template with the values from the dict and writes it to a file
         :param template_values:
@@ -406,18 +409,16 @@ class Design(ABC):
         if self.settings.get(Ct.filename).strip() == '':
             raise 'No filename given'
 
-        template_values[Cm.template_name] = self.settings.get(Ct.template_name, '')
+        template_values[Cm.template_name] = self.settings.get(Ct.template_file, template)
 
-        if Ct.template.strip() == '':
-            raise 'No template given'
+        if template_values[Ct.template_file].strip() == '':
+            raise 'No template file given.'
 
         if Cm.viewbox_x not in template_values:
             raise 'VIEWBOX X is missing'
 
         if Cm.viewbox_y not in template_values:
             raise 'VIEWBOX Y is missing'
-
-        template_string = Template.load_template(template_values[Ct.template])
 
         self.template_variables[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
 
@@ -444,13 +445,26 @@ class Design(ABC):
         self.template_variables[Cm.viewbox] = f'{self.tdpi_to_dpi(self.template_variables[Cm.viewbox_x])} ' \
                                               f' {self.tdpi_to_dpi(self.template_variables[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} '
 
+        # template_string = Template.load_template(template_values[Ct.template])
+        # for key in template_values:
+        #     template_string = template_string.replace(key, str(template_values[key]))
+
+        # template_string = self.remove_xml_labels(template_string)
+        template_string = self.fill_template(template_values)
+
+        with open(f'{self.settings.get(Ct.filename)}', 'w') as f:
+            f.write(template_string)
+
+        return template_string
+
+    def fill_template(self, template_values: dict) -> str:
+        template_string = Template.load_template(template_values[Ct.template_file])
         for key in template_values:
             template_string = template_string.replace(key, str(template_values[key]))
 
         template_string = self.remove_xml_labels(template_string)
+        return template_string
 
-        with open(f'{self.settings.get(Ct.filename)}', 'w') as f:
-            f.write(template_string)
 
     def remove_xml_labels(self, template_string):
         if self.noprint is False:

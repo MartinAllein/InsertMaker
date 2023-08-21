@@ -22,7 +22,6 @@ class C:
 
     rows = 'rows'
     columns = 'columns'
-    # template_name = 'template name'
     template_card_name = 'template card name'
 
 
@@ -34,8 +33,8 @@ class T:
 class CardSheet(Design):
     # Default values
     __DEFAULT_FILENAME: str = 'CardSheet'
-    __DEFAULT_TEMPLATE: str = 'CardSheet.svg'
-    __DEFAULT_TEMPLATE_CARD: str = 'Card.svg'
+    __DEFAULT_TEMPLATE_FILE: str = 'CardSheet.svg'
+    __DEFAULT_TEMPLATE_CARD_FILE: str = 'Card.svg'
 
     # number of rows and columns of cards per sheet
     __DEFAULT_COLUMNS: int = 2
@@ -69,8 +68,8 @@ class CardSheet(Design):
                               C.y_separation: self.__DEFAULT_Y_SEPARATION,
                               C.rows: self.__DEFAULT_ROWS,
                               C.columns: self.__DEFAULT_COLUMNS,
-                              Ct.template_name: self.__DEFAULT_TEMPLATE,
-                              C.template_card_name: self.__DEFAULT_TEMPLATE,
+                              Ct.template_file: self.__DEFAULT_TEMPLATE_FILE,
+                              C.template_card_name: self.__DEFAULT_TEMPLATE_CARD_FILE,
 
                               })
         self.add_settings_measures([C.x_measure, C.y_measure, C.corner_radius, C.x_separation, C.y_separation])
@@ -89,7 +88,7 @@ class CardSheet(Design):
         # noinspection DuplicatedCode
         self.__init_design()
 
-        card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD)
+        card_template = Template.load_template(self.__DEFAULT_TEMPLATE_CARD_FILE)
 
         if self.settings[C.corner_radius] == 0:
             base_cut = [self.draw_paths(self.corners, self.cutlines_nocorners[self.__CUTLINES_CARD_FULL]),
@@ -147,7 +146,7 @@ class CardSheet(Design):
 
                 output += temp
 
-        self.template_variables['TEMPLATE'] = self.__DEFAULT_TEMPLATE
+        self.template_variables[Ct.template_file] = self.__DEFAULT_TEMPLATE_FILE
         self.template_variables[Cm.svgpath] = output
 
         self.template_variables[T.footer_card_width] = str(self.settings.get(C.x_measure)) + ' ' + self.settings.get(Ct.unit)
