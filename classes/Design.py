@@ -399,19 +399,20 @@ class Design(ABC):
 
         return self.left_x, self.right_x, self.top_y, self.bottom_y
 
-    def write_to_file(self, template_values: dict, template=None, nofile=False):
+    def write_to_file(self, template_values: dict, template_file=None, output_filename=None, nowrite=False):
         """
         Fills the template with the values from the dict and writes it to a file
         :param template_values:
         :return:
         """
 
-        if self.settings.get(Ct.filename).strip() == '':
+        output_filename = self.settings.get(Ct.filename, output_filename).strip()
+        if (output_filename == '' or output_filename is None) and nowrite is False:
             raise 'No filename given'
 
-        template_values[Cm.template_name] = self.settings.get(Ct.template_file, template)
+        template_file = template_values.get(Ct.template_file, template_file).strip()
 
-        if template_values[Ct.template_file].strip() == '':
+        if template_file is None or template_file == '':
             raise 'No template file given.'
 
         if Cm.viewbox_x not in template_values:
@@ -420,36 +421,31 @@ class Design(ABC):
         if Cm.viewbox_y not in template_values:
             raise 'VIEWBOX Y is missing'
 
-        self.template_variables[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
+        template_values[Cm.unit] = self.settings.get(Ct.unit, self.__DEFAULT_UNIT)
 
         # modify FILENAME with leading and trailing $
-        self.template_variables[Cm.footer_project_name] = self.settings.get(Ct.project_name, '')
-        self.template_variables[Cm.footer_title] = self.settings.get(Ct.title, '')
-        self.template_variables[Cm.header_title] = self.settings.get(Ct.title, '')
+        template_values[Cm.footer_project_name] = self.settings.get(Ct.project_name, '')
+        template_values[Cm.footer_title] = self.settings.get(Ct.title, '')
+        template_values[Cm.header_title] = self.settings.get(Ct.title, '')
 
-        self.template_variables[Cm.footer_filename] = self.settings.get(Ct.filename, '')
-        self.template_variables[Cm.footer_args_string] = self.args_string
-        self.template_variables[Cm.footer_overall_width] = round(
-            self.template_variables[Cm.viewbox_x] / self.conversion_factor(), 2)
-        self.template_variables[Cm.footer_overall_height] = round(
-            self.template_variables[Cm.viewbox_y] / self.conversion_factor(), 2)
+        template_values[Cm.footer_filename] = self.settings.get(Ct.filename, '')
+        template_values[Cm.footer_args_string] = self.args_string
+        template_values[Cm.footer_overall_width] = round(
+            template_values[Cm.viewbox_x] / self.conversion_factor(), 2)
+        template_values[Cm.footer_overall_height] = round(
+            template_values[Cm.viewbox_y] / self.conversion_factor(), 2)
 
-        self.template_variables[Cm.label] = self.tdpi_to_dpi(self.left_x)
+        template_values[Cm.label] = self.tdpi_to_dpi(self.left_x)
 
-        ycoord = self.template_variables[Cm.viewbox_y]
-        self.template_variables[Cm.label_project_y] = self.tdpi_to_dpi(
+        ycoord = template_values[Cm.viewbox_y]
+        template_values[Cm.label_project_y] = self.tdpi_to_dpi(
             ycoord + self.settings[Ct.y_text_spacing_tdpi])
-        self.template_variables[Cm.label_y_spacing] = self.tdpi_to_dpi(self.settings[Ct.y_text_spacing_tdpi])
+        template_values[Cm.label_y_spacing] = self.tdpi_to_dpi(self.settings[Ct.y_text_spacing_tdpi])
 
-        all_footers = [i for i in self.template_variables if i.startswith(Cm.footer_dash)]
-        self.template_variables[Cm.viewbox] = f'{self.tdpi_to_dpi(self.template_variables[Cm.viewbox_x])} ' \
-                                              f' {self.tdpi_to_dpi(self.template_variables[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} '
+        all_footers = [i for i in template_values if i.startswith(Cm.footer_dash)]
+        template_values[Cm.viewbox] = f'{self.tdpi_to_dpi(template_values[Cm.viewbox_x])} ' \
+                                      f' {Design.tdpi_to_dpi(template_values[Cm.viewbox_y] + (len(all_footers) + 2) * self.settings[Ct.y_text_spacing_tdpi])} '
 
-        # template_string = Template.load_template(template_values[Ct.template])
-        # for key in template_values:
-        #     template_string = template_string.replace(key, str(template_values[key]))
-
-        # template_string = self.remove_xml_labels(template_string)
         template_string = self.fill_template(template_values)
 
         with open(f'{self.settings.get(Ct.filename)}', 'w') as f:
@@ -465,8 +461,7 @@ class Design(ABC):
         template_string = self.remove_xml_labels(template_string)
         return template_string
 
-
-    def remove_xml_labels(self, template_string):
+    def remove_xml_labels(self, template_string: str) -> str:
         if self.noprint is False:
             return template_string
 
