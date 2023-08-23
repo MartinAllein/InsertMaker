@@ -8,7 +8,7 @@
     </style>
     <title>$HEADER_TITLE$</title>
     <g id="base" transform="translate(0, 0)">
-        <g id="base-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='2'>
+        <g id="base-cut" class="cut" fill='none' stroke='#d41a5a' stroke-width='0.1'>
             $SVGPATH$
         </g>
     </g>

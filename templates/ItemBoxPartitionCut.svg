@@ -1,5 +1,3 @@
-    <g id="ItemBoxPartitionCuts-$DESCRIPTION$" transform="translate($TRANSLATE_X$, $TRANSLATE_Y$, scale = ( $SCALE_X$, $SCALE_Y$ )">
-        <g id="cut-$DESCRIPTON$>" class="cut" fill='none' stroke='#d41a5a' stroke-width='1'>
+    <g id="ItemBoxPartitionCuts-$DESCRIPTION$" transform="translate($TRANSLATE_X$, $TRANSLATE_Y$), scale($SCALE_X$, $SCALE_Y$)" class="cut" fill='none' stroke='#d41a5a' stroke-width='0.1'>
             $SVGPATH$
         </g>
-    </g>

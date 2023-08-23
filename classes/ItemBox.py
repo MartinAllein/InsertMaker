@@ -140,12 +140,32 @@ class ItemBox(Design):
         self.template_variables['$FOOTER_OUTER_WIDTH$'] = self.outer_dimensions[1]
         self.template_variables['$FOOTER_OUTER_HEIGHT$'] = self.outer_dimensions[2]
 
-        template_variables = {}
         if partitions_cut is not None:
             # there are side and bottom cuts
+            translate_x = self.corners[92][0]
+            translate_y_top = self.corners[10][1]
+            translate_y_medium = self.corners[29][1]
+            translate_y_bottom = self.corners[21][1]
+            cut_string: str = ''
             for partition in partitions_cut:
                 cut = partitions_cut[partition]
-                ...
+                translate_x = translate_x + cut['separation distance_tdpi'] - (cut['tolerance_tdpi'] >> 1)
+                template_variables = {}
+                template_variables.update({Cm.translate_x: Design.tdpi_to_dpi(translate_x),
+                                           Cm.translate_y: Design.tdpi_to_dpi(translate_y_top)
+                                           })
+                cut_string += self.fill_template(template_variables, template_string=cut['Sidecut'])
+
+                template_variables[Cm.translate_y] = Design.tdpi_to_dpi(translate_y_bottom)
+                cut_string += self.fill_template(template_variables, template_string=cut['Sidecut-mirrored'])
+
+                template_variables[Cm.translate_y] = Design.tdpi_to_dpi(
+                    translate_y_medium + (self.settings.get(Ct.width_tdpi) >> 1))
+                cut_string += self.fill_template(template_variables, template_string=cut['Bottomcut'])
+
+                translate_x += self.settings[Ct.thickness_tdpi] + (cut['tolerance_tdpi'] >> 1)
+
+            self.template_variables['$SVGPATH_PARTITION_CUTS$'] = cut_string
 
         self.write_to_file(self.template_variables)
 

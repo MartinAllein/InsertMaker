@@ -294,11 +294,22 @@ class ItemBoxPartition(Design):
         self.left_x, self.right_x, self.top_y, self.bottom_y = self.set_bounds(self.corners)
 
     def __create_additional_cuts(self, partition_name: str):
+        template_variables = {}
+        template_variables[Ct.template_file] = self.__DEFAULT_CUT_TEMPLATE_FILE
+        template_variables['$DESCRIPTION$'] = f'SIDE-CUT-TOP-{partition_name}'
+        template_variables[Cm.scale_x] = 1
+        template_variables[Cm.scale_y] = 1
+
         path_side_cut = self.__create_side_cut()
         path_side_cut_noxml = self.__create_side_cut(noxml=True)
         self.partitions_corners_and_cuts[partition_name] = {}
         self.partitions_corners_and_cuts[partition_name][C.path_side] = path_side_cut
         self.partitions_corners_and_cuts[partition_name][C.path_side_noxml] = path_side_cut_noxml
+
+        template_variables[Cm.svgpath] = path_side_cut
+        self.partitions_corners_and_cuts[partition_name]['Sidecut'] = self.fill_template(template_variables)
+        template_variables[Cm.scale_y] = -1
+        self.partitions_corners_and_cuts[partition_name]['Sidecut-mirrored'] = self.fill_template(template_variables)
 
         path_bottom_cut = self.__create_bottom_cut()
         path_bottom_cut_noxml = self.__create_bottom_cut(noxml=True)
@@ -308,21 +319,22 @@ class ItemBoxPartition(Design):
         self.partitions_corners_and_cuts[partition_name][C.separation_distance_tdpi] = self.settings[
             C.separation_distance_tdpi]
 
-        #< g id = "base" transform = "translate($TRANSLATE_X$, $TRANSLATE_Y$, scale = ( $SCALE_X$, $SCALE_Y$ )" >
+        template_variables[Cm.svgpath] = path_bottom_cut
+        template_variables[Cm.scale_y] = 1
+        self.partitions_corners_and_cuts[partition_name]['Bottomcut'] = self.fill_template(template_variables)
+        self.partitions_corners_and_cuts[partition_name]['Bottomcut-offset_y'] = 0
+
+        self.partitions_corners_and_cuts[partition_name][C.tolerance] = self.settings.get(C.tolerance)
+        self.partitions_corners_and_cuts[partition_name][C.tolerance_tdpi] = self.settings.get(C.tolerance_tdpi)
+
+        # < g id = "base" transform = "translate($TRANSLATE_X$, $TRANSLATE_Y$, scale = ( $SCALE_X$, $SCALE_Y$ )" >
         #    < g id = "cut-$DESCRIPTON$>" class ="cut" fill='none' stroke='#d41a5a' stroke-width='1' >
         #        $SVGPATH$
         #    < / g >
-        #< / g >
-        template_variables = {}
-        template_variables[Ct.template_file] = self.__DEFAULT_CUT_TEMPLATE_FILE
+        # < / g >
         # translate_top, translate_mid, translate_bottom = translate
-        template_variables['$DESCRIPTION$'] = f'SIDE-CUT-TOP-{partition_name}'
-        template_variables[Cm.svgpath] = path_side_cut
         # template_variables[Cm.translate_x] = Design.unit_to_dpi(translate_top[0])
         # template_variables[Cm.translate_y] = Design.unit_to_dpi(translate_top[1])
-        template_variables[Cm.scale_x] = 1
-        template_variables[Cm.scale_y] = 1
-        self.partitions_corners_and_cuts[partition_name][Ct.template_file] = self.fill_template(template_variables)
         ...
 
     def __create_side_cut(self, noxml=False) -> str:
@@ -340,14 +352,16 @@ class ItemBoxPartition(Design):
         #
         # f   ---------  bottom
 
-        tolerance = self.settings.get(C.tolerance_tdpi)
+        tolerance_tdpi = self.settings.get(C.tolerance_tdpi)
+        height_reduction_tdpi = self.settings.get(C.height_reduction_tdpi)
         a = 0
-        b = a + self.settings.get(Ct.thickness_tdpi) + tolerance
+        b = a + self.settings.get(Ct.thickness_tdpi) + tolerance_tdpi
 
         c = 0
-        d = c + self.settings.get(C.height_reduction_tdpi)
-        f = self.settings.get(Ct.height)
-        e = int((f - d) >> 1) + tolerance
+        d = c + height_reduction_tdpi
+        f = c + self.settings.get(Ct.height_tdpi)
+        # e = int((f - d) >> 1) + tolerance_tdpi
+        e = height_reduction_tdpi + ((self.settings.get(Ct.height_tdpi) - height_reduction_tdpi) >> 1) + tolerance_tdpi
 
         corners = [[a, c], [a, e], [b, c], [b, e]]
         cutlines = [[PathStyle.LINE, [0, 1, 3, 2]]]
@@ -369,9 +383,11 @@ class ItemBoxPartition(Design):
         b = a + self.settings.get(Ct.thickness_tdpi) + tolerance
 
         c = 0
-        d = self.settings.get(C.mounting_hole_length) + tolerance
-        corners = [[a, c], [a, d], [b, d], [b, c]]
-        cutlines = [[PathStyle.LINE, [0, 1, 3, 2, 1]]]
+        d = self.settings.get(C.mounting_hole_length_tdpi) + tolerance
+        c = (c - d) >> 1
+        d = c + d
+        corners = [[a, c], [a, d], [b, c], [b, d]]
+        cutlines = [[PathStyle.LINE, [0, 1, 3, 2, 0]]]
         path = Design.draw_paths(corners, cutlines, noxml)
 
         return path
