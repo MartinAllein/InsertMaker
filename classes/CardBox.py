@@ -119,7 +119,7 @@ class CardBox(Design):
                        f'H{self.settings.get(Ct.height)}-S{self.settings.get(Ct.thickness)}-' \
                        f'{datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
-Desi        self.convert_settings_measures_to_tdpi()
+        self.convert_settings_measures_to_tdpi()
 
     def create(self, separated=False):
         self.__init_design()

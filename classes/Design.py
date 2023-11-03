@@ -411,7 +411,7 @@ class Design(ABC):
         if (output_filename == '' or output_filename is None) and nowrite is False:
             raise 'No filename given'
 
-        template_file = template_values.get(Ct.template_file, template_file).strip()
+        template_file = template_values.get(Ct.template_file, template_file)
 
         if template_file is None or template_file == '':
             raise 'No template file given.'
@@ -431,10 +431,10 @@ class Design(ABC):
 
         template_values[Cm.footer_filename] = self.settings.get(Ct.filename, '')
         template_values[Cm.footer_args_string] = self.args_string
-        template_values[Cm.footer_overall_width] = round(
-            template_values[Cm.viewbox_x] / self.conversion_factor(), 2)
-        template_values[Cm.footer_overall_height] = round(
-            template_values[Cm.viewbox_y] / self.conversion_factor(), 2)
+        # template_values[Cm.footer_overall_width] = round(
+        #     template_values[Cm.viewbox_x] / self.conversion_factor(), 2)
+        # template_values[Cm.footer_overall_height] = round(
+        #     template_values[Cm.viewbox_y] / self.conversion_factor(), 2)
 
         template_values[Cm.label] = self.tdpi_to_dpi(self.left_x)
 

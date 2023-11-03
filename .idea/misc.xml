@@ -3,5 +3,5 @@
   <component name="ProjectResources">
     <resource url="http://purl.org/dc/elements/1.1/" location="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="InsertMaker" project-jdk-type="Python SDK" />
 </project>
