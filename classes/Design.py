@@ -38,7 +38,7 @@ class Design(ABC):
     __DEFAULT_Y_TEXT_SPACING = 7
     __DEFAULT_THICKNESS = 1.5
     __DEFAULT_STROKE_COLOR = '#aaaaaa'
-    __DEFAULT_STROKE_DASHARRAY = '20, 20'
+    __DEFAULT_STROKE_DASHARRAY = '0,0'
     __DEFAULT_STROKE_WIDTH = 2
 
     # Default path  and extension definitions
@@ -436,7 +436,7 @@ class Design(ABC):
         # template_values[Cm.footer_overall_height] = round(
         #     template_values[Cm.viewbox_y] / self.conversion_factor(), 2)
 
-        template_values[Cm.label] = self.tdpi_to_dpi(self.left_x)
+        template_values[Cm.label] = self.unit_to_tdpi(self.left_x)
 
         ycoord = template_values[Cm.viewbox_y]
         template_values[Cm.label_project_y] = self.tdpi_to_dpi(

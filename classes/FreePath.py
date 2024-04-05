@@ -1,4 +1,3 @@
-import ctypes
 import sys
 from datetime import datetime
 from classes.Design import Design
@@ -11,19 +10,18 @@ class C:
     paths = 'paths'
     max_x = 'max x'
     max_y = 'max y'
-    template_name = 'template name'
+    # template_name = 'template name'
     template_group = 'template group'
 
     max_x_tdpi = f'{max_x}{Ct.tdpi}'
     max_y_tdpi = f'{max_y}{Ct.tdpi}'
 
 
-
 class FreePath(Design):
     # Default values
     __DEFAULT_FILENAME: str = 'FreePath'
-    __DEFAULT_TEMPLATE: str = 'FreePath.svg'
-    __DEFAULT_TEMPLATE_GROUP: str = 'FreePathGroup.svg'
+    __DEFAULT_TEMPLATE_FILE: str = 'FreePath.svg'
+    __DEFAULT_TEMPLATE_FILE_GROUP: str = 'FreePathGroup.svg'
 
     # set defaults to A4 paper size
     __DEFAULT_MAX_X = 210
@@ -32,11 +30,13 @@ class FreePath(Design):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
+        self.settings.update({Ct.template_file: self.__DEFAULT_TEMPLATE_FILE})
+
         self.settings.update({C.paths: [],
                               C.max_x: self.__DEFAULT_MAX_X,
                               C.max_y: self.__DEFAULT_MAX_Y,
-                              C.template_name: self.__DEFAULT_TEMPLATE,
-                              C.template_group: self.__DEFAULT_TEMPLATE_GROUP
+                              # Ct.template_name: self.__DEFAULT_TEMPLATE_FILE,
+                              C.template_group: self.__DEFAULT_TEMPLATE_FILE_GROUP
                               })
 
         self.add_settings_measures([C.max_x, C.max_y])
@@ -107,7 +107,7 @@ class FreePath(Design):
                 group_output = a.replace(Cm.svgpath, group_output)
 
                 output += group_output
-
+        self.template_variables[Ct.template_file] = self.__DEFAULT_TEMPLATE_FILE
         self.template_variables[Cm.svgpath] = output
 
         self.template_variables[Cm.viewbox_x] = self.settings.get(C.max_x_tdpi)
@@ -220,4 +220,4 @@ class FreePath(Design):
         end_x = self.unit_to_dpi(float(end[0]) + self.settings.get(Ct.x_offset))
         end_y = self.unit_to_dpi(float(end[1]) + self.settings.get(Ct.y_offset))
 
-        return f'M {start_x} {start_y} L {end_x} {end_y}'
+        return f' M {start_x} {start_y} L {end_x} {end_y}'
